@@ -23,6 +23,7 @@ import {
     save_template,
 } from "../database/database";
 import * as yaml from "js-yaml";
+import * as path from 'node:path';
 import {
     Dataset,
     Evaluator,
@@ -84,10 +85,10 @@ async function handle_save_template(template: prompttemplate, connection: PoolCo
  * @param file_map A map of file fields to their uploaded files.
  * @param experiment_id The ID of the experiment to which the dataset belongs.
  */
-async function handle_save_dataset(dataset: Dataset, connection:PoolConnection, file_map: Record<string, Express.Multer.File[]>, experiment_id: number){
+async function handle_save_dataset(dataset: Dataset, connection:PoolConnection, file_map: Record<string, Express.Multer.File[]>, experiment_id: number, baseDir?: string){
     const node_id = await save_node('dataset', experiment_id, dataset.name, connection);
     const fileField = `file:${dataset.path}`;
-    const datasetPath = file_map[fileField]?.[0]?.path ?? dataset.path;
+    const datasetPath = file_map[fileField]?.[0]?.path ?? (baseDir ? path.resolve(baseDir, dataset.path) : dataset.path);
     await save_dataset(datasetPath, node_id, dataset.name, connection);
 }
 
@@ -98,10 +99,10 @@ async function handle_save_dataset(dataset: Dataset, connection:PoolConnection, 
  * @param file_map A map of file fields to their uploaded files.
  * @param experiment_id The ID of the experiment to which the evaluator belongs.
  */
-async function handle_save_evaluator(evaluator: Evaluator, connection: PoolConnection, file_map: Record<string, Express.Multer.File[]>, experiment_id: number){
+async function handle_save_evaluator(evaluator: Evaluator, connection: PoolConnection, file_map: Record<string, Express.Multer.File[]>, experiment_id: number, baseDir?: string){
     const node_id = await save_node('evaluator', experiment_id, evaluator.name, connection);
     const fileField = `evaluator:${evaluator.file}`;
-    const evaluatorPath = file_map[fileField]?.[0]?.path ?? evaluator.file;
+    const evaluatorPath = file_map[fileField]?.[0]?.path ?? (baseDir ? path.resolve(baseDir, evaluator.file) : evaluator.file);
     const evaluatorCode = fs.readFileSync(evaluatorPath, "utf-8");
     await save_evaluator({ ...evaluator, code: evaluatorCode, node_id: node_id }, connection);
 }
@@ -113,10 +114,10 @@ async function handle_save_evaluator(evaluator: Evaluator, connection: PoolConne
  * @param file_map A map of file fields to their uploaded files.
  * @param experiment_id The ID of the experiment to which the processor belongs.
  */
-async function handle_save_processor(processor: any, connection: PoolConnection, file_map: Record<string, Express.Multer.File[]>, experiment_id: number){
+async function handle_save_processor(processor: any, connection: PoolConnection, file_map: Record<string, Express.Multer.File[]>, experiment_id: number, baseDir?: string){
     const node_id = await save_node('processor', experiment_id, processor.name, connection);
     const fileField = `processor:${processor.file}`;
-    const processorPath = file_map[fileField]?.[0]?.path ?? processor.file;
+    const processorPath = file_map[fileField]?.[0]?.path ?? (baseDir ? path.resolve(baseDir, processor.file) : processor.file);
     const processorCode = fs.readFileSync(processorPath, "utf-8");
     await save_processor({ ...processor, code: processorCode, node_id: node_id }, connection);
 }
@@ -135,6 +136,7 @@ export async function save_config(
         await connection.beginTransaction();
         const raw = fs.readFileSync(yml_path, "utf-8");
         const parsed: any = yaml.load(raw);
+        const baseDir = path.dirname(yml_path);
         let experimentName = parsed.experiment.title;
         let counter = 1;
         let existingExperiment = await get_experiment_by_name(experimentName, connection);
@@ -152,13 +154,13 @@ export async function save_config(
                 await handle_save_template(node.template, connection, experiment_id);
             }
             else if(node.dataset){
-                promises.push(handle_save_dataset(node.dataset, connection, file_map, experiment_id));
+                promises.push(handle_save_dataset(node.dataset, connection, file_map, experiment_id, baseDir));
             }
             else if(node.evaluator){
-                promises.push(handle_save_evaluator(node.evaluator, connection, file_map, experiment_id));
+                promises.push(handle_save_evaluator(node.evaluator, connection, file_map, experiment_id, baseDir));
             }
             else if(node.processor){
-                promises.push(handle_save_processor(node.processor, connection, file_map, experiment_id));
+                promises.push(handle_save_processor(node.processor, connection, file_map, experiment_id, baseDir));
             }
             else{
                 throw new Error(`Unknown node type in configuration: ${JSON.stringify(node)}`);

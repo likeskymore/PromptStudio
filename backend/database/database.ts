@@ -2,6 +2,7 @@ import * as mysql from "mysql2/promise";
 import {
   Db_credentials,
   Evaluator,
+  Eval_type,
   Experiment,
   Experiment_node,
   ExperimentProcessor,
@@ -905,7 +906,13 @@ export async function get_evaluator_by_id(evaluator_id: number, connection: mysq
     const sql = 'SELECT * FROM Evaluator WHERE node_id = ?';
     const [rows] = await connection.execute(sql, [evaluator_id]);
     if ((rows as any[]).length > 0) {
-      return (rows as Evaluator[])[0];
+      const r = (rows as any[])[0];
+      if (r && typeof r.type === 'string') {
+        try {
+          r.type = Eval_type[r.type as keyof typeof Eval_type];
+        } catch (_) {}
+      }
+      return r as Evaluator;
     }
     return undefined;
   }
@@ -945,7 +952,13 @@ export async function get_processor_by_id(processor_id: number, connection: mysq
         const sql = 'SELECT * FROM processor WHERE node_id = ?';
         const [rows] = await connection.execute(sql, [processor_id]);
         if ((rows as any[]).length > 0) {
-        return (rows as ExperimentProcessor[])[0];
+        const r = (rows as any[])[0];
+        if (r && typeof r.type === 'string') {
+          try {
+            r.type = Eval_type[r.type as keyof typeof Eval_type];
+          } catch (_) {}
+        }
+        return r as ExperimentProcessor;
         }
         return undefined;
     }

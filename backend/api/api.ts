@@ -7,7 +7,7 @@ import {run_experiment} from "./runner";
 import {getTotalTokenCountForExperiment, save_config} from "./configHandler";
 
 const app = express();
-const port = 3000;
+const port = 3001;
 
 app.use(express.json());
 
@@ -19,10 +19,18 @@ const upload = multer({ dest: 'uploads/' });
  */
 app.post('/config', upload.any(), async (req, res) => {
     try {
+        if (!req.files || !Array.isArray(req.files)) {
+            return res.status(400).json({ error: "No files uploaded" });
+        }
+
         const yamlFile = req.files.find(f => f.fieldname === 'yaml');
-        if (!yamlFile) return res.status(400).json({ error: "Missing YAML config file" });
+
+        if (!yamlFile) {
+            return res.status(400).json({ error: "Missing YAML config file (fieldname='yaml')" });
+        }
 
         const fileMap: Record<string, Express.Multer.File[]> = {};
+
         for (const f of req.files) {
             if (!fileMap[f.fieldname]) {
                 fileMap[f.fieldname] = [];
@@ -31,10 +39,12 @@ app.post('/config', upload.any(), async (req, res) => {
         }
 
         const experiment_name = await save_config(yamlFile.path, fileMap);
-        res.status(201).json({ experiment_name });
+
+        return res.status(201).json({ experiment_name });
+
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Internal Server Error' });
+        console.error("CONFIG ERROR:", error);
+        return res.status(500).json({ error: 'Internal Server Error' });
     }
 });
 

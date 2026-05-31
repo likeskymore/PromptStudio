@@ -7,7 +7,7 @@ import * as yaml from "js-yaml";
 import * as path from "node:path";
 import Dict = NodeJS.Dict;
 
-const URL = "http://localhost:3000";
+const URL = "http://localhost:3001";
 
 /**
  * Saves a configuration file to the server.

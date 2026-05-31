@@ -6,10 +6,10 @@ import {
     save_response
 } from "../database/database";
 import { LLMSpec, PromptVarsDict} from "../typing";
-import {executejs} from "./evaluator";
-import {ExperimentProcessor, Result} from "./types";
+import {execute_javascript, execute_python} from "./evaluator";
+import {ExperimentProcessor, Result, Eval_type} from "./types";
 
-/**
+/** 
  * Processes an experiment by querying the LLM with the given parameters and saving the responses.
  * This function is designed to be run in a worker thread, allowing for parallel processing.
  * @param config_id The ID of the configuration to use for the experiment.
@@ -66,7 +66,12 @@ async function processExperiment(config_id: number, llm_spec: LLMSpec, iteration
  */
 async function evaluate(evaluator_id: number, LLMSpec: LLMSpec, markersDict: PromptVarsDict, template_value: string, result: Result) {
     const evaluator = await get_evaluator_by_id(evaluator_id);
-    const eval_result = await executejs(evaluator.code, result, markersDict, {}, LLMSpec.base_model, template_value, "evaluator");
+    let eval_result;
+    if (evaluator?.type === Eval_type.python) {
+        eval_result = await execute_python(evaluator.code, result, markersDict, {}, LLMSpec.base_model, template_value, "evaluator");
+    } else {
+        eval_result = await execute_javascript(evaluator.code, result, markersDict, {}, LLMSpec.base_model, template_value, "evaluator");
+    }
     // Check if there is an error in the evaluator itself
     if (eval_result.error) {
         await save_error_evaluator(evaluator.node_id, eval_result.error, result.id, new Date().toISOString().replace('T', ' ').replace('Z', ' '),);
@@ -98,7 +103,12 @@ async function evaluate(evaluator_id: number, LLMSpec: LLMSpec, markersDict: Pro
  */
 async function process(processor_id: number, LLMSpec: LLMSpec,  markersDict: PromptVarsDict, template_value: string, result: Result, input_id: number = null) {
     const processor: ExperimentProcessor = await get_processor_by_id(processor_id);
-    const process_result = await executejs(processor.code, result, markersDict, {}, LLMSpec?.base_model || null, template_value, "processor");
+    let process_result;
+    if (processor?.type === Eval_type.python) {
+        process_result = await execute_python(processor.code, result, markersDict, {}, LLMSpec?.base_model || null, template_value, "processor");
+    } else {
+        process_result = await execute_javascript(processor.code, result, markersDict, {}, LLMSpec?.base_model || null, template_value, "processor");
+    }
     // Check if there is an error in the processor itself
     if (process_result.error) {
         await save_error_processor(processor.node_id, process_result.error, result.id || null, input_id || null, new Date().toISOString().replace('T', ' ').replace('Z', ' '),);
