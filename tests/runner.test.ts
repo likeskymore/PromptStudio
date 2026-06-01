@@ -51,8 +51,8 @@ describe("run_experiment", () => {
         }
     });
 
-    it("flow with python evaluator", async () => {
-        const yml = 'files/testFlowWithPythonEval.yml';
+    it("flow with simple evaluator", async () => {
+        const yml = 'files/singleSimpleEvalFlow.yml';
         const experiment_name = await save_config(yml);
         expect(experiment_name).toBeDefined();
         await run_experiment(experiment_name, '');

@@ -82,7 +82,7 @@ async function evaluate(evaluator_id: number, LLMSpec: LLMSpec, markersDict: Pro
         await save_error_evaluator(evaluator.node_id, eval_result.response.error, eval_result.response.result_id, new Date().toISOString().replace('T', ' ').replace('Z', ' '));
     } else {
         const result = eval_result.response.result;
-        if (result) {
+        if (result !== null && result !== undefined) {
             await save_eval_result(result, eval_result.response.result_id, evaluator.node_id);
         }
     }

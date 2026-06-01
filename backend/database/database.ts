@@ -597,14 +597,25 @@ export async function get_config(config_id: number, connection: mysql.Connection
   }
 }
 
-export async function save_eval_result(eval_result: string, result_id: number, evaluator_id: number, connection: mysql.Connection | mysql.Pool = pool){
-  try{
-    const sql = 'INSERT INTO evaluationsresult(evaluation_result, result_id, evaluator_id) VALUES (?, ?, ?)';
-    const values = [eval_result, result_id, evaluator_id];
-    const [result] = await connection.execute(sql, values);
-    return (result as any).insertId;
-  }
-    catch (error) {
+export async function save_eval_result(
+    eval_result: unknown,
+    result_id: number,
+    evaluator_id: number,
+    connection: mysql.Connection | mysql.Pool = pool
+) {
+    try {
+        const sql =
+            'INSERT INTO evaluationsresult(evaluation_result, result_id, evaluator_id) VALUES (?, ?, ?)';
+
+        const values = [
+            String(eval_result),
+            result_id,
+            evaluator_id,
+        ];
+
+        const [result] = await connection.execute(sql, values);
+        return (result as any).insertId;
+    } catch (error) {
         console.error('Error saving evaluation result:', error);
     }
 }
