@@ -3,11 +3,12 @@ import {queryLLM} from "../backend";
 import {
     get_evaluator_by_id, get_processor_by_id,
     save_error, save_error_evaluator, save_error_processor, save_eval_result, save_process_result,
-    save_response
+    save_response, get_results_by_config_id 
 } from "../database/database";
 import { LLMSpec, PromptVarsDict} from "../typing";
 import {execute_javascript, execute_python} from "./evaluator";
-import {ExperimentProcessor, Result, Eval_type} from "./types";
+import {ExperimentProcessor, Result, Eval_type, Processor_type} from "./types";
+import { execute_join, execute_split } from './processor';
 
 /** 
  * Processes an experiment by querying the LLM with the given parameters and saving the responses.
@@ -104,8 +105,13 @@ async function evaluate(evaluator_id: number, LLMSpec: LLMSpec, markersDict: Pro
 async function process(processor_id: number, LLMSpec: LLMSpec,  markersDict: PromptVarsDict, template_value: string, result: Result, input_id: number = null) {
     const processor: ExperimentProcessor = await get_processor_by_id(processor_id);
     let process_result;
-    if (processor?.type === Eval_type.python) {
+    if (processor?.type === Processor_type.python) {
         process_result = await execute_python(processor.code, result, markersDict, {}, LLMSpec?.base_model || null, template_value, "processor");
+    } else if (processor?.type === Processor_type.join){
+        const results = await get_results_by_config_id(result.config_id);
+        process_result = await execute_join(results, markersDict, {}, LLMSpec?.base_model || null, template_value, "processor", processor.format);
+    } else if (processor?.type === Processor_type.split){
+        process_result = await execute_split(result, markersDict, {}, LLMSpec?.base_model || null, template_value, "processor", processor.format);
     } else {
         process_result = await execute_javascript(processor.code, result, markersDict, {}, LLMSpec?.base_model || null, template_value, "processor");
     }
@@ -118,9 +124,20 @@ async function process(processor_id: number, LLMSpec: LLMSpec,  markersDict: Pro
     if (process_result.response.error) {
         await save_error_processor(processor.node_id, process_result.response.error, process_result.response.result_id || null, input_id || null, new Date().toISOString().replace('T', ' ').replace('Z', ' '));
     } else {
-        const process_result_string = process_result.response.result;
-        if (process_result_string) {
-            await save_process_result(process_result_string, process_result.response.result_id || null, processor.node_id, input_id);
+        let process_result_value = process_result.response.result;
+        console.log('process result value', process_result_value, 'proccessor type is', processor?.type);
+        if (process_result_value !== null && process_result_value !== undefined) {
+            let process_result_string: string;
+            try {
+                process_result_string = typeof process_result_value === 'string' ? process_result_value : JSON.stringify(process_result_value);
+            } catch (err) {
+                process_result_string = String(process_result_value);
+            }
+            try {
+                await save_process_result(process_result_string, process_result.response.result_id || null, processor.node_id, input_id);
+            } catch (err) {
+                console.error('Failed saving process result:', err);
+            }
         }
     }
 }

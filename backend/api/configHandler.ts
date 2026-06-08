@@ -116,6 +116,10 @@ async function handle_save_evaluator(evaluator: Evaluator, connection: PoolConne
  */
 async function handle_save_processor(processor: any, connection: PoolConnection, file_map: Record<string, Express.Multer.File[]>, experiment_id: number, baseDir?: string){
     const node_id = await save_node('processor', experiment_id, processor.name, connection);
+    if (processor.type === 'split' || processor.type === 'join') {
+        await save_processor({ ...processor, node_id: node_id }, connection);
+        return;
+    }
     const fileField = `processor:${processor.file}`;
     const processorPath = file_map[fileField]?.[0]?.path ?? (baseDir ? path.resolve(baseDir, processor.file) : processor.file);
     const processorCode = fs.readFileSync(processorPath, "utf-8");

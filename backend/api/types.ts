@@ -23,6 +23,13 @@ export enum Eval_type {
   python,
 }
 
+export enum Processor_type {
+  join,
+  split,
+  javascript,
+  python,
+}
+
 export type Evaluator = {
   node_id: number;
   type: Eval_type;
@@ -121,8 +128,9 @@ export type ProcessorResult = {
 
 export type ExperimentProcessor = {
   node_id: number;
-  type: Eval_type;
-  code: string;
+  type: Processor_type;
+  code?: string;
+  format?: string;
   name: string;
 }
 

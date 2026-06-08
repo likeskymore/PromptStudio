@@ -3,6 +3,7 @@ import {
   Db_credentials,
   Evaluator,
   Eval_type,
+  Processor_type,
   Experiment,
   Experiment_node,
   ExperimentProcessor,
@@ -553,10 +554,10 @@ export async function save_evaluator(evaluator: Evaluator, connection: mysql.Con
   }
 }
 
-export async function save_processor(processor: Evaluator, connection: mysql.Connection | mysql.Pool = pool): Promise<number>{
+export async function save_processor(processor: ExperimentProcessor, connection: mysql.Connection | mysql.Pool = pool): Promise<number>{
   try{
-    const sql = 'INSERT INTO processor(node_id, type, code, name) VALUES (?, ?, ?, ?)';
-    const [result] = await connection.execute(sql, [processor.node_id, processor.type, processor.code, processor.name]);
+    const sql = 'INSERT INTO processor(node_id, type, code, format, name) VALUES (?, ?, ?, ?, ?)';
+    const [result] = await connection.execute(sql, [processor.node_id, processor.type, processor.code ?? null, processor.format ?? null, processor.name]);
     return (result as any).insertId;
   }
     catch (error) {
@@ -966,7 +967,8 @@ export async function get_processor_by_id(processor_id: number, connection: mysq
         const r = (rows as any[])[0];
         if (r && typeof r.type === 'string') {
           try {
-            r.type = Eval_type[r.type as keyof typeof Eval_type];
+            // Map stored string types to the Processor_type enum
+            r.type = Processor_type[r.type as keyof typeof Processor_type];
           } catch (_) {}
         }
         return r as ExperimentProcessor;
@@ -1048,4 +1050,28 @@ export async function get_results_by_experiment_name(experimentName: string, con
 
   const [rows] = await pool.query(query, [experimentName]);
   return rows as Result[];
+}
+
+export async function get_results_by_config_id(config_id: number, connection: mysql.Connection | mysql.Pool = pool): Promise<Result[]> {
+  try {
+    const sql = 'SELECT * FROM result WHERE config_id = ?';
+    const [rows] = await connection.execute(sql, [config_id]);
+    return rows as Result[];
+  }
+  catch (error) {
+    console.error(error);
+    return [];
+  }
+}
+
+export async function get_results_by_config_and_input_id(config_id: number, input_id: number, connection: mysql.Connection | mysql.Pool = pool): Promise<Result[]> {
+  try {
+    const sql = 'SELECT * FROM result WHERE config_id = ? AND input_id = ?';
+    const [rows] = await connection.execute(sql, [config_id, input_id ]);
+    return rows as Result[];
+  }
+  catch (error) {
+    console.error(error);
+    return [];
+  }
 }

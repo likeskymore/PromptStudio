@@ -183,8 +183,9 @@ CREATE TABLE Error(
 
 CREATE TABLE Processor(
     node_id INT UNSIGNED NOT NULL UNIQUE,
-    type ENUM('simple', 'javascript', 'python') NOT NULL,
+    type ENUM('join', 'split', 'javascript', 'python') NOT NULL,
     code MEDIUMTEXT,
+    format TEXT,
     name VARCHAR(255) NOT NULL,
     CONSTRAINT PK_processor PRIMARY KEY (node_id),
     CONSTRAINT FK_node_id_processor FOREIGN KEY (node_id) REFERENCES Node(id)

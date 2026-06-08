@@ -52,6 +52,7 @@ import {
   ChatMessage as BedrockChatMessage,
 } from "@mirai73/bedrock-fm";
 import Compressor from "compressorjs";
+import { Root, RootContent } from "mdast";
 // import { Models } from "@mirai73/bedrock-fm/lib/bedrock";
 
 const ANTHROPIC_HUMAN_PROMPT = "\n\nHuman:";
@@ -2841,3 +2842,11 @@ export const __http_url_to_base64 = (url: string) => {
     xhr.send();
   });
 };
+
+export function compileTextFromMdAST(md: Root | RootContent): string {
+  if (md === undefined) return "";
+  else if ("value" in md) return typeof md.value === "string" ? md.value : "";
+  else if ("children" in md && md.children?.length > 0)
+    return md.children.map(compileTextFromMdAST).join("");
+  return "";
+}

@@ -8,8 +8,8 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 
-type EvalOrProcessResult = { result_id: number; result?: any; error?: any };
-type EvalOrProcessResponse = {
+export type EvalOrProcessResult = { result_id: number; result?: any; error?: any };
+export type EvalOrProcessResponse = {
     response?: EvalOrProcessResult;
     logs?: string[];
     error?: string;
@@ -79,7 +79,7 @@ export async function execute_javascript(
             metavars,
             llm_name,
             prompt,
-            process_type,
+            undefined,
         );
 
         return { response, logs: all_logs };
@@ -242,13 +242,13 @@ export async function execute_python(
  * @param process_type - The type of process to execute, either "evaluator" or "processor".
  */
 export async function run_over_response(
-    process_func: (resp: ResponseInfo) => any,
+    process_func: ((resp: ResponseInfo, format?: string) => any),
     result: Result,
     vars: PromptVarsDict,
     metavars: Dict,
     llm_name: string,
     prompt: string,
-    process_type: "evaluator" | "processor",
+    format: string | undefined,
 ): Promise<
     { result_id: number; result?: any; error?: string }
 > {
@@ -261,7 +261,7 @@ export async function run_over_response(
         );
 
         try {
-            let processed = process_func(r_info);
+            let processed = process_func(r_info,format);
             if (processed && typeof processed.then === "function") {
                 processed = await processed;
             }
@@ -273,4 +273,52 @@ export async function run_over_response(
                 error: (err as Error).message,
             };
         }
+}
+
+/**
+ * Runs the provided process function over the response information.
+ * @param process_func - A function that takes a ResponseInfo object and returns a processed result.
+ * @param result - The result object containing the output result and ID.
+ * @param vars - A dictionary of prompt variables.
+ * @param metavars - A dictionary of metadata variables.
+ * @param llm_name - The name of the LLM used for processing.
+ * @param prompt - The prompt string used in the evaluation or processing.
+ * @param process_type - The type of process to execute, either "evaluator" or "processor".
+ */
+export async function run_over_responses(
+    process_func: ((responses: ResponseInfo[], format?: string) => any),
+    results: Result[],
+    vars: PromptVarsDict,
+    metavars: Dict,
+    llm_name: string,
+    prompt: string,
+    process_type: "evaluator" | "processor",
+): Promise<
+    { result_id: number; result?: any; error?: string }
+> {
+    const r_infos: ResponseInfo[] = [];
+    for (const result of results) {
+        const r_info = new ResponseInfo(
+            cleanEscapedBraces(result.output_result),
+            prompt,
+            vars,
+            metavars || {},
+            llm_name
+        );
+        r_infos.push(r_info);
+    }
+
+    try {
+        let processed = process_func(r_infos);
+        if (processed && typeof processed.then === "function") {
+            processed = await processed;
+        }
+
+        return { result_id: results[0].id, result: processed }
+    } catch (err) {
+        return {
+            result_id: results[0].id,
+            error: (err as Error).message,
+        };
+    }
 }
