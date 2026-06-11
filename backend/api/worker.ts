@@ -8,7 +8,7 @@ import {
 import { LLMSpec, PromptVarsDict} from "../typing";
 import {execute_javascript, execute_python} from "./evaluator";
 import {ExperimentProcessor, Result, Eval_type, Processor_type} from "./types";
-import { execute_join, execute_split } from './processor';
+import {execute_split } from './processor';
 
 /** 
  * Processes an experiment by querying the LLM with the given parameters and saving the responses.
@@ -108,8 +108,7 @@ async function process(processor_id: number, LLMSpec: LLMSpec,  markersDict: Pro
     if (processor?.type === Processor_type.python) {
         process_result = await execute_python(processor.code, result, markersDict, {}, LLMSpec?.base_model || null, template_value, "processor");
     } else if (processor?.type === Processor_type.join){
-        const results = await get_results_by_config_id(result.config_id);
-        process_result = await execute_join(results, markersDict, {}, LLMSpec?.base_model || null, template_value, "processor", processor.format);
+        // Not supported yet, as it requires multiple results, we would need to change the way we call the processor to support multiple results in one call
     } else if (processor?.type === Processor_type.split){
         process_result = await execute_split(result, markersDict, {}, LLMSpec?.base_model || null, template_value, "processor", processor.format);
     } else {
@@ -125,7 +124,6 @@ async function process(processor_id: number, LLMSpec: LLMSpec,  markersDict: Pro
         await save_error_processor(processor.node_id, process_result.response.error, process_result.response.result_id || null, input_id || null, new Date().toISOString().replace('T', ' ').replace('Z', ' '));
     } else {
         let process_result_value = process_result.response.result;
-        console.log('process result value', process_result_value, 'proccessor type is', processor?.type);
         if (process_result_value !== null && process_result_value !== undefined) {
             let process_result_string: string;
             try {

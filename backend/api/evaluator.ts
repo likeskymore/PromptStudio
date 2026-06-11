@@ -275,50 +275,51 @@ export async function run_over_response(
         }
 }
 
-/**
- * Runs the provided process function over the response information.
- * @param process_func - A function that takes a ResponseInfo object and returns a processed result.
- * @param result - The result object containing the output result and ID.
- * @param vars - A dictionary of prompt variables.
- * @param metavars - A dictionary of metadata variables.
- * @param llm_name - The name of the LLM used for processing.
- * @param prompt - The prompt string used in the evaluation or processing.
- * @param process_type - The type of process to execute, either "evaluator" or "processor".
- */
-export async function run_over_responses(
-    process_func: ((responses: ResponseInfo[], format?: string) => any),
-    results: Result[],
-    vars: PromptVarsDict,
-    metavars: Dict,
-    llm_name: string,
-    prompt: string,
-    process_type: "evaluator" | "processor",
-): Promise<
-    { result_id: number; result?: any; error?: string }
-> {
-    const r_infos: ResponseInfo[] = [];
-    for (const result of results) {
-        const r_info = new ResponseInfo(
-            cleanEscapedBraces(result.output_result),
-            prompt,
-            vars,
-            metavars || {},
-            llm_name
-        );
-        r_infos.push(r_info);
-    }
 
-    try {
-        let processed = process_func(r_infos);
-        if (processed && typeof processed.then === "function") {
-            processed = await processed;
-        }
+// /**
+//  * Runs the provided process function over the response information.
+//  * @param process_func - A function that takes a ResponseInfo object and returns a processed result.
+//  * @param result - The result object containing the output result and ID.
+//  * @param vars - A dictionary of prompt variables.
+//  * @param metavars - A dictionary of metadata variables.
+//  * @param llm_name - The name of the LLM used for processing.
+//  * @param prompt - The prompt string used in the evaluation or processing.
+//  * @param process_type - The type of process to execute, either "evaluator" or "processor".
+//  */
+// export async function run_over_responses(
+//     process_func: ((responses: ResponseInfo[], format?: string) => any),
+//     results: Result[],
+//     vars: PromptVarsDict,
+//     metavars: Dict,
+//     llm_name: string,
+//     prompt: string,
+//     process_type: "evaluator" | "processor",
+// ): Promise<
+//     { result_id: number; result?: any; error?: string }
+// > {
+//     const r_infos: ResponseInfo[] = [];
+//     for (const result of results) {
+//         const r_info = new ResponseInfo(
+//             cleanEscapedBraces(result.output_result),
+//             prompt,
+//             vars,
+//             metavars || {},
+//             llm_name
+//         );
+//         r_infos.push(r_info);
+//     }
 
-        return { result_id: results[0].id, result: processed }
-    } catch (err) {
-        return {
-            result_id: results[0].id,
-            error: (err as Error).message,
-        };
-    }
-}
+//     try {
+//         let processed = process_func(r_infos);
+//         if (processed && typeof processed.then === "function") {
+//             processed = await processed;
+//         }
+
+//         return { result_id: results[0].id, result: processed }
+//     } catch (err) {
+//         return {
+//             result_id: results[0].id,
+//             error: (err as Error).message,
+//         };
+//     }
+// }

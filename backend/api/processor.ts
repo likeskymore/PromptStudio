@@ -4,60 +4,60 @@ import { compileTextFromMdAST, processCSV } from "../utils";
 import { ResponseInfo } from "../backend";
 import { Result } from "./types";
 import { Dict, PromptVarsDict } from "../typing";
-import { EvalOrProcessResponse, run_over_response, run_over_responses } from "./evaluator";
+import { EvalOrProcessResponse, run_over_response } from "./evaluator";
 
 
-/**
- * Executes Join Processors in a sandboxed environment.
- * The code should define a function named `evaluate` or `process` depending on the process
- * @param code - JavaScript code as a string or a function that takes a ResponseInfo object and returns a value.
- * @param result - The result object containing the output result and ID.
- * @param vars - A dictionary of prompt variables.
- * @param metavars - A dictionary of metadata variables.
- * @param llm_name - The name of the LLM used for processing.
- * @param prompt - The prompt string used in the evaluation or processing.
- * @param process_type - The type of process to execute, either "evaluator" or "processor".
- */
-export async function execute_join(
-  results: Result[],
-  vars: PromptVarsDict,
-  metavars: Dict,
-  llm_name: string,
-  prompt: string,
-  process_type: "processor",
-  format: string,
-): Promise<EvalOrProcessResponse> {
-  const req_func_name = process_type;
+// /**
+//  * Executes Join Processors in a sandboxed environment.
+//  * The code should define a function named `evaluate` or `process` depending on the process
+//  * @param code - JavaScript code as a string or a function that takes a ResponseInfo object and returns a value.
+//  * @param result - The result object containing the output result and ID.
+//  * @param vars - A dictionary of prompt variables.
+//  * @param metavars - A dictionary of metadata variables.
+//  * @param llm_name - The name of the LLM used for processing.
+//  * @param prompt - The prompt string used in the evaluation or processing.
+//  * @param process_type - The type of process to execute, either "evaluator" or "processor".
+//  */
+// export async function execute_join(
+//   results: Result[],
+//   vars: PromptVarsDict,
+//   metavars: Dict,
+//   llm_name: string,
+//   prompt: string,
+//   process_type: "processor",
+//   format: string,
+// ): Promise<EvalOrProcessResponse> {
+//   const req_func_name = process_type;
 
-  let process_func: (rinfo: ResponseInfo[], fmt: string) => any;
-  let all_logs: string[] = [];
+//   let process_func: (rinfo: ResponseInfo[], fmt: string) => any;
+//   let all_logs: string[] = [];
 
-  // Adapter: accept an array of ResponseInfo and map to texts for joinTexts
-  process_func = async (r_infos: ResponseInfo[], fmt: string) => {
-    const texts = (r_infos || []).map((r) => r.text || "");
-    const joinFmt = (fmt as any) || "\n";
-    return await joinTexts(texts, joinFmt as any);
-  };
+//   // Adapter: accept an array of ResponseInfo and map to texts for joinTexts
+//   process_func = async (r_infos: ResponseInfo[], fmt: string) => {
+//     const texts = (r_infos || []).map((r) => r.text || "");
+//     const joinFmt = (fmt as any) || "\n";
+//     return await joinTexts(texts, joinFmt as any);
+//   };
 
-  try {
-    const response = await run_over_responses(
-      process_func as any,
-      results,
-      vars,
-      metavars,
-      llm_name,
-      prompt,
-      process_type,
-    );
+//   try {
+//     const response = await run_over_responses(
+//       process_func as any,
+//       results,
+//       vars,
+//       metavars,
+//       llm_name,
+//       prompt,
+//       process_type,
+//     );
 
-    return { response, logs: all_logs };
-  } catch (err) {
-    return {
-      error: `Error encountered while trying to run "${req_func_name}" method:\n${(err as Error).message}`,
-      logs: all_logs,
-    };
-  }
-}
+//     return { response, logs: all_logs };
+//   } catch (err) {
+//     return {
+//       error: `Error encountered while trying to run "${req_func_name}" method:\n${(err as Error).message}`,
+//       logs: all_logs,
+//     };
+//   }
+// }
 
 export async function execute_split(
   result: Result,
