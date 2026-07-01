@@ -2,8 +2,11 @@ import * as workerpool from 'workerpool';
 import {queryLLM} from "../backend";
 import {
     get_evaluator_by_id, get_processor_by_id,
+    get_child_evaluator_ids_by_multi_eval_id,
     save_error, save_error_evaluator, save_error_processor, save_eval_result, save_process_result,
-    save_response, get_results_by_config_id 
+    save_response,
+    get_llm_evaluator_by_id,
+    get_llm_param_by_id, 
 } from "../database/database";
 import { LLMSpec, PromptVarsDict} from "../typing";
 import {execute_javascript, execute_python} from "./evaluator";
@@ -67,11 +70,51 @@ async function processExperiment(config_id: number, llm_spec: LLMSpec, iteration
  */
 async function evaluate(evaluator_id: number, LLMSpec: LLMSpec, markersDict: PromptVarsDict, template_value: string, result: Result) {
     const evaluator = await get_evaluator_by_id(evaluator_id);
+    const llmName = LLMSpec?.base_model ?? "";
+    const prompt = template_value ?? "";
     let eval_result;
+    // If evaluator is a multieval, find its child evaluators and run them sequentially
+    if (evaluator?.type === Eval_type.multieval) {
+        const child_ids = await get_child_evaluator_ids_by_multi_eval_id(evaluator.node_id);
+        for (const child_id of child_ids) {
+            await evaluate(child_id, LLMSpec, markersDict, template_value, result);
+        }
+        return; // Exit after processing all child evaluators
+    }
+    if (evaluator?.type === Eval_type.llm) {
+        const llmEvaluator = await get_llm_evaluator_by_id(evaluator.node_id);
+        try {
+            const graderSpec: any = await get_llm_param_by_id(llmEvaluator.llm_param_id);
+            const gradingPromptTemplate: string = llmEvaluator.prompt ?? '{response}';
+            // local simple template filler (mirrors fillTemplate from configHandler)
+            const fillTemplateLocal = (template: string, vars: PromptVarsDict) =>
+                template.replace(/\{([^}]+)}/g, (_, marker) => {
+                    const entry = vars[marker];
+                    if (entry == null || typeof entry !== "string") return `{${marker}}`;
+                    return entry;
+                });
+
+            const evalVars = { ...markersDict, response: result.output_result } as PromptVarsDict;
+            const gradingPrompt = fillTemplateLocal(gradingPromptTemplate, evalVars);
+
+            const responses = await queryLLM(llmEvaluator.node_id.toString(), [graderSpec], 1, gradingPrompt, evalVars, {});
+            const firstResp = responses.responses && responses.responses.length > 0 ? responses.responses[0] : undefined;
+            const graderOut = firstResp && firstResp.responses && firstResp.responses.length > 0 ? firstResp.responses[0] : undefined;
+            if (!graderOut) {
+                await save_error_evaluator(llmEvaluator.node_id, 'No grader output', result.id, new Date().toISOString().replace('T', ' ').replace('Z', ' '));
+                return;
+            }
+            await save_eval_result(graderOut, result.id, llmEvaluator.node_id);
+        } catch (err) {
+            await save_error_evaluator(llmEvaluator.node_id, String(err), result.id, new Date().toISOString().replace('T', ' ').replace('Z', ' '));
+        }
+        return;
+    }
+
     if (evaluator?.type === Eval_type.python) {
-        eval_result = await execute_python(evaluator.code, result, markersDict, {}, LLMSpec.base_model, template_value, "evaluator");
+        eval_result = await execute_python(evaluator.code, result, markersDict, {}, llmName, prompt, "evaluator");
     } else {
-        eval_result = await execute_javascript(evaluator.code, result, markersDict, {}, LLMSpec.base_model, template_value, "evaluator");
+        eval_result = await execute_javascript(evaluator.code, result, markersDict, {}, llmName, prompt, "evaluator");
     }
     // Check if there is an error in the evaluator itself
     if (eval_result.error) {
@@ -102,17 +145,19 @@ async function evaluate(evaluator_id: number, LLMSpec: LLMSpec, markersDict: Pro
  * @param result The result to process, which contains the response from the LLM.
  * @param input_id
  */
-async function process(processor_id: number, LLMSpec: LLMSpec,  markersDict: PromptVarsDict, template_value: string, result: Result, input_id: number = null) {
+async function process(processor_id: number, LLMSpec: LLMSpec,  markersDict: PromptVarsDict, template_value: string, result: Result, input_id: number) {
     const processor: ExperimentProcessor = await get_processor_by_id(processor_id);
+    const llmName = LLMSpec?.base_model ?? "";
+    const prompt = template_value ?? "";
     let process_result;
     if (processor?.type === Processor_type.python) {
-        process_result = await execute_python(processor.code, result, markersDict, {}, LLMSpec?.base_model || null, template_value, "processor");
+        process_result = await execute_python(processor.code, result, markersDict, {}, llmName, prompt, "processor");
     } else if (processor?.type === Processor_type.join){
         // Not supported yet, as it requires multiple results, we would need to change the way we call the processor to support multiple results in one call
     } else if (processor?.type === Processor_type.split){
-        process_result = await execute_split(result, markersDict, {}, LLMSpec?.base_model || null, template_value, "processor", processor.format);
+        process_result = await execute_split(result, markersDict, {}, llmName, prompt, "processor", processor.format);
     } else {
-        process_result = await execute_javascript(processor.code, result, markersDict, {}, LLMSpec?.base_model || null, template_value, "processor");
+        process_result = await execute_javascript(processor.code, result, markersDict, {}, llmName, prompt, "processor");
     }
     // Check if there is an error in the processor itself
     if (process_result.error) {

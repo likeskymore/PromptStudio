@@ -11,12 +11,15 @@ import {
     get_results,
     get_results_by_template, get_target_var,
     get_template_by_id,
+    map_multi_eval_cluster,
     pool,
     save_dataset,
     save_evaluator, save_experiment,
     save_link,
     save_llm,
+    save_llm_evaluator,
     save_llm_param,
+    save_multi_evaluator,
     save_node,
     save_processor,
     save_promptconfig,
@@ -29,6 +32,7 @@ import {
     Evaluator,
     Experiment_node,
     Llm_params,
+    MultiEvaluatorMapping,
     NodeType,
     ProcessorResult,
     Promptconfig,
@@ -38,6 +42,22 @@ import {LLMSpec, PromptVarsDict} from "../typing";
 import {get_marker_map} from "./utils";
 import {getTokenCount} from "./token";
 import {PoolConnection} from "mysql2/promise";
+
+function buildLLMParams(llm: LLMSpec): Partial<Llm_params> {
+    const llm_params: Partial<Llm_params> = {};
+    const custom_params: Record<string, string> = {};
+    const known = ["max_tokens", "top_p", "top_k", "stop_sequence", "frequency_penalty", "presence_penalty"];
+    const native = ["name", "model", "temp", "base_model", "settings", "emoji", "key"];
+
+    if (llm.temp !== undefined) llm_params.temperature = llm.temp;
+    for (const [k, v] of Object.entries(llm)) {
+        if (known.includes(k)) llm_params[k] = v;
+        else if (!native.includes(k) && v !== undefined) custom_params[k] = String(v);
+    }
+    if (Object.keys(custom_params).length > 0) llm_params.custom_params = custom_params;
+
+    return llm_params;
+}
 
 /**
  * Handles saving a prompt template to the database.
@@ -54,17 +74,7 @@ async function handle_save_template(template: prompttemplate, connection: PoolCo
         const existing = await get_llm_by_base_model(llm.base_model, connection);
         const llm_id = existing ? existing.id : await save_llm(llm, connection);
 
-        const llm_params: Partial<Llm_params> = {};
-        const custom_params: Record<string, string> = {};
-        const known = ["max_tokens", "top_p", "top_k", "stop_sequence", "frequency_penalty", "presence_penalty"];
-        const native = ["name", "model", "temp", "base_model", "settings", "emoji", "key"];
-
-        if (llm.temp !== undefined) llm_params.temperature = llm.temp;
-        for (const [k, v] of Object.entries(llm)) {
-            if (known.includes(k)) llm_params[k] = v;
-            else if (!native.includes(k) && v !== undefined) custom_params[k] = String(v);
-        }
-        if (Object.keys(custom_params).length > 0) llm_params.custom_params = custom_params;
+        const llm_params: Partial<Llm_params> = buildLLMParams(llm);
 
         const llm_param_id = await save_llm_param(llm_params, connection);
         const config_id = await save_promptconfig(
@@ -98,14 +108,65 @@ async function handle_save_dataset(dataset: Dataset, connection:PoolConnection, 
  * @param connection The database connection to use for saving.
  * @param file_map A map of file fields to their uploaded files.
  * @param experiment_id The ID of the experiment to which the evaluator belongs.
+ * @param baseDir The base directory for resolving file paths.
  */
-async function handle_save_evaluator(evaluator: Evaluator, connection: PoolConnection, file_map: Record<string, Express.Multer.File[]>, experiment_id: number, baseDir?: string){
+async function handle_save_evaluator(evaluator: Evaluator, connection: PoolConnection, file_map: Record<string, Express.Multer.File[]>, experiment_id: number, baseDir?: string) : Promise<number>{
     const node_id = await save_node('evaluator', experiment_id, evaluator.name, connection);
     const fileField = `evaluator:${evaluator.file}`;
     const evaluatorPath = file_map[fileField]?.[0]?.path ?? (baseDir ? path.resolve(baseDir, evaluator.file) : evaluator.file);
     const evaluatorCode = fs.readFileSync(evaluatorPath, "utf-8");
     await save_evaluator({ ...evaluator, code: evaluatorCode, node_id: node_id }, connection);
+    return node_id;
 }
+
+/**
+ * Handles saving an evaluator node to the database.
+ * @param evaluator The evaluator to save.
+ * @param connection The database connection to use for saving.
+ * @param file_map A map of file fields to their uploaded files.
+ * @param experiment_id The ID of the experiment to which the evaluator belongs.
+ * @param baseDir The base directory for resolving file paths.
+ */
+async function handle_save_multi_evaluator(evaluator: any, connection: PoolConnection, file_map: Record<string, Express.Multer.File[]>, experiment_id: number, baseDir?: string) {
+    const node_id = await save_node('evaluator', experiment_id, evaluator.name, connection);
+
+    await save_multi_evaluator({ ...evaluator, node_id: node_id }, connection);
+    await save_evaluator({ ...evaluator, node_id: node_id }, connection);
+
+    const mappings: MultiEvaluatorMapping[] = [];
+
+    if (evaluator.evaluators.length > 0 && Array.isArray(evaluator.evaluators)) {
+        for (const childEvaluatorNode of evaluator.evaluators) {
+            const childEvaluator = childEvaluatorNode.evaluator;
+            let childEvalNodeId: number;
+            if (String(childEvaluator.type).toLowerCase() === "llm") {
+                childEvalNodeId = await handle_save_llm_evaluator(childEvaluator, connection, experiment_id);
+            } else {
+                childEvalNodeId = await handle_save_evaluator(childEvaluator, connection, file_map, experiment_id, baseDir);
+            }
+            mappings.push([node_id, childEvalNodeId]);
+        }
+    }
+
+    if (mappings.length > 0) {
+        await map_multi_eval_cluster(mappings, connection);
+    }
+}
+
+/**
+ * Handles saving an evaluator node to the database.
+ * @param evaluator The evaluator to save.
+ * @param connection The database connection to use for saving.
+ * @param experiment_id The ID of the experiment to which the evaluator belongs.
+ */
+async function handle_save_llm_evaluator(evaluator: any, connection: PoolConnection, experiment_id: number) : Promise<number> {
+    const node_id = await save_node('evaluator', experiment_id, evaluator.name, connection);
+    const llm_params = buildLLMParams(evaluator.grader);
+    const llm_param_id = await save_llm_param(llm_params, connection);
+    await save_llm_evaluator({ ...evaluator, node_id: node_id, llm_param_id: llm_param_id }, connection);
+    await save_evaluator({ ...evaluator, node_id: node_id }, connection);
+    return node_id;
+ }
 
 /**
  * Handles saving a processor node to the database.
@@ -161,7 +222,15 @@ export async function save_config(
                 promises.push(handle_save_dataset(node.dataset, connection, file_map, experiment_id, baseDir));
             }
             else if(node.evaluator){
-                promises.push(handle_save_evaluator(node.evaluator, connection, file_map, experiment_id, baseDir));
+                if (String(node.evaluator.type).toLowerCase() === "multieval") {
+                    promises.push(handle_save_multi_evaluator(node.evaluator, connection, file_map, experiment_id, baseDir));
+
+                } else if (String(node.evaluator.type).toLowerCase() === "llm") {
+                    promises.push(handle_save_llm_evaluator(node.evaluator, connection, experiment_id));
+                }
+                else {
+                    promises.push(handle_save_evaluator(node.evaluator, connection, file_map, experiment_id, baseDir));
+                }
             }
             else if(node.processor){
                 promises.push(handle_save_processor(node.processor, connection, file_map, experiment_id, baseDir));
@@ -178,7 +247,7 @@ export async function save_config(
             const targetNode: Experiment_node = await get_node_by_name(link.target, experiment_id, connection);
             if (!sourceNode || !targetNode) {
                 throw new Error(`Link error: source or target node not found for link ${JSON.stringify(link)}`);
-            }
+                }
             promisesLinks.push(save_link(sourceNode.id, targetNode.id,  link.source_var || null, link.target_var || null, connection));
         }
         await Promise.all(promisesLinks);
@@ -225,12 +294,27 @@ export async function getTotalTokenCountForExperiment(experimentName: string): P
         let totalTokens = 0;
 
         for (const config of prompt_configs) {
-            if (!config.final_dataset_id) {
+            
+            const llm = await get_llm_by_id(config.LLM_id);
+            const model = llm.base_model;
+            const template = await get_template_by_id(config.prompt_template_id);
+
+            // If we don't have a final_dataset_id yet it means the template hasn't
+            // been run to create/attach a final dataset. Fall back to resolving
+            // the inputs for the template node so we can estimate token usage
+            // before the experiment has been executed.
+            if (config.final_dataset_id === null || config.final_dataset_id === undefined) {
+                const resolvedInputs = await resolve_inputs(config.prompt_template_id);
+                for (const vars of resolvedInputs) {
+                    const prompt = fillTemplate(template.value, vars);
+                    const tokenCount = getTokenCount(model, prompt);
+                    // If template.iterations is set, assume we will run that many times
+                    totalTokens += tokenCount * (template.iterations || 1);
+                }
+                // move to next config
                 continue;
             }
-            const llm = await get_llm_by_id(config.LLM_id);
-            const template = await get_template_by_id(config.prompt_template_id);
-            const model = llm.base_model;
+
 
             let input_id = 0;
             const last_id = await get_last_input_id(config.final_dataset_id);

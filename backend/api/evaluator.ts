@@ -252,27 +252,28 @@ export async function run_over_response(
 ): Promise<
     { result_id: number; result?: any; error?: string }
 > {
-        const r_info = new ResponseInfo(
-            cleanEscapedBraces(result.output_result),
-            prompt,
-            vars,
-            metavars || {},
-            llm_name
-        );
+    const r_info = new ResponseInfo(
+        cleanEscapedBraces(result.output_result),
+        prompt,
+        vars,
+        metavars || {},
+        llm_name
+    );
 
-        try {
-            let processed = process_func(r_info,format);
-            if (processed && typeof processed.then === "function") {
-                processed = await processed;
-            }
+
+    try {
+        let processed = process_func(r_info,format);
+        if (processed && typeof processed.then === "function") {
+            processed = await processed;
+        }
 
             return { result_id: result.id, result: processed }
-        } catch (err) {
-            return {
-                result_id: result.id,
-                error: (err as Error).message,
-            };
-        }
+    } catch (err) {
+        return {
+            result_id: result.id,
+            error: (err as Error).message,
+        };
+    }
 }
 
 

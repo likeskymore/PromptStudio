@@ -1,4 +1,4 @@
-import {LLMSpec} from "../typing";
+import {Dict, LLMSpec} from "../typing";
 
 export type Experiment = {
   id: number;
@@ -21,6 +21,8 @@ export enum Eval_type {
   simple,
   javascript,
   python,
+  llm,
+  multieval,
 }
 
 export enum Processor_type {
@@ -38,6 +40,20 @@ export type Evaluator = {
   name: string;
   return_type: Return_type;
 };
+
+export type LlmEvaluator = {
+  node_id: number;
+  name: string;
+  llm_param_id: number;
+  format: string;
+  prompt: string;
+  reason_before_scoring: boolean;
+}
+
+export type MultiEvaluator = {
+  node_id: number;
+  name: string;
+}
 
 enum Return_type{
   string = "string",
@@ -134,6 +150,18 @@ export type ExperimentProcessor = {
   name: string;
 }
 
+
+export type JoinProcessorResult = {
+  id: number;
+  processor_id: number;
+  result_id?: number | null;
+  input_id?: number | null;
+  join_signature: string;
+  source_result_ids: string;
+  joined_result: string;
+  timestamp?: Date;
+};
+
 export type Db_credentials = {
   host: string;
   port?: number;
@@ -141,3 +169,16 @@ export type Db_credentials = {
   password: string;
   database: string;
 }
+
+export type MultiEvaluatorMapping = [number, number];
+
+export type JoinProcessorGroupBy = {
+  variable_type: "all" | "fill" | "meta";
+  variable_name?: string | null;
+};
+
+export type JoinItem = {
+  text: string;
+  fill_history?: Dict;
+  metavars?: Dict;
+};

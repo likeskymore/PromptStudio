@@ -51,8 +51,8 @@ describe("run_experiment", () => {
         }
     });
 
-    it("processors flow", async () => {
-        const yml = 'files/pyAndJsProcessors.yml';
+    it("test", async () => {
+        const yml = 'files/08-06-split.yml';
         const experiment_name = await save_config(yml);
         expect(experiment_name).toBeDefined();
         await run_experiment(experiment_name, '');

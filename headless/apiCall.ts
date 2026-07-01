@@ -1,6 +1,6 @@
 import axios from "axios";
 
-import * as FormData from 'form-data';
+import FormData from "form-data";
 
 import * as fs from 'fs';
 import * as yaml from "js-yaml";

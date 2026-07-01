@@ -15,7 +15,11 @@ import {
   ProcessorResult,
   Promptconfig,
   prompttemplate,
-  Result
+  Result,
+  LlmEvaluator,
+  MultiEvaluator,
+  JoinProcessorGroupBy,
+  JoinProcessorResult,
 } from "../api/types";
 import {LLMSpec, PromptVarsDict} from "../typing";
 
@@ -253,7 +257,7 @@ export async function save_llm_param(llm_params: Partial<Llm_params>, connection
     const llm_param_id = (result as any).insertId;
 
     // Save custom parameters if provided
-    if (llm_params.custom_params) {
+    if (llm_params.custom_params !== undefined) {
       const customParamSql = 'INSERT INTO llm_custom_param(name, value, llm_param_id) VALUES (?, ?, ?)';
       for (const [name, value] of Object.entries(llm_params.custom_params)) {
         await connection.execute(customParamSql, [name, value, llm_param_id]);
@@ -546,12 +550,57 @@ export async function get_llm_by_base_model(base_model: string, connection: mysq
 export async function save_evaluator(evaluator: Evaluator, connection: mysql.Connection | mysql.Pool = pool): Promise<number>{
   try{
     const sql = 'INSERT INTO Evaluator(node_id, type, code, name, return_type) VALUES (?, ?, ?, ?, ?)';
-    const [result] = await connection.execute(sql, [evaluator.node_id, evaluator.type, evaluator.code, evaluator.name, evaluator.return_type]);
+    const [result] = await connection.execute(sql, [
+      evaluator.node_id,
+      evaluator.type,
+      evaluator.code ?? null,
+      evaluator.name,
+      evaluator.return_type,
+    ]);
     return (result as any).insertId;
   }
   catch (error) {
     console.error(error);
   }
+}
+
+export async function save_llm_evaluator(evaluator: LlmEvaluator, connection: mysql.Connection | mysql.Pool = pool): Promise<number>{
+  try{
+    const sql = 'INSERT INTO Llm_evaluator(node_id, name, llm_param_id, format, prompt, reason_before_scoring) VALUES (?, ?, ?, ?, ?, ?)';
+    const [result] = await connection.execute(sql, [
+      evaluator.node_id,
+      evaluator.name,
+      evaluator.llm_param_id,
+      evaluator.format,
+      evaluator.prompt,
+      evaluator.reason_before_scoring,
+    ]);
+    return (result as any).insertId;
+  }
+  catch (error) {
+    console.error(error);
+  }
+}
+
+export async function save_multi_evaluator(evaluator: MultiEvaluator, connection: mysql.Connection | mysql.Pool = pool): Promise<number>{
+  try{
+    const sql = 'INSERT INTO Multi_evaluator(node_id, name) VALUES (?, ?)';
+    const [result] = await connection.execute(sql, [
+      evaluator.node_id,
+      evaluator.name
+    ]);
+    return (result as any).insertId;
+  }
+  catch (error) {
+    console.error(error);
+  }
+}
+
+export async function map_multi_eval_cluster(mappings: [number, number][], connection: mysql.Connection | mysql.Pool = pool): Promise<void> {
+    const sql =
+        "INSERT INTO multi_evaluator_mapping(multi_evaluator_id, child_evaluator_id) VALUES ?";
+
+    await connection.query(sql, [mappings]);
 }
 
 export async function save_processor(processor: ExperimentProcessor, connection: mysql.Connection | mysql.Pool = pool): Promise<number>{
@@ -613,6 +662,7 @@ export async function save_eval_result(
             result_id,
             evaluator_id,
         ];
+
 
         const [result] = await connection.execute(sql, values);
         return (result as any).insertId;
@@ -933,6 +983,36 @@ export async function get_evaluator_by_id(evaluator_id: number, connection: mysq
     }
 }
 
+export async function get_multi_evaluator_by_id(evaluator_id: number, connection: mysql.Connection | mysql.Pool = pool){
+  try{
+    const sql = 'SELECT * FROM Multi_evaluator WHERE node_id = ?'; 
+    const [rows] = await connection.execute(sql, [evaluator_id]);
+    if ((rows as any[]).length > 0) {
+      const r = (rows as any[])[0];
+      return r as MultiEvaluator;
+    }
+    return undefined;
+  }
+    catch (error) {
+        console.error('Error fetching multi-evaluator by ID:', error);
+    }
+}
+
+export async function get_llm_evaluator_by_id(evaluator_id: number, connection: mysql.Connection | mysql.Pool = pool){
+  try{
+    const sql = 'SELECT * FROM Llm_evaluator WHERE node_id = ?'; 
+    const [rows] = await connection.execute(sql, [evaluator_id]);
+    if ((rows as any[]).length > 0) {
+      const r = (rows as any[])[0];
+      return r as LlmEvaluator;
+    }
+    return undefined;
+  }
+    catch (error) {
+        console.error('Error fetching llm-evaluator by ID:', error);
+    }
+}
+
 export async function get_results_by_processor(processor_id: number, connection: mysql.Connection | mysql.Pool = pool){
   try{
     const sql = 'SELECT * FROM processorresult WHERE processor_id = ?';
@@ -992,7 +1072,7 @@ export async function save_error_processor(processor_id: number, error_message: 
     }
 }
 
-export async function save_process_result(processor_result: string, result_id: number, processor_id: number, input_id: number, connection: mysql.Connection | mysql.Pool = pool){
+export async function save_process_result(processor_result: string, result_id: number | null, processor_id: number, input_id: number | null, connection: mysql.Connection | mysql.Pool = pool){
   try{
     const sql = 'INSERT INTO processorresult(processor_result, result_id, processor_id, input_id) VALUES (?, ?, ?, ?)';
     const values = [processor_result, result_id, processor_id, input_id];
@@ -1073,5 +1153,21 @@ export async function get_results_by_config_and_input_id(config_id: number, inpu
   catch (error) {
     console.error(error);
     return [];
+  }
+}
+
+export async function get_child_evaluator_ids_by_multi_eval_id(multi_evaluator_id: number, connection: mysql.Connection | mysql.Pool = pool): Promise<number[]> {
+  try{
+    const sql = 'SELECT child_evaluator_id FROM multi_evaluator_mapping WHERE multi_evaluator_id = ?';
+    const [rows] = await connection.execute(sql, [multi_evaluator_id]);
+    let child_evaluator_ids: number[] = [];
+    for (const row of rows as any[]) {
+      child_evaluator_ids.push(row.child_evaluator_id);
+    }
+    return child_evaluator_ids;
+  }
+  catch (error) {
+      console.error('Error fetching evaluators by prefix:', error);
+      return [];
   }
 }

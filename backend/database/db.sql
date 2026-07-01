@@ -113,7 +113,7 @@ CREATE TABLE Marker_value(
 
 CREATE TABLE Evaluator(
     node_id INT UNSIGNED NOT NULL UNIQUE,
-    type ENUM('simple', 'javascript', 'python') NOT NULL,
+    type ENUM('simple', 'javascript', 'python', 'llm','multieval') NOT NULL,
     code MEDIUMTEXT,
     name VARCHAR(255) NOT NULL,
     return_type ENUM('string', 'number', 'boolean') NOT NULL DEFAULT 'string',
@@ -226,6 +226,23 @@ CREATE TABLE ProcessorResult(
     CONSTRAINT CHECK (result_id is NOT NULL OR input_id is NOT NULL)
 );
 
+CREATE TABLE Join_processor_result(
+    id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    processor_id INT UNSIGNED NOT NULL,
+    result_id INT UNSIGNED,
+    input_id INT UNSIGNED,
+    join_signature CHAR(64) NOT NULL,
+    source_result_ids TEXT NOT NULL,
+    joined_result MEDIUMTEXT NOT NULL,
+    timestamp TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+    CONSTRAINT PK_Join_Processor_Result PRIMARY KEY (id),
+    CONSTRAINT Unique_Join_Processor_Signature UNIQUE (processor_id, join_signature),
+    CONSTRAINT FK_join_processor_id FOREIGN KEY (processor_id) REFERENCES Processor(node_id),
+    CONSTRAINT FK_join_result_id FOREIGN KEY (result_id) REFERENCES Result(id),
+    CONSTRAINT FK_join_input_id FOREIGN KEY (input_id) REFERENCES Data_Input(id),
+    CONSTRAINT CHECK (result_id is NOT NULL OR input_id is NOT NULL)
+);
+
 CREATE TABLE Processor_error(
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     processor_id INT UNSIGNED NOT NULL,
@@ -237,6 +254,47 @@ CREATE TABLE Processor_error(
     CONSTRAINT FK_processor_id_error FOREIGN KEY (processor_id) REFERENCES Processor(node_id),
     CONSTRAINT FK_result_id_processor_error FOREIGN KEY (result_id) REFERENCES Result(id),
     CONSTRAINT CHECK (result_id is NOT NULL OR input_id is NOT NULL)
+);
+
+CREATE TABLE Llm_evaluator(
+    node_id INT UNSIGNED NOT NULL UNIQUE,
+    name VARCHAR(255) NOT NULL,
+    llm_param_id INT UNSIGNED NOT NULL,
+    format TEXT NOT NULL,
+    prompt TEXT NOT NULL,
+    reason_before_scoring boolean NOT NULL,
+    CONSTRAINT PK_Llm_evaluator PRIMARY KEY (node_id),
+    CONSTRAINT FK_llm_evaluator_param_id FOREIGN KEY (llm_param_id) REFERENCES Llm_param(id),
+    CONSTRAINT CHECK (llm_param_id is NOT NULL)
+);
+
+CREATE TABLE Multi_evaluator(
+    node_id INT UNSIGNED NOT NULL UNIQUE,
+    name VARCHAR(255) NOT NULL,
+    CONSTRAINT PK_multi_eval PRIMARY KEY (node_id)
+);
+
+CREATE TABLE Multi_evaluator_mapping (
+    multi_evaluator_id INT UNSIGNED NOT NULL,
+    child_evaluator_id INT UNSIGNED NOT NULL,
+    CONSTRAINT PK_mapping PRIMARY KEY (multi_evaluator_id,child_evaluator_id),
+    CONSTRAINT FK_multi_evaluator_id FOREIGN KEY (multi_evaluator_id) REFERENCES Multi_evaluator(node_id),
+    CONSTRAINT FK_child_evaluator_id FOREIGN KEY (child_evaluator_id) REFERENCES Evaluator(node_id),
+    CONSTRAINT CHECK (child_evaluator_id is NOT NULL OR multi_evaluator_id is NOT NULL)
+);
+
+CREATE TABLE Join_processor_group_by (
+    join_processor_id INT UNSIGNED NOT NULL,
+    ordering INT NOT NULL,
+
+    variable_type ENUM('all','fill','meta') NOT NULL,
+
+    variable_name VARCHAR(255),
+
+    PRIMARY KEY(join_processor_id, ordering),
+
+    FOREIGN KEY(join_processor_id)
+        REFERENCES Processor(node_id)
 );
 
 
