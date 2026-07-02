@@ -67,8 +67,9 @@ async function processExperiment(config_id: number, llm_spec: LLMSpec, iteration
  * @param markersDict A dictionary of markers to use in the evaluation.
  * @param template_value The template value to use for the evaluation.
  * @param result The result to evaluate, which contains the response from the LLM.
+ * @param input_id The ID of the input associated with the evaluator.
  */
-async function evaluate(evaluator_id: number, LLMSpec: LLMSpec, markersDict: PromptVarsDict, template_value: string, result: Result) {
+async function evaluate(evaluator_id: number, LLMSpec: LLMSpec, markersDict: PromptVarsDict, template_value: string, result: Result, input_id: number) {
     const evaluator = await get_evaluator_by_id(evaluator_id);
     const llmName = LLMSpec?.base_model ?? "";
     const prompt = template_value ?? "";
@@ -77,7 +78,7 @@ async function evaluate(evaluator_id: number, LLMSpec: LLMSpec, markersDict: Pro
     if (evaluator?.type === Eval_type.multieval) {
         const child_ids = await get_child_evaluator_ids_by_multi_eval_id(evaluator.node_id);
         for (const child_id of child_ids) {
-            await evaluate(child_id, LLMSpec, markersDict, template_value, result);
+            await evaluate(child_id, LLMSpec, markersDict, template_value, result, input_id);
         }
         return; // Exit after processing all child evaluators
     }
@@ -101,12 +102,12 @@ async function evaluate(evaluator_id: number, LLMSpec: LLMSpec, markersDict: Pro
             const firstResp = responses.responses && responses.responses.length > 0 ? responses.responses[0] : undefined;
             const graderOut = firstResp && firstResp.responses && firstResp.responses.length > 0 ? firstResp.responses[0] : undefined;
             if (!graderOut) {
-                await save_error_evaluator(llmEvaluator.node_id, 'No grader output', result.id, new Date().toISOString().replace('T', ' ').replace('Z', ' '));
+                await save_error_evaluator(llmEvaluator.node_id, 'No grader output', result.id, input_id, new Date().toISOString().replace('T', ' ').replace('Z', ' '));
                 return;
             }
-            await save_eval_result(graderOut, result.id, llmEvaluator.node_id);
+            await save_eval_result(graderOut, result.id, input_id, llmEvaluator.node_id);
         } catch (err) {
-            await save_error_evaluator(llmEvaluator.node_id, String(err), result.id, new Date().toISOString().replace('T', ' ').replace('Z', ' '));
+            await save_error_evaluator(llmEvaluator.node_id, String(err), result.id, input_id, new Date().toISOString().replace('T', ' ').replace('Z', ' '));
         }
         return;
     }
@@ -118,16 +119,16 @@ async function evaluate(evaluator_id: number, LLMSpec: LLMSpec, markersDict: Pro
     }
     // Check if there is an error in the evaluator itself
     if (eval_result.error) {
-        await save_error_evaluator(evaluator.node_id, eval_result.error, result.id, new Date().toISOString().replace('T', ' ').replace('Z', ' '),);
+        await save_error_evaluator(evaluator.node_id, eval_result.error, result.id, input_id, new Date().toISOString().replace('T', ' ').replace('Z', ' '),);
         return;
     }
     // Check if there is an error in the evaluation result
     if (eval_result.response.error) {
-        await save_error_evaluator(evaluator.node_id, eval_result.response.error, eval_result.response.result_id, new Date().toISOString().replace('T', ' ').replace('Z', ' '));
+        await save_error_evaluator(evaluator.node_id, eval_result.response.error, eval_result.response.result_id, input_id, new Date().toISOString().replace('T', ' ').replace('Z', ' '));
     } else {
         const result = eval_result.response.result;
         if (result !== null && result !== undefined) {
-            await save_eval_result(result, eval_result.response.result_id, evaluator.node_id);
+            await save_eval_result(result, eval_result.response.result_id, input_id, evaluator.node_id);
         }
     }
 }
@@ -143,7 +144,7 @@ async function evaluate(evaluator_id: number, LLMSpec: LLMSpec, markersDict: Pro
  * @param markersDict A dictionary of markers to use in the processing.
  * @param template_value The template value to use for the processing.
  * @param result The result to process, which contains the response from the LLM.
- * @param input_id
+ * @param input_id The ID of the input associated with the processor.
  */
 async function process(processor_id: number, LLMSpec: LLMSpec,  markersDict: PromptVarsDict, template_value: string, result: Result, input_id: number) {
     const processor: ExperimentProcessor = await get_processor_by_id(processor_id);

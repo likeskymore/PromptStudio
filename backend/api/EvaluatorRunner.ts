@@ -224,8 +224,8 @@ export class EvaluatorRunner {
             if (!task) continue;
 
             try {
-                const {evaluator_id, llm_spec, markersDict, template_value, result} = task;
-                await this.pool.exec('evaluate', [evaluator_id, llm_spec, markersDict, template_value, result]);
+                const {evaluator_id, llm_spec, markersDict, template_value, result, input_id} = task;
+                await this.pool.exec('evaluate', [evaluator_id, llm_spec, markersDict, template_value, result, input_id]);
             } catch (error) {
                 console.error('Error processing task:', error && (error as any).message ? (error as any).message : error);
                 this.errors++;

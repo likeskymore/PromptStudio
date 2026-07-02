@@ -650,19 +650,20 @@ export async function get_config(config_id: number, connection: mysql.Connection
 export async function save_eval_result(
     eval_result: unknown,
     result_id: number,
+    input_id: number,
     evaluator_id: number,
     connection: mysql.Connection | mysql.Pool = pool
 ) {
     try {
         const sql =
-            'INSERT INTO evaluationsresult(evaluation_result, result_id, evaluator_id) VALUES (?, ?, ?)';
+            'INSERT INTO evaluationsresult(evaluation_result, result_id, input_id, evaluator_id) VALUES (?, ?, ?, ?)';
 
         const values = [
             String(eval_result),
-            result_id,
+            result_id ?? null,
+            input_id ?? null,
             evaluator_id,
         ];
-
 
         const [result] = await connection.execute(sql, values);
         return (result as any).insertId;
@@ -684,10 +685,10 @@ export async function get_evaluation_result(result_id: number, evaluator_id: num
   }
 }
 
-export async function save_error_evaluator(evaluator_id: number, error_message: string, result_id: number, timestamp: string, connection: mysql.Connection | mysql.Pool = pool){
+export async function save_error_evaluator(evaluator_id: number, error_message: string, result_id: number, input_id: number, timestamp: string, connection: mysql.Connection | mysql.Pool = pool){
   try{
-    const sql = 'INSERT INTO error_evaluator(evaluator_id, error_message, result_id, timestamp) VALUES (?, ?, ?, ?)';
-    const values = [evaluator_id, error_message, result_id, timestamp];
+    const sql = 'INSERT INTO error_evaluator(evaluator_id, error_message, result_id, input_id, timestamp) VALUES (?, ?, ?, ?, ?)';
+    const values = [evaluator_id, error_message, result_id ?? null, input_id ?? null, timestamp];
     const [result] = await connection.execute(sql, values);
     return (result as any).insertId;
   }

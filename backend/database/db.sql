@@ -196,18 +196,23 @@ CREATE TABLE Error_evaluator(
     evaluator_id INT UNSIGNED NOT NULL,
     error_message TEXT NOT NULL,
     result_id INT UNSIGNED,
+    input_id INT UNSIGNED,
     timestamp TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+    CONSTRAINT FK_input_id_evaluator_error FOREIGN KEY (input_id) REFERENCES Data_Input(id),
     CONSTRAINT PK_Error_evaluator PRIMARY KEY (id),
     CONSTRAINT FK_evaluator_id_error_eval FOREIGN KEY (evaluator_id) REFERENCES Evaluator(node_id),
     CONSTRAINT FK_result_id_error_eval FOREIGN KEY (result_id) REFERENCES Result(id)
 );
 
 CREATE TABLE EvaluationsResult(
+    id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     evaluation_result TEXT NOT NULL,
     result_id INT UNSIGNED,
+    input_id INT UNSIGNED,
     evaluator_id INT UNSIGNED NOT NULL,
-    CONSTRAINT PK_Evaluation_Result PRIMARY KEY (result_id, evaluator_id),
+    CONSTRAINT PK_Evaluation_Result PRIMARY KEY (id),
     CONSTRAINT FK_result_id_eval FOREIGN KEY (result_id) REFERENCES Result(id),
+    CONSTRAINT FK_input_id_evaluator FOREIGN KEY (input_id) REFERENCES Data_Input(id),
     CONSTRAINT FK_evaluator_id FOREIGN KEY (evaluator_id) REFERENCES Evaluator(node_id)
 );
 
