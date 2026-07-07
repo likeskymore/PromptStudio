@@ -18,8 +18,6 @@ import {
   Result,
   LlmEvaluator,
   MultiEvaluator,
-  JoinProcessorGroupBy,
-  JoinProcessorResult,
 } from "../api/types";
 import {LLMSpec, PromptVarsDict} from "../typing";
 
@@ -431,7 +429,6 @@ async function fetch_input_with_markers(input_id: number, connection: mysql.Conn
     marker_id: row.marker_id,
     value: row.value
   }));
-
   return { id: input_id, markers };
 }
 
@@ -771,7 +768,7 @@ export async function get_links_by_experiment(experimentId: number, connection: 
   return rows as Link[];
 }
 
-export async function get_data_inputs_by_dataset(dataset_id: number, connection: mysql.Connection | mysql.Pool = pool): Promise<PromptVarsDict[]> {
+export async function get_data_inputs_by_dataset(dataset_id: number, connection: mysql.Connection | mysql.Pool = pool): Promise<Record<number, PromptVarsDict>> {
   const sql = `
     SELECT
       di.id AS input_id,
@@ -794,7 +791,7 @@ export async function get_data_inputs_by_dataset(dataset_id: number, connection:
     grouped[inputId][row.marker_name] = row.marker_value;
   }
 
-  return Object.values(grouped);
+  return grouped;
 }
 
 export async function update_final_dataset(config_id: number, dataset_id: number, connection: mysql.Connection | mysql.Pool = pool){
@@ -890,6 +887,18 @@ export async function save_dataset_inputs(inputs: PromptVarsDict[], experiment_i
   }
     catch (error) {
         console.error('Error saving dataset input:', error);
+    }
+}
+
+export async function save_resolved_input(source_input_id: number, value: string, connection: mysql.Connection | mysql.Pool = pool): Promise<number | undefined> {
+    try{
+    const sql = 'INSERT INTO resolved_input(source_input_id, value) VALUES (?, ?)';
+    const values = [source_input_id, value];
+    const [result] = await connection.execute(sql, values);
+    return (result as any).insertId;
+  }
+    catch (error) {
+        console.error('Error saving error processor:', error);
     }
 }
 
@@ -1061,10 +1070,10 @@ export async function get_processor_by_id(processor_id: number, connection: mysq
         }
 }
 
-export async function save_error_processor(processor_id: number, error_message: string, result_id: number, input_id: number, timestamp: string, connection: mysql.Connection | mysql.Pool = pool){
+export async function save_error_processor(processor_id: number, error_message: string, result_id: number, input_id: number, resolved_input_id: number | null, timestamp: string, connection: mysql.Connection | mysql.Pool = pool){
   try{
-    const sql = 'INSERT INTO processor_error(processor_id, error_message, result_id, input_id, timestamp) VALUES (?, ?, ?, ?, ?)';
-    const values = [processor_id, error_message, result_id, input_id, timestamp];
+    const sql = 'INSERT INTO processor_error(processor_id, error_message, result_id, input_id, resolved_input_id, timestamp) VALUES (?, ?, ?, ?, ?, ?)';
+    const values = [processor_id, error_message, result_id ?? null, input_id ?? null, resolved_input_id ?? null, timestamp];
     const [result] = await connection.execute(sql, values);
     return (result as any).insertId;
   }
@@ -1073,10 +1082,10 @@ export async function save_error_processor(processor_id: number, error_message: 
     }
 }
 
-export async function save_process_result(processor_result: string, result_id: number | null, processor_id: number, input_id: number | null, connection: mysql.Connection | mysql.Pool = pool){
+export async function save_process_result(processor_result: string, result_id: number | null, processor_id: number, input_id: number | null, resolved_input_id: number | null, connection: mysql.Connection | mysql.Pool = pool){
   try{
-    const sql = 'INSERT INTO processorresult(processor_result, result_id, processor_id, input_id) VALUES (?, ?, ?, ?)';
-    const values = [processor_result, result_id, processor_id, input_id];
+    const sql = 'INSERT INTO processorresult(processor_result, result_id, processor_id, input_id, resolved_input_id) VALUES (?, ?, ?, ?, ?)';
+    const values = [processor_result, result_id ?? null, processor_id, input_id ?? null, resolved_input_id ?? null];
     const [result] = await connection.execute(sql, values);
     return (result as any).insertId;
   }

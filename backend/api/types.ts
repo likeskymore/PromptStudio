@@ -1,4 +1,4 @@
-import {Dict, LLMSpec} from "../typing";
+import {Dict, LLMSpec, PromptVarsDict} from "../typing";
 
 export type Experiment = {
   id: number;
@@ -113,6 +113,11 @@ export type Result = {
   start_time: Date;
   end_time: Date;
 }
+
+export type ResolvedInput = {
+    input_id: number;
+    vars: PromptVarsDict;
+};  
 
 export enum NodeType{
   'prompt_template'= 'prompt_template',

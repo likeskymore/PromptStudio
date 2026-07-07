@@ -14,8 +14,10 @@ import {
     get_result_by_id,
     get_results_by_processor,
     get_results_by_template,
-    get_template_by_id
+    get_template_by_id,
+    save_resolved_input
 } from "../database/database";
+import {fillTemplate, resolve_inputs} from "./configHandler";
 import {create_llm_spec, get_marker_map} from "./utils";
 
 type EvaluationTask = {
@@ -25,6 +27,7 @@ type EvaluationTask = {
     template_value: string;
     result: Result;
     input_id: number;
+    resolved_input_id: number | undefined;
 }
 
 /**
@@ -85,43 +88,80 @@ export class EvaluatorRunner {
      * @param maximumQueueSize The maximum size of the task queue to prevent memory overflow.
      */
     private async produceTasks(maximumQueueSize: number = 1000){
+        const current_node = await get_node_by_id(this.node_id);
+        if (!current_node) {
+            throw new Error(`Node ${this.node_id} was not found`);
+        }
         const links = await get_links_by_target(this.node_id);
         for (const link of links){
             const parent_node = await get_node_by_id(link.source_node_id);
+            if (!parent_node) {
+                continue;
+            }
             if (parent_node.type === NodeType.dataset){
                 // Get the inputs and add them to the task queue
-                let input_id = 0;
-                const last_id = await get_last_input_id(parent_node.id);
-                while (input_id !== last_id) {
-                    const input = await get_next_input(parent_node.id, input_id);
-                    if (!input) break;
-
-                    input_id = input.id;
-                    const markersDict = await get_marker_map(input);
-                    const marker = link.source_var;
-                    const prompt = markersDict[marker];
-                    // Check in processor_result if the input is already processed
-                    const result = await get_processor_result_by_input_id(input.id, this.node_id);
-                    if (result) {
-                        // If the input is already processed, skip it
-                        continue;
+                if (current_node.type === NodeType.processor) {
+                    const resolvedInputs = await resolve_inputs(parent_node.id);
+                    for (const resolvedInput of resolvedInputs) {
+                        const marker = link.source_var;
+                        const marker_value = marker ? resolvedInput.vars[marker] : undefined;
+                        const output_result = marker_value !== undefined
+                            ? fillTemplate(marker_value, resolvedInput.vars)
+                            : "";
+                        const resolved_input_id = await save_resolved_input(resolvedInput.input_id, output_result);
+                        const task: EvaluationTask = {
+                            evaluator_id: this.node_id,
+                            llm_spec: null,
+                            markersDict: null,
+                            template_value: null,
+                            result: {
+                                output_result: output_result,
+                                id: undefined,
+                                config_id: undefined,
+                                input_id: undefined,
+                                start_time: undefined,
+                                end_time: undefined
+                            },
+                            input_id: resolvedInput.input_id,
+                            resolved_input_id: resolved_input_id,
+                        }
+                        this.taskQueue.push(task);
                     }
-                    const task: EvaluationTask = {
-                        evaluator_id: this.node_id,
-                        llm_spec: null,
-                        markersDict: null,
-                        template_value: null,
-                        result: {
-                            output_result: prompt,
-                            id: undefined,
-                            config_id: undefined,
-                            input_id: undefined,
-                            start_time: undefined,
-                            end_time: undefined
-                        },
-                        input_id: input_id,
+                } else {
+                    let input_id = 0;
+                    const last_id = await get_last_input_id(parent_node.id);
+                    while (input_id !== last_id) {
+                        const input = await get_next_input(parent_node.id, input_id);
+                        if (!input) break;
+                        input_id = input.id;
+                        const markersDict = await get_marker_map(input);
+                        const marker = link.source_var;
+                        const markerValue = marker ? markersDict[marker] : undefined;
+                        const output_result = markerValue ?? "";
+                        // Check in processor_result if the input is already processed
+                        const result = await get_processor_result_by_input_id(input.id, this.node_id);
+                        if (result) {
+                            // If the input is already processed, skip it
+                            continue;
+                        }
+                        const task: EvaluationTask = {
+                            evaluator_id: this.node_id,
+                            llm_spec: null,
+                            markersDict: null,
+                            template_value: null,
+                            result: {
+                                output_result: output_result,
+                                id: undefined,
+                                config_id: undefined,
+                                input_id: undefined,
+                                start_time: undefined,
+                                end_time: undefined
+                            },
+                            input_id: input_id,
+                            resolved_input_id: undefined,
+                        }
+                        this.taskQueue.push(task);
                     }
-                    this.taskQueue.push(task);
                 }
             }
             else if(parent_node.type === NodeType.prompt_template){
@@ -159,7 +199,8 @@ export class EvaluatorRunner {
                         markersDict: markersDict,
                         template_value: template_value,
                         result: result,
-                        input_id: null
+                        input_id: null,
+                        resolved_input_id: undefined
                     }
                     this.taskQueue.push(task);
                 }
@@ -199,6 +240,7 @@ export class EvaluatorRunner {
                         template_value: template.value,
                         result: updated_result,
                         input_id: processor_result.input_id,
+                        resolved_input_id: undefined
                     }
                     this.taskQueue.push(task);
                 }
@@ -247,8 +289,8 @@ export class EvaluatorRunner {
             if (!task) continue;
 
             try {
-                const {evaluator_id, llm_spec, markersDict, template_value, result, input_id} = task;
-                await this.pool.exec('process', [evaluator_id, llm_spec, markersDict, template_value, result, input_id]);
+                const {evaluator_id, llm_spec, markersDict, template_value, result, input_id, resolved_input_id} = task;
+                await this.pool.exec('process', [evaluator_id, llm_spec, markersDict, template_value, result, input_id, resolved_input_id]);
             } catch (error) {
                 console.error('Error processing task:', error && (error as any).message ? (error as any).message : error);
                 this.errors++;

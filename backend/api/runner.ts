@@ -22,7 +22,8 @@ import {EvaluatorRunner} from "./EvaluatorRunner";
  */
 async function run_template(node_id: number, api_keys: string, experiment: Experiment) {
     try{
-        const inputs = await resolve_inputs(node_id);
+        const resolvedInputs = await resolve_inputs(node_id);
+        const inputs = resolvedInputs.map(input => input.vars);
         const configs = await get_configs_by_template_id(node_id);
         let dataset_id: number;
         // Check if we already have a final dataset meaning we have run this template before

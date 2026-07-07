@@ -34,9 +34,9 @@ import {
     Llm_params,
     MultiEvaluatorMapping,
     NodeType,
-    ProcessorResult,
     Promptconfig,
-    prompttemplate
+    prompttemplate,
+    ResolvedInput
 } from "./types";
 import {LLMSpec, PromptVarsDict} from "../typing";
 import {get_marker_map} from "./utils";
@@ -266,19 +266,28 @@ export async function save_config(
  * Calculates the Cartesian product of an array of arrays.
  * @param arrays An array of arrays, where each inner array is a record of string key-value pairs.
  */
-export function cartesianProduct(arrays: Record<string, string>[][]): Record<string, string>[] {
+export function cartesianProduct(
+    arrays: ResolvedInput[][]
+): ResolvedInput[] {
     if (arrays.length === 0) return [];
 
-    return arrays.reduce((acc, curr) => {
-        const result: Record<string, string>[] = [];
-
+    return arrays.reduce<ResolvedInput[]>((acc, curr) => {
+        const result: ResolvedInput[] = [];
         for (const a of acc) {
             for (const b of curr) {
-                result.push({ ...a, ...b });
+                result.push({
+                    // Keep the dataset input id
+                    input_id: b.input_id ?? a.input_id,
+                    // Merge all variables
+                    vars: {
+                        ...a.vars,
+                        ...b.vars
+                    }
+                });
             }
         }
         return result;
-    }, [{}] as Record<string, string>[]);
+    }, [{ input_id: null, vars: {} }]);
 }
 
 /**
@@ -305,8 +314,8 @@ export async function getTotalTokenCountForExperiment(experimentName: string): P
             // before the experiment has been executed.
             if (config.final_dataset_id === null || config.final_dataset_id === undefined) {
                 const resolvedInputs = await resolve_inputs(config.prompt_template_id);
-                for (const vars of resolvedInputs) {
-                    const prompt = fillTemplate(template.value, vars);
+                for (const resolvedInput of resolvedInputs) {
+                    const prompt = fillTemplate(template.value, resolvedInput.vars);
                     const tokenCount = getTokenCount(model, prompt);
                     // If template.iterations is set, assume we will run that many times
                     totalTokens += tokenCount * (template.iterations || 1);
@@ -356,72 +365,105 @@ export async function getTotalTokenCountForExperiment(experimentName: string): P
  * If it has parents, it resolves inputs from each parent and combines them.
  * @param node_id The ID of the node for which to resolve inputs.
  */
-export async function resolve_inputs(node_id: number): Promise<PromptVarsDict[]> {
+export async function resolve_inputs(node_id: number): Promise<ResolvedInput[]> {
     const dataset_parents: number[] = await get_parents(node_id, 'dataset');
     const template_parents: number[] = await get_parents(node_id, 'prompt_template');
     const processor_parents: number[] = await get_parents(node_id, 'processor');
 
     // If no parents leaf dataset pull input rows directly
     if (dataset_parents.length + template_parents.length + processor_parents.length === 0) {
-        return await get_data_inputs_by_dataset(node_id);
+        const inputs = await get_data_inputs_by_dataset(node_id);
+
+        return Object.entries(inputs).map(([id, vars]) => ({
+            input_id: Number(id),
+            vars: vars
+        }));
     }
 
-    // Otherwise recursively resolve each parent
-    const resolved_per_parent: PromptVarsDict[][] = [];
+    const resolved_per_parent: ResolvedInput[][] = [];
 
+    // Otherwise recursively resolve each parent
     for (const parent_id of dataset_parents) {
         const parent_inputs = await resolve_inputs(parent_id);
-        const mapped_inputs: PromptVarsDict[] = [];
+        const mapped_inputs: ResolvedInput[] = [];
 
         for (const input of parent_inputs) {
             const dict: PromptVarsDict = {};
-            for (const marker of Object.keys(input)) {
+
+            for (const marker of Object.keys(input.vars)) {
                 const target_var = await get_target_var(parent_id, node_id, marker);
-                if(target_var !== undefined) {
-                    dict[target_var] = input[marker];
-                }
-                else{
-                    dict[marker] = input[marker];
+
+                if (target_var !== undefined) {
+                    dict[target_var] = input.vars[marker];
+                } else {
+                    dict[marker] = input.vars[marker];
                 }
             }
-            mapped_inputs.push(dict);
+
+            mapped_inputs.push({
+                input_id: input.input_id,
+                vars: dict
+            });
         }
+
         resolved_per_parent.push(mapped_inputs);
     }
 
-    for (const parent_id of template_parents){
+    for (const parent_id of template_parents) {
         const results = await get_results_by_template(parent_id.toString());
-        const new_inputs: PromptVarsDict[] = [];
+
         const target_var = await get_target_var(parent_id, node_id, 'prompt');
-        if (target_var === null || target_var === undefined) {
+
+        if (!target_var) {
             continue;
         }
+
+        const new_inputs: ResolvedInput[] = [];
+
         for (const result of results) {
-            const dict: PromptVarsDict = {};
-            dict[target_var] = result.output_result;
-            new_inputs.push(dict);
+            new_inputs.push({
+                input_id: result.input_id,
+                vars: {
+                    [target_var]: result.output_result
+                }
+            });
         }
+
         resolved_per_parent.push(new_inputs);
     }
 
     for (const parent_id of processor_parents) {
-        const results: ProcessorResult[] = await get_processor_results_by_id(parent_id);
-        const new_inputs: PromptVarsDict[] = [];
+        const results = await get_processor_results_by_id(parent_id);
+
         const target_var = await get_target_var(parent_id, node_id, 'output');
+
+        const new_inputs: ResolvedInput[] = [];
+
         for (const result of results) {
-            const dict: PromptVarsDict = {};
-            dict[target_var] = result.processor_result;
-            new_inputs.push(dict);
+            new_inputs.push({
+                input_id: result.input_id ?? null,
+                vars: {
+                    [target_var]: result.processor_result
+                }
+            });
         }
+
         resolved_per_parent.push(new_inputs);
     }
 
     const current_node = await get_node_by_id(node_id);
+
     if (current_node.type === NodeType.dataset) {
         const inputs = await get_data_inputs_by_dataset(node_id);
-        resolved_per_parent.push(inputs);
+
+        resolved_per_parent.push(
+            Object.entries(inputs).map(([id, vars]) => ({
+                input_id: Number(id),
+                vars
+            }))
+        );
     }
-    // Combine
+
     return cartesianProduct(resolved_per_parent);
 }
 

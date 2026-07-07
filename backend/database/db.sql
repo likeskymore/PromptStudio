@@ -147,6 +147,14 @@ CREATE TABLE Data_Input(
     CONSTRAINT FK_dataset_id_input FOREIGN KEY (dataset_id) REFERENCES Dataset(node_id)
 );
 
+CREATE TABLE Resolved_input(
+    id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    source_input_id INT UNSIGNED NOT NULL,
+    value TEXT,
+    CONSTRAINT PK_resolved_input PRIMARY KEY (id),
+    CONSTRAINT PK_input_id_resolved_input FOREIGN KEY (source_input_id) REFERENCES Data_Input(id)
+);
+
 CREATE TABLE Input_marker(
     input_id INT UNSIGNED NOT NULL,
     marker_values_id INT UNSIGNED NOT NULL,
@@ -220,14 +228,16 @@ CREATE TABLE ProcessorResult(
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     processor_result TEXT NOT NULL,
     result_id INT UNSIGNED,
+    resolved_input_id INT UNSIGNED,
     processor_id INT UNSIGNED NOT NULL,
     input_id INT UNSIGNED,
     CONSTRAINT PK_Processor_Result PRIMARY KEY (id),
     CONSTRAINT Unique_Processor_Result UNIQUE (result_id, processor_id),
-    CONSTRAINT Unique_Processor_Input UNIQUE (input_id, processor_id),
+    CONSTRAINT Unique_Processor_Input UNIQUE (input_id, processor_id, resolved_input_id),
     CONSTRAINT FK_result_id_processor FOREIGN KEY (result_id) REFERENCES Result(id),
     CONSTRAINT FK_processor_id FOREIGN KEY (processor_id) REFERENCES Processor(node_id),
     CONSTRAINT FK_input_id_processor FOREIGN KEY (input_id) REFERENCES Data_Input(id),
+    CONSTRAINT FK_resolved_input_id_processor FOREIGN KEY (resolved_input_id) REFERENCES Resolved_input(id),
     CONSTRAINT CHECK (result_id is NOT NULL OR input_id is NOT NULL)
 );
 
@@ -254,8 +264,10 @@ CREATE TABLE Processor_error(
     error_message TEXT NOT NULL,
     result_id INT UNSIGNED,
     input_id INT UNSIGNED,
+    resolved_input_id INT UNSIGNED,
     timestamp TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
     CONSTRAINT PK_Processor_Error PRIMARY KEY (id),
+    CONSTRAINT FK_resolved_input_id_processor_error FOREIGN KEY (resolved_input_id) REFERENCES Resolved_input(id),
     CONSTRAINT FK_processor_id_error FOREIGN KEY (processor_id) REFERENCES Processor(node_id),
     CONSTRAINT FK_result_id_processor_error FOREIGN KEY (result_id) REFERENCES Result(id),
     CONSTRAINT CHECK (result_id is NOT NULL OR input_id is NOT NULL)
