@@ -45,6 +45,7 @@ export type LlmEvaluator = {
   node_id: number;
   name: string;
   llm_param_id: number;
+  llm_id: number;
   format: string;
   prompt: string;
   reason_before_scoring: boolean;

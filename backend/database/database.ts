@@ -563,11 +563,12 @@ export async function save_evaluator(evaluator: Evaluator, connection: mysql.Con
 
 export async function save_llm_evaluator(evaluator: LlmEvaluator, connection: mysql.Connection | mysql.Pool = pool): Promise<number>{
   try{
-    const sql = 'INSERT INTO Llm_evaluator(node_id, name, llm_param_id, format, prompt, reason_before_scoring) VALUES (?, ?, ?, ?, ?, ?)';
+    const sql = 'INSERT INTO Llm_evaluator(node_id, name, llm_param_id, llm_id, format, prompt, reason_before_scoring) VALUES (?, ?, ?, ?, ?, ?, ?)';
     const [result] = await connection.execute(sql, [
       evaluator.node_id,
       evaluator.name,
       evaluator.llm_param_id,
+      evaluator.llm_id,
       evaluator.format,
       evaluator.prompt,
       evaluator.reason_before_scoring,

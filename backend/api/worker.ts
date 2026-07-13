@@ -6,13 +6,15 @@ import {
     save_error, save_error_evaluator, save_error_processor, save_eval_result, save_process_result,
     save_response,
     get_llm_evaluator_by_id,
-    get_llm_param_by_id, 
+    get_llm_param_by_id,
+    get_llm_by_id, 
 } from "../database/database";
 import { LLMSpec, PromptVarsDict} from "../typing";
 import {execute_javascript, execute_python} from "./evaluator";
-import {ExperimentProcessor, Result, Eval_type, Processor_type, ResolvedInput} from "./types";
+import {ExperimentProcessor, Result, Eval_type, Processor_type, ResolvedInput, Llm_params} from "./types";
 import {execute_join, execute_split } from './processor';
 import { fillTemplate } from './configHandler';
+import { create_llm_spec } from './utils';
 
 /** 
  * Processes an experiment by querying the LLM with the given parameters and saving the responses.
@@ -86,7 +88,9 @@ async function evaluate(evaluator_id: number, LLMSpec: LLMSpec, markersDict: Pro
     if (evaluator?.type === Eval_type.llm) {
         const llmEvaluator = await get_llm_evaluator_by_id(evaluator.node_id);
         try {
-            const graderSpec: any = await get_llm_param_by_id(llmEvaluator.llm_param_id);
+            const graderParams: Llm_params = await get_llm_param_by_id(llmEvaluator.llm_param_id);
+            const grader: LLMSpec = await get_llm_by_id(llmEvaluator.llm_id);
+            const graderSpec = create_llm_spec(grader, graderParams);
             const gradingPromptTemplate: string = llmEvaluator.prompt ?? '{response}';
 
             const evalVars = { ...markersDict, response: result.output_result } as PromptVarsDict;

@@ -262,10 +262,12 @@ CREATE TABLE Llm_evaluator(
     node_id INT UNSIGNED NOT NULL UNIQUE,
     name VARCHAR(255) NOT NULL,
     llm_param_id INT UNSIGNED NOT NULL,
+    llm_id INT UNSIGNED NOT NULL,
     format TEXT NOT NULL,
     prompt TEXT NOT NULL,
     reason_before_scoring boolean NOT NULL,
-    CONSTRAINT PK_Llm_evaluator PRIMARY KEY (node_id),
+    CONSTRAINT PK_llm_evaluator PRIMARY KEY (node_id),
+	CONSTRAINT PK_llm_evaluator_llm_id foreign key (llm_id) references llm(id),
     CONSTRAINT FK_llm_evaluator_param_id FOREIGN KEY (llm_param_id) REFERENCES Llm_param(id),
     CONSTRAINT CHECK (llm_param_id is NOT NULL)
 );

@@ -158,9 +158,11 @@ async function handle_save_multi_evaluator(evaluator: any, connection: PoolConne
  */
 async function handle_save_llm_evaluator(evaluator: any, connection: PoolConnection, experiment_id: number) : Promise<number> {
     const node_id = await save_node('evaluator', experiment_id, evaluator.name, connection);
+    const existing = await get_llm_by_base_model(evaluator.grader.base_model, connection);
+    const llm_id = existing ? existing.id : await save_llm(evaluator.grader, connection);
     const llm_params = buildLLMParams(evaluator.grader);
     const llm_param_id = await save_llm_param(llm_params, connection);
-    await save_llm_evaluator({ ...evaluator, node_id: node_id, llm_param_id: llm_param_id }, connection);
+    await save_llm_evaluator({ ...evaluator, node_id: node_id, llm_param_id: llm_param_id, llm_id: llm_id }, connection);
     await save_evaluator({ ...evaluator, node_id: node_id }, connection);
     return node_id;
  }
