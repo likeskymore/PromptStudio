@@ -52,7 +52,7 @@ describe("run_experiment", () => {
     });
 
     it("test", async () => {
-        const yml = 'files/08-06-split.yml';
+        const yml = 'files/multiEvalFlow.yml';
         const experiment_name = await save_config(yml);
         expect(experiment_name).toBeDefined();
         await run_experiment(experiment_name, '');

@@ -152,20 +152,10 @@ export type ExperimentProcessor = {
   type: Processor_type;
   code?: string;
   format?: string;
+  selected_group_vars?: string;
   name: string;
 }
 
-
-export type JoinProcessorResult = {
-  id: number;
-  processor_id: number;
-  result_id?: number | null;
-  input_id?: number | null;
-  join_signature: string;
-  source_result_ids: string;
-  joined_result: string;
-  timestamp?: Date;
-};
 
 export type Db_credentials = {
   host: string;
@@ -176,11 +166,6 @@ export type Db_credentials = {
 }
 
 export type MultiEvaluatorMapping = [number, number];
-
-export type JoinProcessorGroupBy = {
-  variable_type: "all" | "fill" | "meta";
-  variable_name?: string | null;
-};
 
 export type JoinItem = {
   text: string;

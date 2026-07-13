@@ -2,10 +2,18 @@ import { fromMarkdown } from "mdast-util-from-markdown";
 import { escapeBraces } from "../template";
 import { compileTextFromMdAST, processCSV } from "../utils";
 import { ResponseInfo } from "../backend";
-import { Result } from "./types";
+import { ResolvedInput, Result } from "./types";
 import { Dict, PromptVarsDict } from "../typing";
 import { EvalOrProcessResponse, run_over_response } from "./evaluator";
+import { fillTemplate } from "./configHandler";
 
+enum JoinFormat {
+  DubNewLine = "\n\n",
+  NewLine = "\n",
+  DashedList = "-",
+  NumList = "1.",
+  PyArr = "[]",
+}
 
 export async function execute_split(
   result: Result,
@@ -16,12 +24,9 @@ export async function execute_split(
   process_type: "processor",
   format: string,
 ): Promise<EvalOrProcessResponse> {
-  
   const req_func_name = process_type;
 
   let process_func = splitText;
-  let all_logs: string[] = [];
-
 
   try {
     const response = await run_over_response(
@@ -34,19 +39,117 @@ export async function execute_split(
       format,
     );
 
-    return { response, logs: all_logs };
+    return { response };
   } catch (err) {
     return {
       error: `Error encountered while trying to run "${req_func_name}" method:\n${(err as Error).message}`,
-      logs: all_logs,
     };
   }
 }
 
-export async function splitText(
-  resp: ResponseInfo,
-  format?: string,
-) : Promise<string[]> {
+export async function execute_join(
+  selected_group_vars: string,
+  resolved_inputs: ResolvedInput[],
+  format: string,
+): Promise<EvalOrProcessResponse[]> {
+  try {
+    const joinFormat = format.replace(/\\n/g, "\n") as JoinFormat;
+
+    const vars = (JSON.parse(selected_group_vars) as string[])
+      .filter((v) => v.startsWith("V"))
+      .map((v) => v.substring(1));
+
+    function groupInputs(
+      inputs: ResolvedInput[],
+      remainingVars: string[],
+    ): ResolvedInput[][] {
+      if (inputs.length === 0) {
+        return [];
+      }
+
+      // Base case: keep this group intact
+      if (remainingVars.length === 0) {
+        return [inputs];
+      }
+
+      const currentVar = remainingVars[0];
+
+      const groups = new Map<string, ResolvedInput[]>();
+      const leftover: ResolvedInput[] = [];
+
+      for (const input of inputs) {
+        const value = input.vars[currentVar];
+
+        if (value === undefined) {
+          leftover.push(input);
+          continue;
+        }
+
+        if (!groups.has(value)) {
+          groups.set(value, []);
+        }
+
+        groups.get(value)!.push(input);
+      }
+
+      const result: ResolvedInput[][] = [];
+
+      for (const group of groups.values()) {
+        const nestedGroups = groupInputs(group, remainingVars.slice(1));
+        result.push(
+          nestedGroups.reduce<ResolvedInput[]>(
+            (acc, nestedGroup) => acc.concat(nestedGroup),
+            [],
+          ),
+        );
+      }
+
+      if (leftover.length > 0) {
+        const nestedGroups = groupInputs(leftover, remainingVars.slice(1));
+        result.push(
+          nestedGroups.reduce<ResolvedInput[]>(
+            (acc, nestedGroup) => acc.concat(nestedGroup),
+            [],
+          ),
+        );
+      }
+
+      return result;
+    }
+
+    const groupedInputs = groupInputs(resolved_inputs, vars);
+    const joinResults = [];
+
+    for (const group of groupedInputs) {
+      const outputs = [
+        ...new Set(
+          group.map((input) =>
+            fillTemplate(input.vars.output ?? "", input.vars),
+          ),
+        ),
+      ];
+
+      joinResults.push({
+        response: {
+          input_id: group[0].input_id,
+          result: joinTexts(outputs, joinFormat),
+        },
+      });
+    }
+    return joinResults;
+
+  } catch (error) {
+    console.error("Error executing join processor:", error);
+
+    return [
+      {
+        error: error instanceof Error ? error.message : String(error),
+      },
+    ];
+  }
+}
+
+function splitText(resp: ResponseInfo, format?: string): string[] {
   const _escapeBraces = escapeBraces;
 
   // If format is newline separators, we can just split:
@@ -94,18 +197,9 @@ export async function splitText(
   // NOTE: It is possible to have an empty [] results after split.
   // This happens if the splitter is a markdown separator, and none were found in the input(s).
   return results;
-};
-
-
-enum JoinFormat {
-  DubNewLine = "\n\n",
-  NewLine = "\n",
-  DashedList = "-",
-  NumList = "1.",
-  PyArr = "[]",
 }
 
-export async function joinTexts(texts: string[], format: JoinFormat): Promise<string> {
+function joinTexts(texts: string[], format: JoinFormat): string {
   const escaped_texts = texts.map((t) => escapeBraces(t));
 
   if (format === JoinFormat.DubNewLine || format === JoinFormat.NewLine)
@@ -118,6 +212,4 @@ export async function joinTexts(texts: string[], format: JoinFormat): Promise<st
 
   console.error(`Could not join: Unknown formatting option: ${format}`);
   return escaped_texts[0];
-};
-
-
+}

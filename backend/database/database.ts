@@ -579,31 +579,17 @@ export async function save_llm_evaluator(evaluator: LlmEvaluator, connection: my
   }
 }
 
-export async function save_multi_evaluator(evaluator: MultiEvaluator, connection: mysql.Connection | mysql.Pool = pool): Promise<number>{
-  try{
-    const sql = 'INSERT INTO Multi_evaluator(node_id, name) VALUES (?, ?)';
-    const [result] = await connection.execute(sql, [
-      evaluator.node_id,
-      evaluator.name
-    ]);
-    return (result as any).insertId;
-  }
-  catch (error) {
-    console.error(error);
-  }
-}
-
-export async function map_multi_eval_cluster(mappings: [number, number][], connection: mysql.Connection | mysql.Pool = pool): Promise<void> {
+export async function save_multi_evaluator_mapping(mappings: [number, number][], connection: mysql.Connection | mysql.Pool = pool): Promise<void> {
     const sql =
-        "INSERT INTO multi_evaluator_mapping(multi_evaluator_id, child_evaluator_id) VALUES ?";
+        "INSERT INTO Multi_evaluator(evaluator_id, child_evaluator_id) VALUES ?";
 
     await connection.query(sql, [mappings]);
 }
 
 export async function save_processor(processor: ExperimentProcessor, connection: mysql.Connection | mysql.Pool = pool): Promise<number>{
   try{
-    const sql = 'INSERT INTO processor(node_id, type, code, format, name) VALUES (?, ?, ?, ?, ?)';
-    const [result] = await connection.execute(sql, [processor.node_id, processor.type, processor.code ?? null, processor.format ?? null, processor.name]);
+    const sql = 'INSERT INTO processor(node_id, type, code, format, selected_group_vars, name) VALUES (?, ?, ?, ?, ?, ?)';
+    const [result] = await connection.execute(sql, [processor.node_id, processor.type, processor.code ?? null, processor.format ?? null, processor.selected_group_vars ?? null, processor.name]);
     return (result as any).insertId;
   }
     catch (error) {
@@ -1168,7 +1154,7 @@ export async function get_results_by_config_and_input_id(config_id: number, inpu
 
 export async function get_child_evaluator_ids_by_multi_eval_id(multi_evaluator_id: number, connection: mysql.Connection | mysql.Pool = pool): Promise<number[]> {
   try{
-    const sql = 'SELECT child_evaluator_id FROM multi_evaluator_mapping WHERE multi_evaluator_id = ?';
+    const sql = 'SELECT child_evaluator_id FROM multi_evaluator WHERE evaluator_id = ?';
     const [rows] = await connection.execute(sql, [multi_evaluator_id]);
     let child_evaluator_ids: number[] = [];
     for (const row of rows as any[]) {

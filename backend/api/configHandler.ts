@@ -11,7 +11,6 @@ import {
     get_results,
     get_results_by_template, get_target_var,
     get_template_by_id,
-    map_multi_eval_cluster,
     pool,
     save_dataset,
     save_evaluator, save_experiment,
@@ -19,7 +18,7 @@ import {
     save_llm,
     save_llm_evaluator,
     save_llm_param,
-    save_multi_evaluator,
+    save_multi_evaluator_mapping,
     save_node,
     save_processor,
     save_promptconfig,
@@ -120,7 +119,7 @@ async function handle_save_evaluator(evaluator: Evaluator, connection: PoolConne
 }
 
 /**
- * Handles saving an evaluator node to the database.
+ * Handles saving a multi evaluator node and its child nodes mapping to the database.
  * @param evaluator The evaluator to save.
  * @param connection The database connection to use for saving.
  * @param file_map A map of file fields to their uploaded files.
@@ -129,8 +128,6 @@ async function handle_save_evaluator(evaluator: Evaluator, connection: PoolConne
  */
 async function handle_save_multi_evaluator(evaluator: any, connection: PoolConnection, file_map: Record<string, Express.Multer.File[]>, experiment_id: number, baseDir?: string) {
     const node_id = await save_node('evaluator', experiment_id, evaluator.name, connection);
-
-    await save_multi_evaluator({ ...evaluator, node_id: node_id }, connection);
     await save_evaluator({ ...evaluator, node_id: node_id }, connection);
 
     const mappings: MultiEvaluatorMapping[] = [];
@@ -149,12 +146,12 @@ async function handle_save_multi_evaluator(evaluator: any, connection: PoolConne
     }
 
     if (mappings.length > 0) {
-        await map_multi_eval_cluster(mappings, connection);
+        await save_multi_evaluator_mapping(mappings, connection);
     }
 }
 
 /**
- * Handles saving an evaluator node to the database.
+ * Handles saving an LLM evaluator node to the database.
  * @param evaluator The evaluator to save.
  * @param connection The database connection to use for saving.
  * @param experiment_id The ID of the experiment to which the evaluator belongs.
@@ -468,14 +465,22 @@ export async function resolve_inputs(node_id: number): Promise<ResolvedInput[]> 
 }
 
 export function fillTemplate(
-    template: string,
-    vars: PromptVarsDict
+  template: string,
+  vars: Record<string, string>,
 ): string {
-    return template.replace(/\{([^}]+)}/g, (_, marker) => {
-        const entry = vars[marker];
-        if (entry == null || typeof entry !== "string") {
-            return `{${marker}}`;
-        }
-        return entry;
+  let result = template;
+
+  const regex = /\{([^}]+)\}/g;
+
+  let previous: string;
+
+  do {
+    previous = result;
+
+    result = result.replace(regex, (match, key) => {
+      return vars[key] ?? match;
     });
+  } while (result !== previous);
+
+  return result;
 }

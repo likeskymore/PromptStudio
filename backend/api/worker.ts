@@ -10,8 +10,8 @@ import {
 } from "../database/database";
 import { LLMSpec, PromptVarsDict} from "../typing";
 import {execute_javascript, execute_python} from "./evaluator";
-import {ExperimentProcessor, Result, Eval_type, Processor_type} from "./types";
-import {execute_split } from './processor';
+import {ExperimentProcessor, Result, Eval_type, Processor_type, ResolvedInput} from "./types";
+import {execute_join, execute_split } from './processor';
 import { fillTemplate } from './configHandler';
 
 /** 
@@ -91,7 +91,7 @@ async function evaluate(evaluator_id: number, LLMSpec: LLMSpec, markersDict: Pro
 
             const evalVars = { ...markersDict, response: result.output_result } as PromptVarsDict;
             const gradingPrompt = fillTemplate(gradingPromptTemplate, evalVars);
-
+            
             const responses = await queryLLM(llmEvaluator.node_id.toString(), [graderSpec], 1, gradingPrompt, evalVars, {});
             const firstResp = responses.responses && responses.responses.length > 0 ? responses.responses[0] : undefined;
             const graderOut = firstResp && firstResp.responses && firstResp.responses.length > 0 ? firstResp.responses[0] : undefined;
@@ -140,8 +140,9 @@ async function evaluate(evaluator_id: number, LLMSpec: LLMSpec, markersDict: Pro
  * @param result The result to process, which contains the response from the LLM.
  * @param input_id The ID of the input associated with the processor.
  * @param resolved_input_id The ID of the resolved input associated with the processor.
+ * @param resolved_inputs An array of resolved inputs associated with the processor.
  */
-async function process(processor_id: number, LLMSpec: LLMSpec,  markersDict: PromptVarsDict, template_value: string, result: Result, input_id: number, resolved_input_id: number | null) {
+async function process(processor_id: number, LLMSpec: LLMSpec,  markersDict: PromptVarsDict, template_value: string, result: Result, input_id: number, resolved_input_id: number | null, resolved_inputs: ResolvedInput[] | null) {
     const processor: ExperimentProcessor = await get_processor_by_id(processor_id);
     const llmName = LLMSpec?.base_model ?? "";
     const prompt = template_value ?? "";
@@ -149,7 +150,11 @@ async function process(processor_id: number, LLMSpec: LLMSpec,  markersDict: Pro
     if (processor?.type === Processor_type.python) {
         process_result = await execute_python(processor.code, result, markersDict, {}, llmName, prompt, "processor");
     } else if (processor?.type === Processor_type.join){
-        // Not supported yet, as it requires multiple results, we would need to change the way we call the processor to support multiple results in one call
+        process_result = await execute_join(processor.selected_group_vars, resolved_inputs, processor.format);
+        for (const result of process_result || []) {
+            await save_process_result(result.response?.result, result.response?.result_id || null, processor.node_id, result.response?.input_id || null, resolved_input_id);
+        }
+        return;
     } else if (processor?.type === Processor_type.split){
         process_result = await execute_split(result, markersDict, {}, llmName, prompt, "processor", processor.format);
     } else {
@@ -164,20 +169,9 @@ async function process(processor_id: number, LLMSpec: LLMSpec,  markersDict: Pro
     if (process_result.response.error) {
         await save_error_processor(processor.node_id, process_result.response.error, process_result.response.result_id || null, input_id || null, resolved_input_id || null, new Date().toISOString().replace('T', ' ').replace('Z', ' '));
     } else {
-        let process_result_value = process_result.response.result;
-        if (process_result_value !== null && process_result_value !== undefined) {
-            let process_result_string: string;
-            try {
-                process_result_string = typeof process_result_value === 'string' ? process_result_value : JSON.stringify(process_result_value);
-            } catch (err) {
-                process_result_string = String(process_result_value);
-            }
-            try {
-                await save_process_result(process_result_string, process_result.response.result_id || null, processor.node_id, input_id, resolved_input_id);
-            } catch (err) {
-                console.error('Failed saving process result:', err);
-            }
-        }
+        let result = process_result.response.result;
+        await save_process_result(result, result.response.result_id || null, processor.node_id, input_id, resolved_input_id);
+
     }
 }
 
