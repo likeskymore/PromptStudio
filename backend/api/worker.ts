@@ -116,13 +116,17 @@ async function evaluate(evaluator_id: number, LLMSpec: LLMSpec, markersDict: Pro
     }
     if (evaluator?.type === Eval_type.simple) {
         const simple_evaluator = await get_simple_evaluator_by_id(evaluator.node_id);
-        if (simple_evaluator.var_selected === true) {
+        if (simple_evaluator?.var_selected === true) {
             const vars: PromptVarsDict = {};
             const metavars: PromptVarsDict = {};
 
             for (const [key, value] of Object.entries(markersDict)) {
-                if (key === "prompt") {
+                if (key === simple_evaluator?.var_value) {
+                    if (simple_evaluator?.var_type === 'meta') {
+                        metavars[`of ${key} (meta)`] = value;
+                    } else {
                     vars[`of ${key} (var)`] = value;
+                    }
                 } else {
                     metavars[`of ${key} (meta)`] = value;
                 }
