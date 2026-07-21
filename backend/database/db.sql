@@ -121,6 +121,39 @@ CREATE TABLE Evaluator(
     CONSTRAINT FK_node_id_evaluator FOREIGN KEY (node_id) REFERENCES Node(id)
 );
 
+CREATE TABLE Llm_evaluator(
+    node_id INT UNSIGNED NOT NULL UNIQUE,
+    name VARCHAR(255) NOT NULL,
+    llm_param_id INT UNSIGNED NOT NULL,
+    llm_id INT UNSIGNED NOT NULL,
+    format TEXT NOT NULL,
+    prompt TEXT NOT NULL,
+    reason_before_scoring boolean NOT NULL,
+    CONSTRAINT PK_llm_evaluator PRIMARY KEY (node_id),
+    CONSTRAINT FK_llm_evaluator_node_id foreign key (node_id) references node(id),
+	CONSTRAINT FK_llm_evaluator_llm_id foreign key (llm_id) references llm(id),
+    CONSTRAINT FK_llm_evaluator_param_id FOREIGN KEY (llm_param_id) REFERENCES Llm_param(id)
+);
+
+
+CREATE TABLE Multi_evaluator (
+    evaluator_id INT UNSIGNED NOT NULL,
+    child_evaluator_id INT UNSIGNED NOT NULL,
+    CONSTRAINT PK_mapping PRIMARY KEY (evaluator_id,child_evaluator_id),
+    CONSTRAINT FK_multi_evaluator_id FOREIGN KEY (evaluator_id) REFERENCES Evaluator(node_id),
+    CONSTRAINT FK_child_evaluator_id FOREIGN KEY (child_evaluator_id) REFERENCES Evaluator(node_id)
+);
+
+CREATE TABLE Simple_evaluator (
+    node_id INT UNSIGNED NOT NULL,
+    text_value TEXT NOT NULL,
+    var_value TEXT,
+    var_type TEXT,
+    var_selected boolean,
+    CONSTRAINT PK_simple_evaluator PRIMARY KEY (node_id),
+    CONSTRAINT FK_simple_evaluator_node_id foreign key (node_id) references node(id)
+);
+
 CREATE INDEX idx_dataset_name ON Dataset(name);
 
 CREATE TABLE PromptConfig(
@@ -256,29 +289,6 @@ CREATE TABLE Processor_error(
     CONSTRAINT FK_processor_id_error FOREIGN KEY (processor_id) REFERENCES Processor(node_id),
     CONSTRAINT FK_result_id_processor_error FOREIGN KEY (result_id) REFERENCES Result(id),
     CONSTRAINT CHECK (result_id is NOT NULL OR input_id is NOT NULL)
-);
-
-CREATE TABLE Llm_evaluator(
-    node_id INT UNSIGNED NOT NULL UNIQUE,
-    name VARCHAR(255) NOT NULL,
-    llm_param_id INT UNSIGNED NOT NULL,
-    llm_id INT UNSIGNED NOT NULL,
-    format TEXT NOT NULL,
-    prompt TEXT NOT NULL,
-    reason_before_scoring boolean NOT NULL,
-    CONSTRAINT PK_llm_evaluator PRIMARY KEY (node_id),
-	CONSTRAINT PK_llm_evaluator_llm_id foreign key (llm_id) references llm(id),
-    CONSTRAINT FK_llm_evaluator_param_id FOREIGN KEY (llm_param_id) REFERENCES Llm_param(id),
-    CONSTRAINT CHECK (llm_param_id is NOT NULL)
-);
-
-
-CREATE TABLE Multi_evaluator (
-    evaluator_id INT UNSIGNED NOT NULL,
-    child_evaluator_id INT UNSIGNED NOT NULL,
-    CONSTRAINT PK_mapping PRIMARY KEY (evaluator_id,child_evaluator_id),
-    CONSTRAINT FK_multi_evaluator_id FOREIGN KEY (evaluator_id) REFERENCES Evaluator(node_id),
-    CONSTRAINT FK_child_evaluator_id FOREIGN KEY (child_evaluator_id) REFERENCES Evaluator(node_id)
 );
 
 

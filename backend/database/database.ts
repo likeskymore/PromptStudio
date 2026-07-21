@@ -17,7 +17,7 @@ import {
   prompttemplate,
   Result,
   LlmEvaluator,
-  MultiEvaluator,
+  SimpleEvaluator,
 } from "../api/types";
 import {LLMSpec, PromptVarsDict} from "../typing";
 
@@ -561,6 +561,23 @@ export async function save_evaluator(evaluator: Evaluator, connection: mysql.Con
   }
 }
 
+export async function save_simple_evaluator(evaluator: SimpleEvaluator, connection: mysql.Connection | mysql.Pool = pool): Promise<number>{
+  try{
+    const sql = 'INSERT INTO Simple_evaluator(node_id, text_value, var_value, var_type, var_selected) VALUES (?, ?, ?, ?, ?)';
+    const [result] = await connection.execute(sql, [
+      evaluator.node_id,
+      evaluator.text_value,
+      evaluator.var_value,
+      evaluator.var_type,
+      evaluator.var_selected,
+    ]);
+    return (result as any).insertId;
+  }
+  catch (error) {
+    console.error(error);
+  }
+}
+
 export async function save_llm_evaluator(evaluator: LlmEvaluator, connection: mysql.Connection | mysql.Pool = pool): Promise<number>{
   try{
     const sql = 'INSERT INTO Llm_evaluator(node_id, name, llm_param_id, llm_id, format, prompt, reason_before_scoring) VALUES (?, ?, ?, ?, ?, ?, ?)';
@@ -980,35 +997,45 @@ export async function get_evaluator_by_id(evaluator_id: number, connection: mysq
     }
 }
 
-export async function get_multi_evaluator_by_id(evaluator_id: number, connection: mysql.Connection | mysql.Pool = pool){
-  try{
-    const sql = 'SELECT * FROM Multi_evaluator WHERE node_id = ?'; 
-    const [rows] = await connection.execute(sql, [evaluator_id]);
-    if ((rows as any[]).length > 0) {
-      const r = (rows as any[])[0];
-      return r as MultiEvaluator;
-    }
-    return undefined;
-  }
-    catch (error) {
-        console.error('Error fetching multi-evaluator by ID:', error);
-    }
-}
-
 export async function get_llm_evaluator_by_id(evaluator_id: number, connection: mysql.Connection | mysql.Pool = pool){
   try{
     const sql = 'SELECT * FROM Llm_evaluator WHERE node_id = ?'; 
     const [rows] = await connection.execute(sql, [evaluator_id]);
-    if ((rows as any[]).length > 0) {
-      const r = (rows as any[])[0];
-      return r as LlmEvaluator;
+    if ((rows as any[]).length === 0) {
+      return undefined;
     }
-    return undefined;
+    const r = (rows as any[])[0];
+
+    return {
+      ...r,
+      reason_before_scoring: r.reason_before_scoring === 1,
+    } as LlmEvaluator;
   }
     catch (error) {
         console.error('Error fetching llm-evaluator by ID:', error);
     }
 }
+
+
+export async function get_simple_evaluator_by_id(evaluator_id: number, connection: mysql.Connection | mysql.Pool = pool){
+  try{
+    const sql = 'SELECT * FROM Simple_evaluator WHERE node_id = ?'; 
+    const [rows] = await connection.execute(sql, [evaluator_id]);
+    if ((rows as any[]).length === 0) {
+      return undefined;
+    }
+    const r = (rows as any[])[0];
+
+    return {
+      ...r,
+      var_selected: r.var_selected === 1,
+    } as SimpleEvaluator;
+  }
+    catch (error) {
+        console.error('Error fetching simple-evaluator by ID:', error);
+    }
+}
+
 
 export async function get_results_by_processor(processor_id: number, connection: mysql.Connection | mysql.Pool = pool){
   try{

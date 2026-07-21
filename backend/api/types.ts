@@ -41,6 +41,16 @@ export type Evaluator = {
   return_type: Return_type;
 };
 
+export type SimpleEvaluator = {
+  node_id: number;
+  name: string;
+  return_type: Return_type;
+  text_value: string;
+  var_value: string;
+  var_type: string;
+  var_selected: boolean;
+};
+
 export type LlmEvaluator = {
   node_id: number;
   name: string;

@@ -7,7 +7,8 @@ import {
     save_response,
     get_llm_evaluator_by_id,
     get_llm_param_by_id,
-    get_llm_by_id, 
+    get_llm_by_id,
+    get_simple_evaluator_by_id, 
 } from "../database/database";
 import { LLMSpec, PromptVarsDict} from "../typing";
 import {execute_javascript, execute_python} from "./evaluator";
@@ -112,6 +113,25 @@ async function evaluate(evaluator_id: number, LLMSpec: LLMSpec, markersDict: Pro
 
     if (evaluator?.type === Eval_type.python) {
         eval_result = await execute_python(evaluator.code, result, markersDict, {}, llmName, prompt, "evaluator");
+    }
+    if (evaluator?.type === Eval_type.simple) {
+        const simple_evaluator = await get_simple_evaluator_by_id(evaluator.node_id);
+        if (simple_evaluator.var_selected === true) {
+            const vars: PromptVarsDict = {};
+            const metavars: PromptVarsDict = {};
+
+            for (const [key, value] of Object.entries(markersDict)) {
+                if (key === "prompt") {
+                    vars[`of ${key} (var)`] = value;
+                } else {
+                    metavars[`of ${key} (meta)`] = value;
+                }
+            }
+
+            eval_result = await execute_javascript(evaluator.code, result, vars, metavars, llmName, prompt, "evaluator");
+        } else {
+            eval_result = await execute_javascript(evaluator.code, result, markersDict, {}, llmName, prompt, "evaluator");
+        }
     } else {
         eval_result = await execute_javascript(evaluator.code, result, markersDict, {}, llmName, prompt, "evaluator");
     }

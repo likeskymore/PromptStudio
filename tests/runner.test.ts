@@ -33,10 +33,10 @@ describe("run_experiment", () => {
         );
         jest.spyOn(ExperimentRunner.prototype as any, 'submitTask').mockImplementation(
             async function (this: ExperimentRunner, task: Task, experimentMaxRetry: number){
-                await save_response(task.config_id, `test, response, ${task.config_id} ${task.input_id}`,
+                await save_response(task.config_id, `test, response 4, ${task.config_id} ${task.input_id}`,
                     task.input_id, new Date().toISOString().replace('T', ' ').replace('Z', ' '),
                     new Date().toISOString().replace('T', ' ').replace('Z', ' '), 0);
-                await save_response(task.config_id, `test, response, ${task.config_id} ${task.input_id} 2`,
+                await save_response(task.config_id, `test, response 6, ${task.config_id} ${task.input_id} 2`,
                     task.input_id, new Date().toISOString().replace('T', ' ').replace('Z', ' '),
                     new Date().toISOString().replace('T', ' ').replace('Z', ' '), 0);
                 return;
@@ -52,7 +52,7 @@ describe("run_experiment", () => {
     });
 
     it("test", async () => {
-        const yml = 'files/multiEvalFlow.yml';
+        const yml = 'files/tabularSimpleEvalFlow.yml';
         const experiment_name = await save_config(yml);
         expect(experiment_name).toBeDefined();
         await run_experiment(experiment_name, '');

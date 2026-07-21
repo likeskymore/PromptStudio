@@ -22,6 +22,7 @@ import {
     save_node,
     save_processor,
     save_promptconfig,
+    save_simple_evaluator,
     save_template,
 } from "../database/database";
 import * as yaml from "js-yaml";
@@ -45,15 +46,46 @@ import {PoolConnection} from "mysql2/promise";
 function buildLLMParams(llm: LLMSpec): Partial<Llm_params> {
     const llm_params: Partial<Llm_params> = {};
     const custom_params: Record<string, string> = {};
-    const known = ["max_tokens", "top_p", "top_k", "stop_sequence", "frequency_penalty", "presence_penalty"];
-    const native = ["name", "model", "temp", "base_model", "settings", "emoji", "key"];
 
-    if (llm.temp !== undefined) llm_params.temperature = llm.temp;
-    for (const [k, v] of Object.entries(llm)) {
-        if (known.includes(k)) llm_params[k] = v;
-        else if (!native.includes(k) && v !== undefined) custom_params[k] = String(v);
+    const known = [
+        "max_tokens",
+        "top_p",
+        "top_k",
+        "stop_sequence",
+        "frequency_penalty",
+        "presence_penalty"
+    ];
+
+    const native = [
+        "name",
+        "model",
+        "temp",
+        "base_model",
+        "settings",
+        "emoji",
+        "key"
+    ];
+
+    if (llm.temp !== undefined) {
+        llm_params.temperature = llm.temp;
     }
-    if (Object.keys(custom_params).length > 0) llm_params.custom_params = custom_params;
+
+    for (const [k, v] of Object.entries(llm)) {
+        if (known.includes(k)) {
+            (llm_params as any)[k] = v;
+        }
+        else if (!native.includes(k) && v !== undefined) {
+            if (typeof v === "object") {
+                custom_params[k] = JSON.stringify(v);
+            } else {
+                custom_params[k] = String(v);
+            }
+        }
+    }
+
+    if (Object.keys(custom_params).length > 0) {
+        llm_params.custom_params = custom_params;
+    }
 
     return llm_params;
 }
@@ -119,6 +151,19 @@ async function handle_save_evaluator(evaluator: Evaluator, connection: PoolConne
 }
 
 /**
+ * Handles saving a simple evaluator node to the database.
+ * @param evaluator The evaluator to save.
+ * @param connection The database connection to use for saving.
+ * @param file_map A map of file fields to their uploaded files.
+ * @param experiment_id The ID of the experiment to which the evaluator belongs.
+ * @param baseDir The base directory for resolving file paths.
+ */
+async function handle_save_simple_evaluator(evaluator: any, connection: PoolConnection, file_map: Record<string, Express.Multer.File[]>, experiment_id: number, baseDir?: string){
+    const node_id = await handle_save_evaluator(evaluator, connection, file_map, experiment_id, baseDir);
+    await save_simple_evaluator({ ...evaluator, node_id: node_id }, connection);
+}
+
+/**
  * Handles saving a multi evaluator node and its child nodes mapping to the database.
  * @param evaluator The evaluator to save.
  * @param connection The database connection to use for saving.
@@ -162,8 +207,9 @@ async function handle_save_llm_evaluator(evaluator: any, connection: PoolConnect
     const llm_id = existing ? existing.id : await save_llm(evaluator.grader, connection);
     const llm_params = buildLLMParams(evaluator.grader);
     const llm_param_id = await save_llm_param(llm_params, connection);
-    await save_llm_evaluator({ ...evaluator, node_id: node_id, llm_param_id: llm_param_id, llm_id: llm_id }, connection);
     await save_evaluator({ ...evaluator, node_id: node_id }, connection);
+    await save_llm_evaluator({ ...evaluator, node_id: node_id, llm_param_id: llm_param_id, llm_id: llm_id }, connection);
+
     return node_id;
  }
 
@@ -226,8 +272,9 @@ export async function save_config(
 
                 } else if (String(node.evaluator.type).toLowerCase() === "llm") {
                     promises.push(handle_save_llm_evaluator(node.evaluator, connection, experiment_id));
-                }
-                else {
+                } else if (String(node.evaluator.type).toLowerCase() === "simple") {
+                    promises.push(handle_save_simple_evaluator(node.evaluator, connection, file_map, experiment_id, baseDir));
+                } else {
                     promises.push(handle_save_evaluator(node.evaluator, connection, file_map, experiment_id, baseDir));
                 }
             }
