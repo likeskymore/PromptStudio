@@ -123,12 +123,12 @@ async function evaluate(evaluator_id: number, LLMSpec: LLMSpec, markersDict: Pro
             for (const [key, value] of Object.entries(markersDict)) {
                 if (key === simple_evaluator?.var_value) {
                     if (simple_evaluator?.var_type === 'meta') {
-                        metavars[`of ${key} (meta)`] = value;
+                        metavars[`${key}`] = value;
                     } else {
-                    vars[`of ${key} (var)`] = value;
+                    vars[`${key}`] = value;
                     }
                 } else {
-                    metavars[`of ${key} (meta)`] = value;
+                    metavars[`${key}`] = value;
                 }
             }
 
