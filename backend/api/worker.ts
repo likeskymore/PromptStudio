@@ -31,12 +31,13 @@ import { create_llm_spec } from './utils';
  */
 async function processExperiment(config_id: number, llm_spec: LLMSpec, iterations: number,
                                  template_value: string, markersDict: PromptVarsDict,
-                                 input_id: number, api_keys: string, tries: number = 0 ): Promise<{success: boolean, tries: number}> {
+                                 input_id: number, api_keys: string, tries: number = 0 ): Promise<{success: boolean, tries: number, totalTokens?: number, durationMs?: number, responseCount?: number, errorCount?: number}> {
     let safe_api_keys = {};
     if (api_keys){
         safe_api_keys = JSON.parse(api_keys);
     }
     const start_time = new Date().toISOString().replace('T', ' ').replace('Z', ' ');
+    const startedAtMs = Date.now();
     const responses = await queryLLM(
         config_id.toString(),
         [llm_spec],
@@ -45,9 +46,12 @@ async function processExperiment(config_id: number, llm_spec: LLMSpec, iteration
         markersDict,
         safe_api_keys);
     const end_time = new Date().toISOString().replace('T', ' ').replace('Z', ' ');
+    let total_tokens = 0;
     for (const response of responses.responses) {
+        const responseTokens = response.tokens?.total_tokens ?? 0;
+        total_tokens += responseTokens;
         for (const llm_response of response.responses) {
-            await save_response(config_id, llm_response, input_id, start_time, end_time, response.tokens.total_tokens / responses.responses.length);
+            await save_response(config_id, llm_response, input_id, start_time, end_time, responseTokens / Math.max(responses.responses.length, 1));
         }
     }
     if (responses.errors && Object.keys(responses.errors).length > 0){
@@ -55,11 +59,11 @@ async function processExperiment(config_id: number, llm_spec: LLMSpec, iteration
             for (const err of responses.errors[key]) {
                 await save_error(config_id, err.message, err.getStatus() || 0, input_id, start_time, end_time);
                 tries++;
-                return {success: false, tries: tries};
+                return {success: false, tries: tries, totalTokens: total_tokens, durationMs: Date.now() - startedAtMs, responseCount: responses.responses.length, errorCount: 1};
             }
         }
     }
-    return {success: true, tries: tries};
+    return {success: true, tries: tries, totalTokens: total_tokens, durationMs: Date.now() - startedAtMs, responseCount: responses.responses.length, errorCount: 0};
 }
 
 /**

@@ -74,16 +74,10 @@ export async function save_config(configPath: string): Promise<string | undefine
 /**
  * Runs an experiment by its name using the API.
  * @param name The name of the experiment to run.
- * @param api_keys A dictionary of API keys to use for the experiment.
  */
-export async function run_experiment(name: string, api_keys: Dict<any>): Promise<void> {
+export async function run_experiment(name: string): Promise<void> {
     try {
-        const response = await axios.get(`${URL}/run_experiment/${name}`,
-            {
-                params: {
-                    api_keys: api_keys
-                }
-            });
+        const response = await axios.get(`${URL}/experiments/run/${name}`);
         console.log(`Experiment ${name} started successfully.`);
     } catch (error) {
         console.error(`Failed to run experiment ${name}:`, error);

@@ -291,6 +291,25 @@ CREATE TABLE Processor_error(
     CONSTRAINT CHECK (result_id is NOT NULL OR input_id is NOT NULL)
 );
 
+CREATE TABLE Experiment_run(
+    run_id CHAR(36) NOT NULL,
+    experiment_name VARCHAR(255) NOT NULL,
+    status ENUM('queued', 'running', 'completed', 'failed') NOT NULL,
+    created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+    started_at TIMESTAMP(6) NULL,
+    finished_at TIMESTAMP(6) NULL,
+    updated_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+    total_tasks INT UNSIGNED NOT NULL DEFAULT 0,
+    attempts INT UNSIGNED NOT NULL DEFAULT 0,
+    completed INT UNSIGNED NOT NULL DEFAULT 0,
+    failed INT UNSIGNED NOT NULL DEFAULT 0,
+    retries INT UNSIGNED NOT NULL DEFAULT 0,
+    total_tokens BIGINT UNSIGNED NOT NULL DEFAULT 0,
+    last_error TEXT,
+    samples_json JSON,
+    CONSTRAINT PK_Experiment_run PRIMARY KEY (run_id)
+);
+
 
 CREATE VIEW View_Result_By_Template AS
 SELECT

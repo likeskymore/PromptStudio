@@ -5,8 +5,10 @@ PromptStudio is a tool to assist in engineering prompts for large language model
 
 ## Table of Contents
 
-- [Installation](#installation)
-- [Usage](#usage)
+- [PromptStudio](#promptstudio)
+  - [Table of Contents](#table-of-contents)
+  - [Installation](#installation)
+  - [Usage](#usage)
 
 ---
 
@@ -50,7 +52,7 @@ The format of the configuration can be imported from ChainForge.
 3. You need to be running the backend server. To do so, run the following command:
 ```bash
 cd backend/api
-tsx api.ts
+tsx server.ts
 ```
 4. Finally, you can run an experiment with the following command:
 ```bash

@@ -10,6 +10,39 @@ import {Experiment, Experiment_node, Link, NodeType} from "./types";
 import {resolve_inputs} from "./configHandler";
 import {ExperimentRunner} from "./ExperimentRunner";
 import {EvaluatorRunner} from "./EvaluatorRunner";
+import { completeExperimentRun, createExperimentRun, failExperimentRun, startExperimentRun } from "./runState";
+
+
+async function execute_experiment(experiment: Experiment, api_keys: string, runState: { runId: string }) {
+    try {
+    const nodes = await get_nodes_by_experiment(experiment.id);
+    const links = await get_links_by_experiment(experiment.id);
+    // Sort nodes topologically to ensure dependencies are resolved
+    const sorted_nodes = topologicalSort(nodes, links);
+    for (const node of sorted_nodes){
+        switch (node.type) {
+            case NodeType.dataset:
+                // Nothing to do here
+                break;
+            case NodeType.prompt_template:
+                await run_template(node.id, api_keys, experiment, runState.runId);
+                break;
+            case NodeType.evaluator:
+                await run_evaluator(node.id, experiment);
+                break;
+            case NodeType.processor:
+                await run_processor(node.id, experiment);
+                break;
+            default:
+                console.warn(`Unknown node type for node ${node.id}`);
+        }
+    }
+    completeExperimentRun(runState.runId);
+    } catch (error) {
+        failExperimentRun(runState.runId, error instanceof Error ? error.message : String(error));
+        console.error(`Error running experiment ${experiment.title}:`, error);
+    }
+}
 
 /**
  * Runs a template by its node ID, resolving inputs and managing datasets.
@@ -20,12 +53,12 @@ import {EvaluatorRunner} from "./EvaluatorRunner";
  * @param api_keys A dictionary of API keys to use for the experiment.
  * @param experiment The experiment object containing details like title and threads.
  */
-async function run_template(node_id: number, api_keys: string, experiment: Experiment) {
+async function run_template(node_id: number, api_keys: string, experiment: Experiment, runId?: string) {
     try{
         const resolvedInputs = await resolve_inputs(node_id);
         const inputs = resolvedInputs.map(input => input.vars);
         const configs = await get_configs_by_template_id(node_id);
-        let dataset_id: number;
+        let dataset_id: number | undefined;
         // Check if we already have a final dataset meaning we have run this template before
         for (const config of configs) {
             if (config.final_dataset_id){
@@ -37,7 +70,14 @@ async function run_template(node_id: number, api_keys: string, experiment: Exper
         }
         // If we don't have a final dataset, we need to create one, at first run
         if (!dataset_id){
-            dataset_id = await save_dataset_inputs(inputs, experiment.id);
+            const createdDatasetId = await save_dataset_inputs(inputs, experiment.id);
+            if (!createdDatasetId) {
+                throw new Error(`Unable to create dataset for experiment ${experiment.title}`);
+            }
+            dataset_id = createdDatasetId;
+        }
+        if (!dataset_id) {
+            throw new Error(`Unable to resolve dataset for experiment ${experiment.title}`);
         }
         const promises: Promise<void>[] = [];
         for (const config of configs) {
@@ -45,7 +85,7 @@ async function run_template(node_id: number, api_keys: string, experiment: Exper
         }
         await Promise.all(promises);
         const num_workers = experiment.threads || 1;
-        const runner = new ExperimentRunner(experiment.title, num_workers, configs, api_keys);
+        const runner = new ExperimentRunner(experiment.title, num_workers, configs, api_keys, runId);
         await runner.run();
     }
     catch (error) {
@@ -94,34 +134,26 @@ async function run_processor(processor_id: number, experiment: Experiment){
  * @param experiment_name The name of the experiment to run.
  * @param api_keys A dictionary of API keys to use for the experiment.
  */
-export async function run_experiment(experiment_name: string, api_keys: string) {
+export async function run_experiment(experiment_name: string, api_keys: string, options?: { background?: boolean }) {
     try{
         const experiment = await get_experiment_by_name(experiment_name);
-        const nodes = await get_nodes_by_experiment(experiment.id);
-        const links = await get_links_by_experiment(experiment.id);
-        // Sort nodes topologically to ensure dependencies are resolved
-        const sorted_nodes = topologicalSort(nodes, links);
-        for (const node of sorted_nodes){
-            switch (node.type) {
-                case NodeType.dataset:
-                    // Nothing to do here
-                    break;
-                case NodeType.prompt_template:
-                    await run_template(node.id, api_keys, experiment);
-                    break;
-                case NodeType.evaluator:
-                    await run_evaluator(node.id, experiment);
-                    break;
-                case NodeType.processor:
-                    await run_processor(node.id, experiment);
-                    break;
-                default:
-                    console.warn(`Unknown node type for node ${node.id}`);
-            }
+        if (!experiment) {
+            throw new Error(`Experiment ${experiment_name} not found`);
         }
+        const runState = createExperimentRun(experiment_name);
+        startExperimentRun(runState.runId);
+
+        const runPromise = execute_experiment(experiment, api_keys, runState);
+
+        if (!options?.background) {
+            await runPromise;
+        }
+
+        return runState.runId;
     }
     catch (error) {
         console.error(`Error running experiment ${experiment_name}:`, error);
+        throw error;
     }
 }
 

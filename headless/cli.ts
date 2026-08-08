@@ -48,15 +48,6 @@ async function main() {
         process.exit(1);
     }
 
-    let api_keys: Record<string, string> = {};
-    try {
-        const parsed = JSON.parse(fs.readFileSync(credentialsPath, "utf-8"));
-        api_keys = parsed.api_keys;
-    } catch (err) {
-        console.error("Failed to parse 'credentials.json':", err);
-        process.exit(1);
-    }
-
     if (options.config) {
         // Check if the provided config file exists
         if (!fs.existsSync(options.config)) {
@@ -70,14 +61,14 @@ async function main() {
             console.log("Experiment run cancelled.");
             process.exit(0);
         }
-        await run_experiment(name, api_keys);
+        await run_experiment(name);
     } else if (options.name) {
         const validate = await validateRun(options.name);
         if (!validate) {
             console.log("Experiment run cancelled.");
             process.exit(0);
         }
-        await run_experiment(options.name, api_keys);
+        await run_experiment(options.name);
     }
     else {
         console.error("Please provide a configuration file or an experiment name.");

@@ -202,7 +202,7 @@ export class EvaluatorRunner {
                     const task: EvaluationTask = {
                         evaluator_id: this.node_id,
                         llm_spec: null,
-                        markersDict: null,
+                        markersDict: markersDict,
                         template_value: null,
                         result: {
                             output_result: output_result,

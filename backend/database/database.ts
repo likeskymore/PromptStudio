@@ -20,6 +20,7 @@ import {
   SimpleEvaluator,
 } from "../api/types";
 import {LLMSpec, PromptVarsDict} from "../typing";
+import type { ExperimentRunState } from "../api/types";
 
 import * as fs from "fs";
 import {parse} from "csv-parse";
@@ -326,6 +327,30 @@ export async function get_experiment_by_name(experiment_name: string, connection
   }
   catch (error) {
     console.error(error);
+  }
+}
+
+export async function get_all_experiments(connection: mysql.Connection | mysql.Pool = pool): Promise<Experiment[]>{
+  try{
+    const sql = 'SELECT * FROM experiment';
+    const [rows] = await connection.execute(sql);
+    return rows as Experiment[];
+  }
+  catch (error) {
+    console.error(error);
+    return [];
+  }
+}
+
+export async function get_all_running_experiments(connection: mysql.Connection | mysql.Pool = pool): Promise<{run_id: string, experiment_name: string}[]>{
+  try{
+    const sql = 'SELECT run_id, experiment_name FROM experiment_run WHERE status = "running"';
+    const [rows] = await connection.execute(sql);
+    return (rows as any[]).map((row: any) => ({ run_id: row.run_id, experiment_name: row.experiment_name }));
+  }
+  catch (error) {
+    console.error(error);
+    return [];
   }
 }
 
@@ -1106,6 +1131,66 @@ export async function save_process_result(processor_result: string, result_id: n
     catch (error) {
         console.error('Error saving process result:', error);
     }
+}
+
+export async function upsert_experiment_run_snapshot(runState: ExperimentRunState, connection: mysql.Connection | mysql.Pool = pool) {
+  try {
+    const sql = `
+      INSERT INTO Experiment_run (
+        run_id,
+        experiment_name,
+        status,
+        created_at,
+        started_at,
+        finished_at,
+        updated_at,
+        total_tasks,
+        attempts,
+        completed,
+        failed,
+        retries,
+        total_tokens,
+        last_error,
+        samples_json
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON DUPLICATE KEY UPDATE
+        experiment_name = VALUES(experiment_name),
+        status = VALUES(status),
+        started_at = VALUES(started_at),
+        finished_at = VALUES(finished_at),
+        updated_at = VALUES(updated_at),
+        total_tasks = VALUES(total_tasks),
+        attempts = VALUES(attempts),
+        completed = VALUES(completed),
+        failed = VALUES(failed),
+        retries = VALUES(retries),
+        total_tokens = VALUES(total_tokens),
+        last_error = VALUES(last_error),
+        samples_json = VALUES(samples_json)
+    `;
+
+    const values = [
+      runState.runId,
+      runState.experimentName,
+      runState.status,
+      runState.createdAt,
+      runState.startedAt ?? null,
+      runState.finishedAt ?? null,
+      runState.updatedAt,
+      runState.totalTasks,
+      runState.attempts,
+      runState.completed,
+      runState.failed,
+      runState.retries,
+      runState.totalTokens,
+      runState.lastError ?? null,
+      JSON.stringify(runState.samples),
+    ];
+
+    await connection.execute(sql, values);
+  } catch (error) {
+    console.error('Error saving experiment run snapshot:', error);
+  }
 }
 
 export async function get_processor_result_by_input_id(input_id: number, processor_id: number, connection: mysql.Connection | mysql.Pool = pool){

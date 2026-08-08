@@ -1,4 +1,3 @@
-import {LLMSpec, PromptVarsDict} from "../typing";
 import * as workerpool from "workerpool";
 import {
     get_config,
@@ -11,18 +10,9 @@ import {
     get_template_by_id
 } from "../database/database";
 import { create_llm_spec, get_marker_map } from "./utils";
-import { Promptconfig } from "./types";
+import { Promptconfig, Task, WorkerTaskResult } from "./types";
+import { recordTaskCompleted, recordTaskQueued, recordTaskRetry, recordTaskStarted, recordTaskFailed } from "./runState";
 
-export type Task = {
-    config_id: number;
-    llm_spec: LLMSpec;
-    iterations: number;
-    template_value: string;
-    markersDict: PromptVarsDict;
-    max_retry: number;
-    input_id: number;
-    tries: number;
-};
 
 /**
  * Class to manage the execution of an experiment using multi threading.
@@ -45,7 +35,8 @@ export class ExperimentRunner {
         private experiment_name: string,
         private num_workers: number,
         private configs: Promptconfig[],
-        private api_keys: string
+        private api_keys: string,
+        private runId?: string
     ) {
         this.pool = workerpool.pool(__dirname + '/worker.ts', {
             minWorkers: this.num_workers,
@@ -74,6 +65,7 @@ export class ExperimentRunner {
      */
     private async produceTasks(maximumQueueSize: number = 1000) {
         const experiment = await get_experiment_by_name(this.experiment_name);
+        const experimentMaxRetry = experiment.max_retry ?? 0;
         // Create a task for each input inside each configuration for a prompt_template node
         for (const config of this.configs) {
             const updatedConfig = await get_config(config.id);
@@ -107,10 +99,14 @@ export class ExperimentRunner {
                     iterations,
                     template_value: template.value,
                     markersDict,
-                    max_retry: experiment.max_retry,
+                    max_retry: experimentMaxRetry,
                     input_id,
                     tries: 0,
                 });
+                
+                if (this.runId) {
+                    recordTaskQueued(this.runId);
+                }
 
                 // maximum queue size check
                 while (this.taskQueue.length > maximumQueueSize) {
@@ -128,6 +124,7 @@ export class ExperimentRunner {
      */
     private async taskRunner() {
         const experiment = await get_experiment_by_name(this.experiment_name);
+        const experimentMaxRetry = experiment.max_retry ?? 0;
         while (this.isProducing || this.taskQueue.length > 0 || this.failedQueue.size > 0) {
             let task: Task | undefined;
 
@@ -153,7 +150,7 @@ export class ExperimentRunner {
                 await new Promise((res) => setTimeout(res, 50));
                 continue;
             }
-            await this.submitTask(task, experiment.max_retry);
+            await this.submitTask(task, experimentMaxRetry);
         }
     }
 
@@ -164,6 +161,9 @@ export class ExperimentRunner {
      * @param experimentMaxRetry The maximum number of retries allowed for the experiment.
      */
     private async submitTask(task: Task, experimentMaxRetry: number) {
+        if (this.runId) {
+            recordTaskStarted(this.runId);
+        }
         const result = await this.pool.exec('processExperiment', [
             task.config_id,
             task.llm_spec,
@@ -173,15 +173,25 @@ export class ExperimentRunner {
             task.input_id,
             this.api_keys,
             task.tries,
-        ]);
+        ]) as WorkerTaskResult;
 
         if (!result.success && result.tries <= experimentMaxRetry) {
             // Push to failed queue, organized by tries
             const triesBucket = this.failedQueue.get(result.tries) ?? [];
             triesBucket.push({ ...task, tries: result.tries });
             this.failedQueue.set(result.tries, triesBucket);
+            if (this.runId) {
+                recordTaskRetry(this.runId, `task ${task.config_id}/${task.input_id} retry ${result.tries}`);
+            }
         } else if (!result.success) {
             this.errors++;
+            if (this.runId) {
+                recordTaskFailed(this.runId, `task ${task.config_id}/${task.input_id} failed after ${result.tries} tries`);
+            }
+        } else {
+            if (this.runId) {
+                recordTaskCompleted(this.runId, result.totalTokens ?? 0);
+            }
         }
     }
 }

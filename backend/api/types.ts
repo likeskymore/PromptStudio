@@ -183,3 +183,53 @@ export type JoinItem = {
   fill_history?: Dict;
   metavars?: Dict;
 };
+
+export type ExperimentRunStatus = "queued" | "running" | "completed" | "failed";
+
+export type ExperimentRunSample = {
+  at: string;
+  totalTasks: number;
+  attempts: number;
+  completed: number;
+  failed: number;
+  retries: number;
+  totalTokens: number;
+};
+
+export type ExperimentRunState = {
+  runId: string;
+  experimentName: string;
+  status: ExperimentRunStatus;
+  createdAt: string;
+  startedAt?: string;
+  finishedAt?: string;
+  updatedAt: string;
+  totalTasks: number;
+  attempts: number;
+  completed: number;
+  failed: number;
+  retries: number;
+  totalTokens: number;
+  lastError?: string;
+  samples: ExperimentRunSample[];
+};
+
+export type Task = {
+    config_id: number;
+    llm_spec: LLMSpec;
+    iterations: number;
+    template_value: string;
+    markersDict: PromptVarsDict;
+    max_retry: number;
+    input_id: number;
+    tries: number;
+};
+
+export type WorkerTaskResult = {
+    success: boolean;
+    tries: number;
+    totalTokens?: number;
+    durationMs?: number;
+    responseCount?: number;
+    errorCount?: number;
+};
