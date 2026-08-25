@@ -1,42 +1,50 @@
-import { run_experiment } from "../backend/api/runner";
 import {save_config} from "../headless/apiCall";
 import * as workerpool from 'workerpool';
-import { ExecOptions} from "workerpool/types/types";
 import * as path from "node:path";
 import {get_results_by_experiment_name, pool as dbPool} from "../backend/database/database";
+import { run_experiment } from "../backend/api/runner";
 
 
-jest.setTimeout(20000000);
+jest.setTimeout(200000);
 
-// Keep a reference to any test-created worker pool so we can terminate it
+jest.mock('workerpool', () => {
+    const actual = jest.requireActual('workerpool');
+    return { ...actual, pool: jest.fn() } as unknown;
+});
+
 let testPool: import('workerpool').Pool | undefined;
-let originalWorkerPool: typeof workerpool.pool | undefined;
+let originalWorkerPool: typeof workerpool.pool
 
-// To run those tests we need to run api.ts and have a working database
 describe("run_experiment", () => {
 
 
     beforeEach( () => {
         const workerPath = path.resolve(__dirname, '../backend/api/worker.ts');
         if (!originalWorkerPool) {
-            originalWorkerPool = workerpool.pool;
+            originalWorkerPool = (jest.requireActual('workerpool') as any).pool;
         }
         testPool = originalWorkerPool(workerPath);
 
-        jest.spyOn(workerpool, 'pool').mockReturnValue(testPool as import('workerpool').Pool);
+        (workerpool.pool as jest.Mock).mockReturnValue(testPool as import('workerpool').Pool);
 
+        const delay = 2000;
         jest.spyOn(testPool, 'exec').mockImplementation(
-            (method: string | ((...args: any[]) => any), params?: any[] | null, options?: ExecOptions): workerpool.Promise<any> => {
+            (method, params) => {
                 if (method === 'processExperiment') {
-                    return {
-                        success: true,
-                        tries: params?.[6],
-                        totalTokens: 0,
-                    } as unknown as workerpool.Promise<any>;
+                    return new Promise(resolve => {
+                        setTimeout(() => {
+                            resolve({
+                                success: true,
+                                tries: params?.[6],
+                                totalTokens: 0,
+                            });
+                        }, delay);
+                    }) as unknown as workerpool.Promise<any>;
                 }
+
                 throw new Error(`Unexpected workerpool method: ${String(method)}`);
             }
-        )
+        );
     });
 
     afterEach(async () => {

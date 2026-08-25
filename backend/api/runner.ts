@@ -13,7 +13,7 @@ import {EvaluatorRunner} from "./EvaluatorRunner";
 import { completeExperimentRun, createExperimentRun, failExperimentRun, startExperimentRun } from "./runState";
 
 
-async function execute_experiment(experiment: Experiment, api_keys: string, runState: { runId: string }) {
+async function execute_experiment(experiment: Experiment, api_keys: string, runState: { run_id: string }) {
     try {
     const nodes = await get_nodes_by_experiment(experiment.id);
     const links = await get_links_by_experiment(experiment.id);
@@ -25,7 +25,7 @@ async function execute_experiment(experiment: Experiment, api_keys: string, runS
                 // Nothing to do here
                 break;
             case NodeType.prompt_template:
-                await run_template(node.id, api_keys, experiment, runState.runId);
+                await run_template(node.id, api_keys, experiment, runState.run_id);
                 break;
             case NodeType.evaluator:
                 await run_evaluator(node.id, experiment);
@@ -37,9 +37,9 @@ async function execute_experiment(experiment: Experiment, api_keys: string, runS
                 console.warn(`Unknown node type for node ${node.id}`);
         }
     }
-    completeExperimentRun(runState.runId);
+    completeExperimentRun(runState.run_id);
     } catch (error) {
-        failExperimentRun(runState.runId, error instanceof Error ? error.message : String(error));
+        failExperimentRun(runState.run_id, error instanceof Error ? error.message : String(error));
         console.error(`Error running experiment ${experiment.title}:`, error);
     }
 }
@@ -136,12 +136,13 @@ async function run_processor(processor_id: number, experiment: Experiment){
  */
 export async function run_experiment(experiment_name: string, api_keys: string, options?: { background?: boolean }) {
     try{
+        console.log(`hit run_exp`)
         const experiment = await get_experiment_by_name(experiment_name);
         if (!experiment) {
             throw new Error(`Experiment ${experiment_name} not found`);
         }
         const runState = createExperimentRun(experiment_name);
-        startExperimentRun(runState.runId);
+        startExperimentRun(runState.run_id);
 
         const runPromise = execute_experiment(experiment, api_keys, runState);
 
@@ -149,7 +150,7 @@ export async function run_experiment(experiment_name: string, api_keys: string, 
             await runPromise;
         }
 
-        return runState.runId;
+        return runState.run_id;
     }
     catch (error) {
         console.error(`Error running experiment ${experiment_name}:`, error);

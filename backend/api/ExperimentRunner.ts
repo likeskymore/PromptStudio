@@ -11,7 +11,8 @@ import {
 } from "../database/database";
 import { create_llm_spec, get_marker_map } from "./utils";
 import { Promptconfig, Task, WorkerTaskResult } from "./types";
-import { recordTaskCompleted, recordTaskQueued, recordTaskRetry, recordTaskStarted, recordTaskFailed } from "./runState";
+import { recordTaskCompleted, recordTotalTasks, recordTaskRetry, recordTaskStarted, recordTaskFailed } from "./runState";
+
 
 
 /**
@@ -77,6 +78,12 @@ export class ExperimentRunner {
             let input_id = 0;
             const last_id = await get_last_input_id(updatedConfig.final_dataset_id);
 
+            const totalTasks = await this.calculateTotalTasks();
+
+            if (this.runId) {
+                recordTotalTasks(this.runId, totalTasks);
+            }
+
             // Create a task for each input in the final dataset
             while (input_id !== last_id) {
                 const input = await get_next_input(updatedConfig.final_dataset_id, input_id);
@@ -103,10 +110,6 @@ export class ExperimentRunner {
                     input_id,
                     tries: 0,
                 });
-                
-                if (this.runId) {
-                    recordTaskQueued(this.runId);
-                }
 
                 // maximum queue size check
                 while (this.taskQueue.length > maximumQueueSize) {
@@ -193,5 +196,46 @@ export class ExperimentRunner {
                 recordTaskCompleted(this.runId, result.totalTokens ?? 0);
             }
         }
+    }
+    private async calculateTotalTasks(): Promise<number> {
+        let totalTasks = 0;
+
+        for (const config of this.configs) {
+            const updatedConfig = await get_config(config.id);
+            const template = await get_template_by_id(
+                updatedConfig.prompt_template_id
+            );
+
+            let input_id = 0;
+            const last_id = await get_last_input_id(
+                updatedConfig.final_dataset_id
+            );
+
+            while (input_id !== last_id) {
+                const input = await get_next_input(
+                    updatedConfig.final_dataset_id,
+                    input_id
+                );
+
+                if (!input) break;
+
+                input_id = input.id;
+
+                let iterations = template.iterations;
+
+                const existing = await get_results(
+                    updatedConfig.id,
+                    input_id
+                );
+
+                iterations -= existing?.length ?? 0;
+
+                if (iterations > 0) {
+                    totalTasks += iterations;
+                }
+            }
+        }
+
+        return totalTasks;
     }
 }

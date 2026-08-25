@@ -1,7 +1,11 @@
 import express from "express";
 import * as fs from "fs";
 import { run_experiment } from "../../runner";
-import { credentialsPath, get_all_experiments, get_all_running_experiments } from "../../../database/database";
+import {
+  credentialsPath,
+  get_all_experiment_runs,
+  get_all_experiments,
+} from "../../../database/database";
 import { ResponseCode, sendResponse } from "../../common/responseHandler";
 import { getExperimentRun, subscribeExperimentRun } from "../../runState";
 
@@ -9,6 +13,7 @@ const router = express.Router();
 
 const credentials = JSON.parse(fs.readFileSync(credentialsPath, "utf-8"));
 const api_keys = JSON.stringify(credentials.api_keys ?? {});
+const SSE_THROTTLE_MS = 1000;
 
 router.get("/:runId/events", (req, res) => {
   const { runId } = req.params;
@@ -31,8 +36,39 @@ router.get("/:runId/events", (req, res) => {
 
   writeEvent("snapshot", snapshot);
 
+  let lastSent = Date.now();
+  let pendingState: typeof snapshot | null = null;
+  let throttleTimer: NodeJS.Timeout | undefined;
+
+  const sendThrottledSnapshot = (state: typeof snapshot) => {
+    const now = Date.now();
+    const elapsed = now - lastSent;
+
+    if (elapsed >= SSE_THROTTLE_MS) {
+      lastSent = now;
+      writeEvent("snapshot", state);
+      return;
+    }
+
+    pendingState = state;
+
+    if (throttleTimer) {
+      return;
+    }
+
+    throttleTimer = setTimeout(() => {
+      throttleTimer = undefined;
+
+      if (pendingState) {
+        lastSent = Date.now();
+        writeEvent("snapshot", pendingState);
+        pendingState = null;
+      }
+    }, SSE_THROTTLE_MS - elapsed);
+  };
+
   const unsubscribe = subscribeExperimentRun(runId, (state) => {
-    writeEvent("snapshot", state);
+    sendThrottledSnapshot(state);
   });
 
   const heartbeat = setInterval(() => {
@@ -42,6 +78,12 @@ router.get("/:runId/events", (req, res) => {
 
   req.on("close", () => {
     clearInterval(heartbeat);
+
+    if (throttleTimer) {
+      clearTimeout(throttleTimer);
+      throttleTimer = undefined;
+    }
+
     unsubscribe();
     res.end();
   });
@@ -50,7 +92,9 @@ router.get("/:runId/events", (req, res) => {
 router.get("/run/:name", async (req, res) => {
   try {
     const experiment_name = req.params.name;
-    const runId = await run_experiment(experiment_name, api_keys, { background: true });
+    const runId = await run_experiment(experiment_name, api_keys, {
+      background: true,
+    });
     return sendResponse(res, {
       body: {
         message: `Experiment ${experiment_name} started successfully.`,
@@ -61,8 +105,6 @@ router.get("/run/:name", async (req, res) => {
   } catch (error) {
     console.error(error);
     return sendResponse(res, {
-
-      
       statusCode: 500,
       responseCode: ResponseCode.ERROR,
       body: {
@@ -72,16 +114,15 @@ router.get("/run/:name", async (req, res) => {
   }
 });
 
-router.get("", async (req, res) => {
+router.get("/states", async (req, res) => {
   try {
-    const experiments = await get_all_experiments();
+    const experiment_states = await get_all_experiment_runs();
 
     return sendResponse(res, {
       body: {
-        experiments,
+        experiment_states,
       },
     });
-
   } catch (error) {
     return sendResponse(res, {
       statusCode: 500,
@@ -93,13 +134,13 @@ router.get("", async (req, res) => {
   }
 });
 
-router.get("/running-experiments", async (req, res) => {
+router.get("/", async (req, res) => {
   try {
-    const running_experiments = await get_all_running_experiments();
+    const experiments = await get_all_experiments();
 
     return sendResponse(res, {
       body: {
-        running_experiments,
+        experiments,
       },
     });
   } catch (error) {
@@ -114,4 +155,3 @@ router.get("/running-experiments", async (req, res) => {
 });
 
 export const ExperimentRoutes = router;
-    

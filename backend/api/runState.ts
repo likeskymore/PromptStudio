@@ -41,25 +41,24 @@ function notify(runId: string) {
 }
 
 function persistSnapshot(runId: string) {
-  const state = experimentRuns.get(runId);
-  if (!state) {
-    return;
-  }
+    const state = experimentRuns.get(runId);
 
-  void upsert_experiment_run_snapshot(state).catch((error) => {
-    console.error(`Error saving experiment run snapshot for ${runId}:`, error);
-  });
+    if (!state) {
+        return Promise.resolve();
+    }
+
+    return upsert_experiment_run_snapshot(state);
 }
 
 function pushTimelineSample(state: ExperimentRunState) {
   state.samples.push({
     at: now(),
-    totalTasks: state.totalTasks,
+    total_tasks: state.total_tasks,
     attempts: state.attempts,
     completed: state.completed,
     failed: state.failed,
     retries: state.retries,
-    totalTokens: state.totalTokens,
+    total_tokens: state.total_tokens,
   });
 
   if (state.samples.length > 120) {
@@ -80,7 +79,7 @@ function scheduleSnapshotTimer(runId: string) {
     }
 
     pushTimelineSample(state);
-    state.updatedAt = now();
+    state.updated_at = now();
     persistSnapshot(runId);
     notify(runId);
   }, 5000);
@@ -97,31 +96,34 @@ function stopSnapshotTimer(runId: string) {
   }
 }
 
-function mutateRunState(runId: string, mutator: (state: ExperimentRunState) => void) {
+function mutateRunState(
+  runId: string,
+  mutator: (state: ExperimentRunState) => void,
+) {
   const state = experimentRuns.get(runId);
   if (!state) {
     return;
   }
 
   mutator(state);
-  state.updatedAt = now();
+  state.updated_at = now();
   notify(runId);
 }
 
-export function createExperimentRun(experimentName: string) {
+export function createExperimentRun(experiment_name: string) {
   const runId = randomUUID();
   const state: ExperimentRunState = {
-    runId,
-    experimentName,
+    run_id: runId,
+    experiment_name,
     status: "queued",
-    createdAt: now(),
-    updatedAt: now(),
-    totalTasks: 0,
+    created_at: now(),
+    updated_at: now(),
+    total_tasks: 0,
     attempts: 0,
     completed: 0,
     failed: 0,
     retries: 0,
-    totalTokens: 0,
+    total_tokens: 0,
     samples: [],
   };
 
@@ -134,6 +136,7 @@ export function createExperimentRun(experimentName: string) {
 }
 
 export function getExperimentRun(runId: string) {
+  console.log(experimentRuns);
   const state = experimentRuns.get(runId);
   return state ? cloneState(state) : undefined;
 }
@@ -155,15 +158,38 @@ export function subscribeExperimentRun(runId: string, listener: Listener) {
 export function startExperimentRun(runId: string) {
   mutateRunState(runId, (state) => {
     state.status = "running";
-    state.startedAt = state.startedAt ?? now();
+    state.started_at = state.started_at ?? now();
   });
 
   scheduleSnapshotTimer(runId);
 }
 
-export function recordTaskQueued(runId: string) {
+export async function pauseExperimentRun(runId: string) {
+    console.log(`Pausing experiment run ${runId}`);
+
+    mutateRunState(runId, (state) => {
+        state.status = "paused";
+        pushTimelineSample(state);
+    });
+
+    stopSnapshotTimer(runId);
+
+    await persistSnapshot(runId);
+}
+
+export async function pauseRunningExperimentRuns() {
+    for (const [runId, state] of experimentRuns.entries()) {
+        if (state.status !== "running") {
+            continue;
+        }
+
+        await pauseExperimentRun(runId);
+    }
+}
+
+export function recordTotalTasks(runId: string, count: number) {
   mutateRunState(runId, (state) => {
-    state.totalTasks += 1;
+    state.total_tasks = count;
   });
 }
 
@@ -177,7 +203,7 @@ export function recordTaskRetry(runId: string, errorMessage?: string) {
   mutateRunState(runId, (state) => {
     state.retries += 1;
     if (errorMessage) {
-      state.lastError = errorMessage;
+      state.last_error = errorMessage;
     }
   });
 }
@@ -185,7 +211,7 @@ export function recordTaskRetry(runId: string, errorMessage?: string) {
 export function recordTaskCompleted(runId: string, totalTokens = 0) {
   mutateRunState(runId, (state) => {
     state.completed += 1;
-    state.totalTokens += totalTokens;
+    state.total_tokens += totalTokens;
   });
 }
 
@@ -193,7 +219,7 @@ export function recordTaskFailed(runId: string, errorMessage?: string) {
   mutateRunState(runId, (state) => {
     state.failed += 1;
     if (errorMessage) {
-      state.lastError = errorMessage;
+      state.last_error = errorMessage;
     }
   });
 }
@@ -201,7 +227,7 @@ export function recordTaskFailed(runId: string, errorMessage?: string) {
 export function completeExperimentRun(runId: string) {
   mutateRunState(runId, (state) => {
     state.status = "completed";
-    state.finishedAt = now();
+    state.finished_at = now();
     pushTimelineSample(state);
   });
 
@@ -212,8 +238,8 @@ export function completeExperimentRun(runId: string) {
 export function failExperimentRun(runId: string, errorMessage: string) {
   mutateRunState(runId, (state) => {
     state.status = "failed";
-    state.finishedAt = now();
-    state.lastError = errorMessage;
+    state.finished_at = now();
+    state.last_error = errorMessage;
     pushTimelineSample(state);
   });
 

@@ -44,6 +44,7 @@ export const pool: mysql.Pool = mysql.createPool({
   queueLimit: 0,
   maxIdle: 10,
   idleTimeout: 60000,
+  timezone: "Z",
 });
 
 /**
@@ -188,7 +189,7 @@ export async function save_llm(llm: LLMSpec, connection: mysql.Connection | mysq
       // If it exists, return its ID
       return existingLlm.id;
     }
-    const sql = "INSERT INTO LLM(base_model, name, model) VALUES (?, ?, ?)";
+    const sql = "INSERT INTO Llm(base_model, name, model) VALUES (?, ?, ?)";
     const values = [llm.base_model, llm.name, llm.model];
     const [result] = await connection.execute(sql, values);
     return (result as any).insertId;
@@ -251,13 +252,13 @@ export async function save_llm_param(llm_params: Partial<Llm_params>, connection
       throw new Error('No valid parameters provided');
     }
 
-    const sql = `INSERT INTO llm_param(${fields.join(', ')}) VALUES (${placeholders.join(', ')})`;
+    const sql = `INSERT INTO Llm_param(${fields.join(', ')}) VALUES (${placeholders.join(', ')})`;
     const [result] = await connection.execute(sql, values);
     const llm_param_id = (result as any).insertId;
 
     // Save custom parameters if provided
     if (llm_params.custom_params !== undefined) {
-      const customParamSql = 'INSERT INTO llm_custom_param(name, value, llm_param_id) VALUES (?, ?, ?)';
+      const customParamSql = 'INSERT INTO Llm_custom_param(name, value, llm_param_id) VALUES (?, ?, ?)';
       for (const [name, value] of Object.entries(llm_params.custom_params)) {
         await connection.execute(customParamSql, [name, value, llm_param_id]);
       }
@@ -283,7 +284,7 @@ export async function save_llm_param(llm_params: Partial<Llm_params>, connection
  */
 export async function save_promptconfig(experiment_id: number, llm_id: number, llm_param_id: number, template_id: number, dataset_id: number, connection: mysql.Connection | mysql.Pool = pool): Promise<number>{
   try{
-    const sql = 'INSERT INTO promptconfig(experiment_id, llm_id, llm_param_id, prompt_template_id, final_dataset_id) VALUES (?, ?, ?, ?, ?)';
+    const sql = 'INSERT INTO PromptConfig(experiment_id, llm_id, llm_param_id, prompt_template_id, final_dataset_id) VALUES (?, ?, ?, ?, ?)';
     const values = [experiment_id, llm_id, llm_param_id, template_id, dataset_id];
     const [result] = await connection.execute(sql, values);
     return (result as any).insertId;
@@ -301,7 +302,7 @@ export async function save_promptconfig(experiment_id: number, llm_id: number, l
  */
 export async function get_prompt_config_by_experiment(experiment_id: number, connection: mysql.Connection | mysql.Pool = pool): Promise<Promptconfig[]> {
   try {
-    const sql = 'SELECT * FROM promptconfig WHERE experiment_id = ?';
+    const sql = 'SELECT * FROM PromptConfig WHERE experiment_id = ?';
     const [rows] = await connection.execute(sql, [experiment_id]);
     return rows as Promptconfig[];
   }
@@ -319,7 +320,7 @@ export async function get_prompt_config_by_experiment(experiment_id: number, con
  */
 export async function get_experiment_by_name(experiment_name: string, connection: mysql.Connection | mysql.Pool = pool): Promise<Experiment>{
   try{
-    const sql = 'SELECT * FROM experiment WHERE title = ?';
+    const sql = 'SELECT * FROM Experiment WHERE title = ?';
     const [rows] = await connection.execute(sql, [experiment_name]);
     if ((rows as any[]).length > 0) {
       return (rows as Experiment[])[0];
@@ -332,7 +333,7 @@ export async function get_experiment_by_name(experiment_name: string, connection
 
 export async function get_all_experiments(connection: mysql.Connection | mysql.Pool = pool): Promise<Experiment[]>{
   try{
-    const sql = 'SELECT * FROM experiment';
+    const sql = 'SELECT * FROM Experiment';
     const [rows] = await connection.execute(sql);
     return rows as Experiment[];
   }
@@ -342,17 +343,18 @@ export async function get_all_experiments(connection: mysql.Connection | mysql.P
   }
 }
 
-export async function get_all_running_experiments(connection: mysql.Connection | mysql.Pool = pool): Promise<{run_id: string, experiment_name: string}[]>{
+export async function get_all_experiment_runs(connection: mysql.Connection | mysql.Pool = pool): Promise<ExperimentRunState[]>{
   try{
-    const sql = 'SELECT run_id, experiment_name FROM experiment_run WHERE status = "running"';
+    const sql = 'SELECT * FROM Experiment_run';
     const [rows] = await connection.execute(sql);
-    return (rows as any[]).map((row: any) => ({ run_id: row.run_id, experiment_name: row.experiment_name }));
+    return rows as ExperimentRunState[];
   }
   catch (error) {
     console.error(error);
     return [];
   }
 }
+
 
 /**
  * Retrieves an LLM specification by its ID.
@@ -363,7 +365,7 @@ export async function get_all_running_experiments(connection: mysql.Connection |
  */
 export async function get_llm_by_id(llm_id: number, connection: mysql.Connection | mysql.Pool = pool): Promise<LLMSpec>{
   try{
-    const sql = 'SELECT * FROM llm WHERE id = ?';
+    const sql = 'SELECT * FROM Llm WHERE id = ?';
     const [rows] = await connection.execute(sql, [llm_id]);
     if ((rows as any[]).length > 0) {
       return (rows as any[])[0];
@@ -385,12 +387,12 @@ export async function get_llm_by_id(llm_id: number, connection: mysql.Connection
  */
 export async function get_llm_param_by_id(llm_param_id: number, connection: mysql.Connection | mysql.Pool = pool): Promise<Llm_params>{
   try{
-    const sql = 'SELECT * FROM llm_param WHERE id = ?';
+    const sql = 'SELECT * FROM Llm_param WHERE id = ?';
     const [rows] = await connection.execute(sql, [llm_param_id]);
     if ((rows as any[]).length > 0) {
       const llm_param = (rows as any[])[0];
 
-      const customParamSql = 'SELECT name, value FROM llm_custom_param WHERE llm_param_id = ?';
+      const customParamSql = 'SELECT name, value FROM Llm_custom_param WHERE llm_param_id = ?';
       const [customRows] = await connection.execute(customParamSql, [llm_param_id]);
       
       const custom_params: Record<string, string> = {};
@@ -435,7 +437,7 @@ export async function get_template_by_id(template_id: number, connection: mysql.
  * @return An Input object containing the input ID and its associated markers.
  */
 async function fetch_input_with_markers(input_id: number, connection: mysql.Connection | mysql.Pool = pool): Promise<Input> {
-  const sqlMarkers = 'SELECT marker_values_id FROM input_marker WHERE input_id = ?';
+  const sqlMarkers = 'SELECT marker_values_id FROM Input_marker WHERE input_id = ?';
   const [rowsMarkers] = await connection.execute(sqlMarkers, [input_id]);
   const markerValueIds: number[] = (rowsMarkers as any[]).map(row => row.marker_values_id);
 
@@ -445,7 +447,7 @@ async function fetch_input_with_markers(input_id: number, connection: mysql.Conn
 
   const placeholders = markerValueIds.map(() => '?').join(',');
   const sqlValues = `SELECT id, marker_id, value
-                     FROM marker_value
+                     FROM Marker_value
                      WHERE id IN (${placeholders})`;
   const [rowsValues] = await connection.execute(sqlValues, markerValueIds);
 
@@ -465,7 +467,7 @@ async function fetch_input_with_markers(input_id: number, connection: mysql.Conn
  */
 export async function get_input_by_id(input_id: number, connection: mysql.Connection | mysql.Pool = pool): Promise<Input | undefined> {
   try {
-    const sqlCheck = 'SELECT id FROM data_input WHERE id = ?';
+    const sqlCheck = 'SELECT id FROM Data_Input WHERE id = ?';
     const [rowsInput] = await connection.execute(sqlCheck, [input_id]);
 
     if ((rowsInput as any[]).length === 0) {
@@ -482,7 +484,7 @@ export async function get_input_by_id(input_id: number, connection: mysql.Connec
 
 export async function get_next_input(dataset_id: number, last_input_id = 0, connection: mysql.Connection | mysql.Pool = pool): Promise<Input | undefined> {
   try {
-    const sqlNext = `SELECT id FROM data_input WHERE dataset_id = ? AND id > ? ORDER BY id LIMIT 1`;
+    const sqlNext = `SELECT id FROM Data_Input WHERE dataset_id = ? AND id > ? ORDER BY id LIMIT 1`;
     const [rowsNext] = await connection.execute(sqlNext, [dataset_id, last_input_id]);
 
     if ((rowsNext as any[]).length === 0) {
@@ -499,7 +501,7 @@ export async function get_next_input(dataset_id: number, last_input_id = 0, conn
 
 export async function get_marker_by_id(marker_id: number, connection: mysql.Connection | mysql.Pool = pool): Promise<string>{
   try{
-    const sql = 'SELECT marker FROM marker WHERE id = ?';
+    const sql = 'SELECT marker FROM Marker WHERE id = ?';
     const [rows] = await connection.execute(sql, [marker_id]);
     if ((rows as any[]).length > 0) {
       return (rows as any[])[0].marker;
@@ -511,7 +513,7 @@ export async function get_marker_by_id(marker_id: number, connection: mysql.Conn
 }
 
 export async function save_response(config_id: number, output_result: string, input_id: number, start_time: string, end_time: string, total_tokens: number, connection: mysql.Connection | mysql.Pool = pool){
-  const sql = 'INSERT INTO result(config_id, output_result, input_id, start_time, end_time, total_tokens) VALUES (?, ?, ?, ?, ?, ?)';
+  const sql = 'INSERT INTO Result(config_id, output_result, input_id, start_time, end_time, total_tokens) VALUES (?, ?, ?, ?, ?, ?)';
   const values = [config_id, output_result, input_id, start_time, end_time, total_tokens];
   try{
     const [result] = await connection.execute(sql, values);
@@ -524,7 +526,7 @@ export async function save_response(config_id: number, output_result: string, in
 
 export async function get_last_input_id(dataset_id: number, connection: mysql.Connection | mysql.Pool = pool): Promise<number>{
   try{
-    const sql = 'SELECT MAX(id) as id FROM data_input WHERE dataset_id = ?';
+    const sql = 'SELECT MAX(id) as id FROM Data_Input WHERE dataset_id = ?';
     const [rows] = await connection.execute(sql, [dataset_id]);
     if ((rows as any[]).length > 0) {
       return (rows as any[])[0].id;
@@ -537,7 +539,7 @@ export async function get_last_input_id(dataset_id: number, connection: mysql.Co
 
 export async function save_error(config_id: number, error_message: string, error_status: number, input_id: number, start_time: string, end_time: string, connection: mysql.Connection | mysql.Pool = pool): Promise<number>{
   try{
-    const sql = 'INSERT INTO error(config_id, error_message, error_code, input_id, start_time, end_time) VALUES (?, ?, ?, ?, ?, ?)';
+    const sql = 'INSERT INTO Error(config_id, error_message, error_code, input_id, start_time, end_time) VALUES (?, ?, ?, ?, ?, ?)';
     const values = [config_id, error_message, error_status, input_id, start_time, end_time];
     const [result] = await connection.execute(sql, values);
     return (result as any).insertId;
@@ -549,7 +551,7 @@ export async function save_error(config_id: number, error_message: string, error
 
 export async function get_results(config_id: number, input_id: number, connection: mysql.Connection | mysql.Pool = pool): Promise<Result[]>{
   try {
-    const sql = 'SELECT * FROM result WHERE config_id = ? AND input_id = ?';
+    const sql = 'SELECT * FROM Result WHERE config_id = ? AND input_id = ?';
     const [rows] = await connection.execute(sql, [config_id, input_id]);
     return rows as Result[];
   }
@@ -560,7 +562,7 @@ export async function get_results(config_id: number, input_id: number, connectio
 
 export async function get_llm_by_base_model(base_model: string, connection: mysql.Connection | mysql.Pool = pool): Promise<Llm> {
   try {
-    const sql = 'SELECT * FROM llm WHERE base_model = ?';
+    const sql = 'SELECT * FROM Llm WHERE base_model = ?';
     const [rows] = await connection.execute(sql, [base_model]);
     return (rows as Llm[])[0];
   }
@@ -631,7 +633,7 @@ export async function save_multi_evaluator_mapping(mappings: [number, number][],
 
 export async function save_processor(processor: ExperimentProcessor, connection: mysql.Connection | mysql.Pool = pool): Promise<number>{
   try{
-    const sql = 'INSERT INTO processor(node_id, type, code, format, selected_group_vars, name) VALUES (?, ?, ?, ?, ?, ?)';
+    const sql = 'INSERT INTO Processor(node_id, type, code, format, selected_group_vars, name) VALUES (?, ?, ?, ?, ?, ?)';
     const [result] = await connection.execute(sql, [processor.node_id, processor.type, processor.code ?? null, processor.format ?? null, processor.selected_group_vars ?? null, processor.name]);
     return (result as any).insertId;
   }
@@ -662,7 +664,7 @@ export async function get_results_by_template(template_id: string, connection: m
 
 export async function get_config(config_id: number, connection: mysql.Connection | mysql.Pool = pool): Promise<Promptconfig> {
   try {
-    const sql = 'SELECT * FROM promptconfig WHERE id = ?';
+    const sql = 'SELECT * FROM PromptConfig WHERE id = ?';
     const [rows] = await connection.execute(sql, [config_id]);
     if ((rows as any[]).length > 0) {
       return (rows as Promptconfig[])[0];
@@ -682,7 +684,7 @@ export async function save_eval_result(
 ) {
     try {
         const sql =
-            'INSERT INTO evaluationsresult(evaluation_result, result_id, input_id, evaluator_id) VALUES (?, ?, ?, ?)';
+            'INSERT INTO EvaluationsResult(evaluation_result, result_id, input_id, evaluator_id) VALUES (?, ?, ?, ?)';
 
         const values = [
             String(eval_result),
@@ -700,7 +702,7 @@ export async function save_eval_result(
 
 export async function get_evaluation_result(result_id: number, evaluator_id: number, connection: mysql.Connection | mysql.Pool = pool): Promise<string | undefined> {
   try {
-    const sql = 'SELECT evaluation_result FROM evaluationsresult WHERE result_id = ? AND evaluator_id = ?';
+    const sql = 'SELECT evaluation_result FROM EvaluationsResult WHERE result_id = ? AND evaluator_id = ?';
     const [rows] = await connection.execute(sql, [result_id, evaluator_id]);
     if ((rows as any[]).length > 0) {
       return (rows as any[])[0].evaluation_result;
@@ -713,7 +715,7 @@ export async function get_evaluation_result(result_id: number, evaluator_id: num
 
 export async function save_error_evaluator(evaluator_id: number, error_message: string, result_id: number, input_id: number, timestamp: string, connection: mysql.Connection | mysql.Pool = pool){
   try{
-    const sql = 'INSERT INTO error_evaluator(evaluator_id, error_message, result_id, input_id, timestamp) VALUES (?, ?, ?, ?, ?)';
+    const sql = 'INSERT INTO Error_evaluator(evaluator_id, error_message, result_id, input_id, timestamp) VALUES (?, ?, ?, ?, ?)';
     const values = [evaluator_id, error_message, result_id ?? null, input_id ?? null, timestamp];
     const [result] = await connection.execute(sql, values);
     return (result as any).insertId;
@@ -758,7 +760,7 @@ export async function save_link(source_node_id: number, target_node_id: number, 
 
 export async function get_configs_by_template_id(template_id: number, connection: mysql.Connection | mysql.Pool = pool): Promise<Promptconfig[]> {
   try {
-    const sql = 'SELECT * FROM promptconfig WHERE prompt_template_id = ?';
+    const sql = 'SELECT * FROM PromptConfig WHERE prompt_template_id = ?';
     const [rows] = await connection.execute(sql, [template_id]);
     return rows as Promptconfig[];
   } catch (error) {
@@ -825,7 +827,7 @@ export async function get_data_inputs_by_dataset(dataset_id: number, connection:
 
 export async function update_final_dataset(config_id: number, dataset_id: number, connection: mysql.Connection | mysql.Pool = pool){
   try{
-    await connection.execute('UPDATE promptconfig SET final_dataset_id = ? WHERE id = ?', [dataset_id, config_id]);
+    await connection.execute('UPDATE PromptConfig SET final_dataset_id = ? WHERE id = ?', [dataset_id, config_id]);
   }
     catch (error) {
         console.error('Error updating final dataset:', error);
@@ -921,7 +923,7 @@ export async function save_dataset_inputs(inputs: PromptVarsDict[], experiment_i
 
 export async function save_resolved_input(source_input_id: number, value: string, connection: mysql.Connection | mysql.Pool = pool): Promise<number | undefined> {
     try{
-    const sql = 'INSERT INTO resolved_input(source_input_id, value) VALUES (?, ?)';
+    const sql = 'INSERT INTO Resolved_input(source_input_id, value) VALUES (?, ?)';
     const values = [source_input_id, value];
     const [result] = await connection.execute(sql, values);
     return (result as any).insertId;
@@ -967,7 +969,7 @@ export async function get_target_var(source_id: number, target_id: number, sourc
 
 export async function get_processor_results_by_id(processor_id: number, connection: mysql.Connection | mysql.Pool = pool){
   try{
-    const sql = 'SELECT * FROM processorresult WHERE processor_id = ?';
+    const sql = 'SELECT * FROM ProcessorResult WHERE processor_id = ?';
     const [rows] = await connection.execute(sql, [processor_id]);
     return rows as ProcessorResult[];
   }
@@ -1064,7 +1066,7 @@ export async function get_simple_evaluator_by_id(evaluator_id: number, connectio
 
 export async function get_results_by_processor(processor_id: number, connection: mysql.Connection | mysql.Pool = pool){
   try{
-    const sql = 'SELECT * FROM processorresult WHERE processor_id = ?';
+    const sql = 'SELECT * FROM ProcessorResult WHERE processor_id = ?';
     const [rows] = await connection.execute(sql, [processor_id]);
     return rows as ProcessorResult[];
   }
@@ -1076,7 +1078,7 @@ export async function get_results_by_processor(processor_id: number, connection:
 
 export async function get_result_by_id(result_id: number, connection: mysql.Connection | mysql.Pool = pool){
   try{
-    const sql = 'SELECT * FROM result WHERE id = ?';
+    const sql = 'SELECT * FROM Result WHERE id = ?';
     const [rows] = await connection.execute(sql, [result_id]);
     if ((rows as any[]).length > 0) {
       return (rows as Result[])[0];
@@ -1090,7 +1092,7 @@ export async function get_result_by_id(result_id: number, connection: mysql.Conn
 
 export async function get_processor_by_id(processor_id: number, connection: mysql.Connection | mysql.Pool = pool){
     try{
-        const sql = 'SELECT * FROM processor WHERE node_id = ?';
+        const sql = 'SELECT * FROM Processor WHERE node_id = ?';
         const [rows] = await connection.execute(sql, [processor_id]);
         if ((rows as any[]).length > 0) {
         const r = (rows as any[])[0];
@@ -1111,7 +1113,7 @@ export async function get_processor_by_id(processor_id: number, connection: mysq
 
 export async function save_error_processor(processor_id: number, error_message: string, result_id: number, input_id: number, resolved_input_id: number | null, timestamp: string, connection: mysql.Connection | mysql.Pool = pool){
   try{
-    const sql = 'INSERT INTO processor_error(processor_id, error_message, result_id, input_id, resolved_input_id, timestamp) VALUES (?, ?, ?, ?, ?, ?)';
+    const sql = 'INSERT INTO Processor_error(processor_id, error_message, result_id, input_id, resolved_input_id, timestamp) VALUES (?, ?, ?, ?, ?, ?)';
     const values = [processor_id, error_message, result_id ?? null, input_id ?? null, resolved_input_id ?? null, timestamp];
     const [result] = await connection.execute(sql, values);
     return (result as any).insertId;
@@ -1123,7 +1125,7 @@ export async function save_error_processor(processor_id: number, error_message: 
 
 export async function save_process_result(processor_result: string, result_id: number | null, processor_id: number, input_id: number | null, resolved_input_id: number | null, connection: mysql.Connection | mysql.Pool = pool){
   try{
-    const sql = 'INSERT INTO processorresult(processor_result, result_id, processor_id, input_id, resolved_input_id) VALUES (?, ?, ?, ?, ?)';
+    const sql = 'INSERT INTO ProcessorResult(processor_result, result_id, processor_id, input_id, resolved_input_id) VALUES (?, ?, ?, ?, ?)';
     const values = [processor_result, result_id ?? null, processor_id, input_id ?? null, resolved_input_id ?? null];
     const [result] = await connection.execute(sql, values);
     return (result as any).insertId;
@@ -1135,6 +1137,10 @@ export async function save_process_result(processor_result: string, result_id: n
 
 export async function upsert_experiment_run_snapshot(runState: ExperimentRunState, connection: mysql.Connection | mysql.Pool = pool) {
   try {
+        console.log("Saving experiment run:", {
+        run_id: runState.run_id,
+        status: runState.status,
+    });
     const sql = `
       INSERT INTO Experiment_run (
         run_id,
@@ -1170,20 +1176,20 @@ export async function upsert_experiment_run_snapshot(runState: ExperimentRunStat
     `;
 
     const values = [
-      runState.runId,
-      runState.experimentName,
+      runState.run_id,
+      runState.experiment_name,
       runState.status,
-      runState.createdAt,
-      runState.startedAt ?? null,
-      runState.finishedAt ?? null,
-      runState.updatedAt,
-      runState.totalTasks,
+      runState.created_at,
+      runState.started_at ?? null,
+      runState.finished_at ?? null,
+      runState.updated_at,
+      runState.total_tasks,
       runState.attempts,
       runState.completed,
       runState.failed,
       runState.retries,
-      runState.totalTokens,
-      runState.lastError ?? null,
+      runState.total_tokens,
+      runState.last_error ?? null,
       JSON.stringify(runState.samples),
     ];
 
@@ -1195,7 +1201,7 @@ export async function upsert_experiment_run_snapshot(runState: ExperimentRunStat
 
 export async function get_processor_result_by_input_id(input_id: number, processor_id: number, connection: mysql.Connection | mysql.Pool = pool){
     try {
-        const sql = 'SELECT * FROM processorresult WHERE input_id = ? AND processor_id = ?';
+        const sql = 'SELECT * FROM ProcessorResult WHERE input_id = ? AND processor_id = ?';
         const [rows] = await connection.execute(sql, [input_id, processor_id]);
         if ((rows as any[]).length > 0) {
         return (rows as ProcessorResult[])[0];
@@ -1208,7 +1214,7 @@ export async function get_processor_result_by_input_id(input_id: number, process
 
 export async function get_processor_result_by_result_id(result_id: number, processor_id: number, connection: mysql.Connection | mysql.Pool = pool){
     try {
-        const sql = 'SELECT * FROM processorresult WHERE result_id = ? AND processor_id = ?';
+        const sql = 'SELECT * FROM ProcessorResult WHERE result_id = ? AND processor_id = ?';
         const [rows] = await connection.execute(sql, [result_id, processor_id]);
         if ((rows as any[]).length > 0) {
             return (rows as ProcessorResult[])[0];
@@ -1243,7 +1249,7 @@ export async function get_results_by_experiment_name(experimentName: string, con
 
 export async function get_results_by_config_id(config_id: number, connection: mysql.Connection | mysql.Pool = pool): Promise<Result[]> {
   try {
-    const sql = 'SELECT * FROM result WHERE config_id = ?';
+    const sql = 'SELECT * FROM Result WHERE config_id = ?';
     const [rows] = await connection.execute(sql, [config_id]);
     return rows as Result[];
   }
@@ -1255,7 +1261,7 @@ export async function get_results_by_config_id(config_id: number, connection: my
 
 export async function get_results_by_config_and_input_id(config_id: number, input_id: number, connection: mysql.Connection | mysql.Pool = pool): Promise<Result[]> {
   try {
-    const sql = 'SELECT * FROM result WHERE config_id = ? AND input_id = ?';
+    const sql = 'SELECT * FROM Result WHERE config_id = ? AND input_id = ?';
     const [rows] = await connection.execute(sql, [config_id, input_id ]);
     return rows as Result[];
   }
@@ -1267,7 +1273,7 @@ export async function get_results_by_config_and_input_id(config_id: number, inpu
 
 export async function get_child_evaluator_ids_by_multi_eval_id(multi_evaluator_id: number, connection: mysql.Connection | mysql.Pool = pool): Promise<number[]> {
   try{
-    const sql = 'SELECT child_evaluator_id FROM multi_evaluator WHERE evaluator_id = ?';
+    const sql = 'SELECT child_evaluator_id FROM Multi_evaluator WHERE evaluator_id = ?';
     const [rows] = await connection.execute(sql, [multi_evaluator_id]);
     let child_evaluator_ids: number[] = [];
     for (const row of rows as any[]) {

@@ -184,33 +184,33 @@ export type JoinItem = {
   metavars?: Dict;
 };
 
-export type ExperimentRunStatus = "queued" | "running" | "completed" | "failed";
+export type ExperimentRunStatus = "queued" | "running" | "paused" | "completed" | "failed";
 
 export type ExperimentRunSample = {
   at: string;
-  totalTasks: number;
+  total_tasks: number;
   attempts: number;
   completed: number;
   failed: number;
   retries: number;
-  totalTokens: number;
+  total_tokens: number;
 };
 
 export type ExperimentRunState = {
-  runId: string;
-  experimentName: string;
+  run_id: string;
+  experiment_name: string;
   status: ExperimentRunStatus;
-  createdAt: string;
-  startedAt?: string;
-  finishedAt?: string;
-  updatedAt: string;
-  totalTasks: number;
+  created_at: string;
+  started_at?: string;
+  finished_at?: string;
+  updated_at: string;
+  total_tasks: number;
   attempts: number;
   completed: number;
   failed: number;
   retries: number;
-  totalTokens: number;
-  lastError?: string;
+  total_tokens: number;
+  last_error?: string;
   samples: ExperimentRunSample[];
 };
 

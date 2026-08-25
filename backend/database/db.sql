@@ -1,4 +1,4 @@
-DROP DATABASE promptstudio;
+-- DROP DATABASE promptstudio;
 
 CREATE DATABASE promptstudio;
 
@@ -98,7 +98,7 @@ CREATE TABLE Marker(
     marker varchar(255) NOT NULL,
     dataset_id INT UNSIGNED NOT NULL,
     CONSTRAINT PK_Marker PRIMARY KEY (id),
-    CONSTRAINT FK_dataset_id_marker FOREIGN KEY (dataset_id) REFERENCES dataset(node_id)
+    CONSTRAINT FK_dataset_id_marker FOREIGN KEY (dataset_id) REFERENCES Dataset(node_id)
 );
 
 CREATE TABLE Marker_value(
@@ -130,8 +130,8 @@ CREATE TABLE Llm_evaluator(
     prompt TEXT NOT NULL,
     reason_before_scoring boolean NOT NULL,
     CONSTRAINT PK_llm_evaluator PRIMARY KEY (node_id),
-    CONSTRAINT FK_llm_evaluator_node_id foreign key (node_id) references node(id),
-	CONSTRAINT FK_llm_evaluator_llm_id foreign key (llm_id) references llm(id),
+    CONSTRAINT FK_llm_evaluator_node_id foreign key (node_id) references Node(id),
+	CONSTRAINT FK_llm_evaluator_llm_id foreign key (llm_id) references Llm(id),
     CONSTRAINT FK_llm_evaluator_param_id FOREIGN KEY (llm_param_id) REFERENCES Llm_param(id)
 );
 
@@ -151,7 +151,7 @@ CREATE TABLE Simple_evaluator (
     var_type TEXT,
     var_selected boolean,
     CONSTRAINT PK_simple_evaluator PRIMARY KEY (node_id),
-    CONSTRAINT FK_simple_evaluator_node_id foreign key (node_id) references node(id)
+    CONSTRAINT FK_simple_evaluator_node_id foreign key (node_id) references Node(id)
 );
 
 CREATE INDEX idx_dataset_name ON Dataset(name);
@@ -294,7 +294,7 @@ CREATE TABLE Processor_error(
 CREATE TABLE Experiment_run(
     run_id CHAR(36) NOT NULL,
     experiment_name VARCHAR(255) NOT NULL,
-    status ENUM('queued', 'running', 'completed', 'failed') NOT NULL,
+    status ENUM('queued', 'running', 'paused', 'completed', 'failed') NOT NULL,
     created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
     started_at TIMESTAMP(6) NULL,
     finished_at TIMESTAMP(6) NULL,
@@ -315,8 +315,8 @@ CREATE VIEW View_Result_By_Template AS
 SELECT
     r.*,
     pc.prompt_template_id
-FROM result r
-    JOIN promptconfig pc ON r.config_id = pc.id
+FROM Result r
+    JOIN PromptConfig pc ON r.config_id = pc.id
     JOIN PromptTemplate pt ON pc.prompt_template_id = pt.node_id;
 
 
