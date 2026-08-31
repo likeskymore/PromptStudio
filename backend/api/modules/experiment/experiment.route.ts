@@ -5,6 +5,7 @@ import {
   credentialsPath,
   get_all_experiment_runs,
   get_all_experiments,
+  get_llm_models_of_experiment_by_experiment_name,
 } from "../../../database/database";
 import { ResponseCode, sendResponse } from "../../common/responseHandler";
 import { getExperimentRun, subscribeExperimentRun } from "../../runState";
@@ -144,6 +145,28 @@ router.get("/", async (req, res) => {
       },
     });
   } catch (error) {
+    return sendResponse(res, {
+      statusCode: 500,
+      responseCode: ResponseCode.ERROR,
+      body: {
+        error: error instanceof Error ? error.message : "Internal Server Error",
+      },
+    });
+  }
+});
+
+router.get("/:experiment_name/models", async (req, res) => {
+  try {
+    const experiment_name = req.params.experiment_name;
+    const models = await get_llm_models_of_experiment_by_experiment_name(experiment_name);
+
+    return sendResponse(res, {
+      body: {
+        models,
+      },
+    });
+  } catch (error) {
+    console.error(error);
     return sendResponse(res, {
       statusCode: 500,
       responseCode: ResponseCode.ERROR,

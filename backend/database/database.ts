@@ -1137,10 +1137,6 @@ export async function save_process_result(processor_result: string, result_id: n
 
 export async function upsert_experiment_run_snapshot(runState: ExperimentRunState, connection: mysql.Connection | mysql.Pool = pool) {
   try {
-        console.log("Saving experiment run:", {
-        run_id: runState.run_id,
-        status: runState.status,
-    });
     const sql = `
       INSERT INTO Experiment_run (
         run_id,
@@ -1157,8 +1153,13 @@ export async function upsert_experiment_run_snapshot(runState: ExperimentRunStat
         retries,
         total_tokens,
         last_error,
+        total_latency_ms,
+        latency_count,
+        p50_latency_ms,
+        p95_latency_ms,
+        p99_latency_ms,
         samples_json
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON DUPLICATE KEY UPDATE
         experiment_name = VALUES(experiment_name),
         status = VALUES(status),
@@ -1172,6 +1173,11 @@ export async function upsert_experiment_run_snapshot(runState: ExperimentRunStat
         retries = VALUES(retries),
         total_tokens = VALUES(total_tokens),
         last_error = VALUES(last_error),
+        total_latency_ms = VALUES(total_latency_ms),
+        latency_count = VALUES(latency_count),
+        p50_latency_ms = VALUES(p50_latency_ms),
+        p95_latency_ms = VALUES(p95_latency_ms),
+        p99_latency_ms = VALUES(p99_latency_ms),
         samples_json = VALUES(samples_json)
     `;
 
@@ -1190,6 +1196,11 @@ export async function upsert_experiment_run_snapshot(runState: ExperimentRunStat
       runState.retries,
       runState.total_tokens,
       runState.last_error ?? null,
+      runState.total_latency_ms,
+      runState.latency_count,
+      runState.p50_latency_ms,
+      runState.p95_latency_ms,
+      runState.p99_latency_ms,
       JSON.stringify(runState.samples),
     ];
 
@@ -1286,3 +1297,21 @@ export async function get_child_evaluator_ids_by_multi_eval_id(multi_evaluator_i
       return [];
   }
 }
+
+export async function get_llm_models_of_experiment_by_experiment_name(experiment_name: string, connection: mysql.Connection | mysql.Pool = pool): Promise<Llm[]> {
+  try {
+    const sql = `
+      SELECT DISTINCT l.*
+      FROM Llm l
+      JOIN PromptConfig pc ON l.id = pc.llm_id
+      JOIN Experiment e ON pc.experiment_id = e.id
+      WHERE e.title = ?
+    `;
+    const [rows] = await connection.execute(sql, [experiment_name]);
+    return rows as Llm[];
+  } catch (error) {
+    console.error('Error fetching LLM models for experiment:', error);
+    return [];
+  }
+}
+

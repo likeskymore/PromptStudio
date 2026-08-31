@@ -306,6 +306,11 @@ CREATE TABLE Experiment_run(
     retries INT UNSIGNED NOT NULL DEFAULT 0,
     total_tokens BIGINT UNSIGNED NOT NULL DEFAULT 0,
     last_error TEXT,
+    total_latency_ms BIGINT UNSIGNED NOT NULL DEFAULT 0,
+    latency_count INT UNSIGNED NOT NULL DEFAULT 0,
+    p50_latency_ms BIGINT UNSIGNED NOT NULL DEFAULT 0,
+    p95_latency_ms BIGINT UNSIGNED NOT NULL DEFAULT 0,
+    p99_latency_ms BIGINT UNSIGNED NOT NULL DEFAULT 0,
     samples_json JSON,
     CONSTRAINT PK_Experiment_run PRIMARY KEY (run_id)
 );

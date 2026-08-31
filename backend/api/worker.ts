@@ -10,7 +10,7 @@ import {
     get_llm_by_id,
     get_simple_evaluator_by_id, 
 } from "../database/database";
-import { LLMSpec, PromptVarsDict} from "../typing";
+import { LLMResponse, LLMSpec, PromptVarsDict} from "../typing";
 import {execute_javascript, execute_python} from "./evaluator";
 import {ExperimentProcessor, Result, Eval_type, Processor_type, ResolvedInput, Llm_params} from "./types";
 import {execute_join, execute_split } from './processor';
@@ -31,13 +31,14 @@ import { create_llm_spec } from './utils';
  */
 async function processExperiment(config_id: number, llm_spec: LLMSpec, iterations: number,
                                  template_value: string, markersDict: PromptVarsDict,
-                                 input_id: number, api_keys: string, tries: number = 0 ): Promise<{success: boolean, tries: number, totalTokens?: number, durationMs?: number, responseCount?: number, errorCount?: number}> {
+                                 input_id: number, api_keys: string, tries: number = 0 ): Promise<{success: boolean, tries: number, totalTokens?: number, latencyMs?: number, responseCount?: number, errorCount?: number}> {
     let safe_api_keys = {};
     if (api_keys){
         safe_api_keys = JSON.parse(api_keys);
     }
     const start_time = new Date().toISOString().replace('T', ' ').replace('Z', ' ');
-    const startedAtMs = Date.now();
+
+    const llmStartedAt = performance.now();
     const responses = await queryLLM(
         config_id.toString(),
         [llm_spec],
@@ -45,13 +46,14 @@ async function processExperiment(config_id: number, llm_spec: LLMSpec, iteration
         template_value,
         markersDict,
         safe_api_keys);
+    const latency_ms = performance.now() - llmStartedAt;
     const end_time = new Date().toISOString().replace('T', ' ').replace('Z', ' ');
     let total_tokens = 0;
-    for (const response of responses.responses) {
+    for (const response of responses) {
         const responseTokens = response.tokens?.total_tokens ?? 0;
         total_tokens += responseTokens;
         for (const llm_response of response.responses) {
-            await save_response(config_id, llm_response, input_id, start_time, end_time, responseTokens / Math.max(responses.responses.length, 1));
+            await save_response(config_id, llm_response, input_id, start_time, end_time, responseTokens / Math.max(responses.length, 1));
         }
     }
     if (responses.errors && Object.keys(responses.errors).length > 0){
@@ -59,11 +61,11 @@ async function processExperiment(config_id: number, llm_spec: LLMSpec, iteration
             for (const err of responses.errors[key]) {
                 await save_error(config_id, err.message, err.getStatus() || 0, input_id, start_time, end_time);
                 tries++;
-                return {success: false, tries: tries, totalTokens: total_tokens, durationMs: Date.now() - startedAtMs, responseCount: responses.responses.length, errorCount: 1};
+                return {success: false, tries: tries, totalTokens: total_tokens, latencyMs: latency_ms, responseCount: responses.length, errorCount: 1};
             }
         }
     }
-    return {success: true, tries: tries, totalTokens: total_tokens, durationMs: Date.now() - startedAtMs, responseCount: responses.responses.length, errorCount: 0};
+    return {success: true, tries: tries, totalTokens: total_tokens, latencyMs: latency_ms, responseCount: responses.length, errorCount: 0};
 }
 
 /**

@@ -11,7 +11,7 @@ import {
 } from "../database/database";
 import { create_llm_spec, get_marker_map } from "./utils";
 import { Promptconfig, Task, WorkerTaskResult } from "./types";
-import { recordTaskCompleted, recordTotalTasks, recordTaskRetry, recordTaskStarted, recordTaskFailed } from "./runState";
+import { recordTaskCompleted, recordTotalTasks, recordTaskRetry, recordTaskStarted, recordTaskFailed, recordRequestLatency } from "./runState";
 
 
 
@@ -177,6 +177,10 @@ export class ExperimentRunner {
             this.api_keys,
             task.tries,
         ]) as WorkerTaskResult;
+
+        if (this.runId && result.latencyMs !== undefined) {
+            recordRequestLatency(this.runId, result.latencyMs);
+        }
 
         if (!result.success && result.tries <= experimentMaxRetry) {
             // Push to failed queue, organized by tries

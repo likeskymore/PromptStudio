@@ -136,7 +136,6 @@ async function run_processor(processor_id: number, experiment: Experiment){
  */
 export async function run_experiment(experiment_name: string, api_keys: string, options?: { background?: boolean }) {
     try{
-        console.log(`hit run_exp`)
         const experiment = await get_experiment_by_name(experiment_name);
         if (!experiment) {
             throw new Error(`Experiment ${experiment_name} not found`);

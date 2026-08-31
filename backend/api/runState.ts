@@ -7,9 +7,31 @@ type Listener = (state: ExperimentRunState) => void;
 const experimentRuns = new Map<string, ExperimentRunState>();
 const listeners = new Map<string, Set<Listener>>();
 const snapshotTimers = new Map<string, NodeJS.Timeout>();
+const MAX_LATENCY_SAMPLES = 10000;
 
 function now() {
   return new Date().toISOString().replace("T", " ").replace("Z", " ");
+}
+
+function percentile(values: number[], percentile: number): number {
+  if (values.length === 0) {
+    return 0;
+  }
+
+  const sorted = [...values].sort((a, b) => a - b);
+
+  const index = (percentile / 100) * (sorted.length - 1);
+
+  const lower = Math.floor(index);
+  const upper = Math.ceil(index);
+
+  if (lower === upper) {
+    return sorted[lower];
+  }
+
+  const weight = index - lower;
+
+  return sorted[lower] + (sorted[upper] - sorted[lower]) * weight;
 }
 
 function cloneState(state: ExperimentRunState): ExperimentRunState {
@@ -41,13 +63,13 @@ function notify(runId: string) {
 }
 
 function persistSnapshot(runId: string) {
-    const state = experimentRuns.get(runId);
+  const state = experimentRuns.get(runId);
 
-    if (!state) {
-        return Promise.resolve();
-    }
+  if (!state) {
+    return Promise.resolve();
+  }
 
-    return upsert_experiment_run_snapshot(state);
+  return upsert_experiment_run_snapshot(state);
 }
 
 function pushTimelineSample(state: ExperimentRunState) {
@@ -59,6 +81,11 @@ function pushTimelineSample(state: ExperimentRunState) {
     failed: state.failed,
     retries: state.retries,
     total_tokens: state.total_tokens,
+    total_latency_ms: state.total_latency_ms,
+    latency_count: state.latency_count,
+    p50_latency_ms: state.p50_latency_ms,
+    p95_latency_ms: state.p95_latency_ms,
+    p99_latency_ms: state.p99_latency_ms,
   });
 
   if (state.samples.length > 120) {
@@ -78,6 +105,7 @@ function scheduleSnapshotTimer(runId: string) {
       return;
     }
 
+    updateLatencyPercentiles(state);
     pushTimelineSample(state);
     state.updated_at = now();
     persistSnapshot(runId);
@@ -125,6 +153,12 @@ export function createExperimentRun(experiment_name: string) {
     retries: 0,
     total_tokens: 0,
     samples: [],
+    total_latency_ms: 0,
+    latency_count: 0,
+    p50_latency_ms: 0,
+    p95_latency_ms: 0,
+    p99_latency_ms: 0,
+    latency_samples: [],
   };
 
   experimentRuns.set(runId, state);
@@ -136,7 +170,6 @@ export function createExperimentRun(experiment_name: string) {
 }
 
 export function getExperimentRun(runId: string) {
-  console.log(experimentRuns);
   const state = experimentRuns.get(runId);
   return state ? cloneState(state) : undefined;
 }
@@ -165,26 +198,25 @@ export function startExperimentRun(runId: string) {
 }
 
 export async function pauseExperimentRun(runId: string) {
-    console.log(`Pausing experiment run ${runId}`);
 
-    mutateRunState(runId, (state) => {
-        state.status = "paused";
-        pushTimelineSample(state);
-    });
+  mutateRunState(runId, (state) => {
+    state.status = "paused";
+    pushTimelineSample(state);
+  });
 
-    stopSnapshotTimer(runId);
+  stopSnapshotTimer(runId);
 
-    await persistSnapshot(runId);
+  await persistSnapshot(runId);
 }
 
 export async function pauseRunningExperimentRuns() {
-    for (const [runId, state] of experimentRuns.entries()) {
-        if (state.status !== "running") {
-            continue;
-        }
-
-        await pauseExperimentRun(runId);
+  for (const [runId, state] of experimentRuns.entries()) {
+    if (state.status !== "running") {
+      continue;
     }
+
+    await pauseExperimentRun(runId);
+  }
 }
 
 export function recordTotalTasks(runId: string, count: number) {
@@ -245,4 +277,23 @@ export function failExperimentRun(runId: string, errorMessage: string) {
 
   stopSnapshotTimer(runId);
   persistSnapshot(runId);
+}
+
+export function recordRequestLatency(runId: string, latencyMs: number) {
+  mutateRunState(runId, (state) => {
+    state.total_latency_ms += latencyMs;
+    state.latency_count += 1;
+
+    state.latency_samples.push(latencyMs);
+
+    if (state.latency_samples.length > MAX_LATENCY_SAMPLES) {
+      state.latency_samples.shift();
+    }
+  });
+}
+
+function updateLatencyPercentiles(state: ExperimentRunState) {
+  state.p50_latency_ms = percentile(state.latency_samples, 50);
+  state.p95_latency_ms = percentile(state.latency_samples, 95);
+  state.p99_latency_ms = percentile(state.latency_samples, 99);
 }

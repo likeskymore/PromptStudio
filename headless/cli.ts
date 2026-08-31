@@ -8,6 +8,7 @@ import * as path from "node:path";
  * @param name The name of the experiment.
  */
 async function validateRun(name: string): Promise<boolean> {
+    console.log(`Calculating total token estimation for experiment: ${name}...`);
     console.log("Total estimate input tokens: ", await getTotalTokenCountForExperiment(name));
     const readline = require("readline").createInterface({
         input: process.stdin,

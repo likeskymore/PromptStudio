@@ -1,4 +1,4 @@
-import {Dict, LLMSpec, PromptVarsDict} from "../typing";
+import { Dict, LLMSpec, PromptVarsDict } from "../typing";
 
 export type Experiment = {
   id: number;
@@ -59,14 +59,14 @@ export type LlmEvaluator = {
   format: string;
   prompt: string;
   reason_before_scoring: boolean;
-}
+};
 
 export type MultiEvaluator = {
   node_id: number;
   name: string;
-}
+};
 
-enum Return_type{
+enum Return_type {
   string = "string",
   number = "number",
   boolean = "boolean",
@@ -76,27 +76,27 @@ export type MarkerValue = {
   id: number;
   marker_id: number;
   value: string;
-}
+};
 
 export type Input = {
   id: number;
   markers: MarkerValue[];
-}
+};
 
 export type prompttemplate = {
-  node_id : number;
+  node_id: number;
   value: string;
   name: string;
   iterations: number;
   llms: LLMSpec[];
-}
+};
 
 export type Llm = {
   id: number;
   base_model: string;
   name: string;
   model: string;
-}
+};
 
 export type Llm_params = {
   id: number;
@@ -108,13 +108,13 @@ export type Llm_params = {
   frequency_penalty?: number;
   presence_penalty?: number;
   custom_params?: Record<string, string>;
-}
+};
 
 export type Dataset = {
   node_id: number;
   name: string;
   path: string;
-}
+};
 
 export type Result = {
   id: number;
@@ -123,18 +123,18 @@ export type Result = {
   input_id: number;
   start_time: Date;
   end_time: Date;
-}
+};
 
 export type ResolvedInput = {
-    input_id: number;
-    vars: PromptVarsDict;
-};  
+  input_id: number;
+  vars: PromptVarsDict;
+};
 
-export enum NodeType{
-  'prompt_template'= 'prompt_template',
-  'processor'= 'processor',
-  'evaluator'= 'evaluator',
-  'dataset'= 'dataset',
+export enum NodeType {
+  "prompt_template" = "prompt_template",
+  "processor" = "processor",
+  "evaluator" = "evaluator",
+  "dataset" = "dataset",
 }
 
 export type Experiment_node = {
@@ -142,21 +142,21 @@ export type Experiment_node = {
   type: NodeType;
   experiment_id: number;
   name: string;
-}
+};
 
 export type Link = {
   source_node_id: number;
   target_node_id: number;
   source_var: string | null;
   target_var: string | null;
-}
+};
 
 export type ProcessorResult = {
   processor_result: string;
   result_id?: number;
   processor_id: number;
   input_id?: number;
-}
+};
 
 export type ExperimentProcessor = {
   node_id: number;
@@ -165,8 +165,7 @@ export type ExperimentProcessor = {
   format?: string;
   selected_group_vars?: string;
   name: string;
-}
-
+};
 
 export type Db_credentials = {
   host: string;
@@ -174,7 +173,7 @@ export type Db_credentials = {
   user: string;
   password: string;
   database: string;
-}
+};
 
 export type MultiEvaluatorMapping = [number, number];
 
@@ -184,7 +183,12 @@ export type JoinItem = {
   metavars?: Dict;
 };
 
-export type ExperimentRunStatus = "queued" | "running" | "paused" | "completed" | "failed";
+export type ExperimentRunStatus =
+  | "queued"
+  | "running"
+  | "paused"
+  | "completed"
+  | "failed";
 
 export type ExperimentRunSample = {
   at: string;
@@ -194,6 +198,11 @@ export type ExperimentRunSample = {
   failed: number;
   retries: number;
   total_tokens: number;
+  total_latency_ms: number;
+  latency_count: number;
+  p50_latency_ms: number;
+  p95_latency_ms: number;
+  p99_latency_ms: number;
 };
 
 export type ExperimentRunState = {
@@ -211,25 +220,31 @@ export type ExperimentRunState = {
   retries: number;
   total_tokens: number;
   last_error?: string;
+  total_latency_ms: number;
+  latency_count: number;
+  p50_latency_ms: number;
+  p95_latency_ms: number;
+  p99_latency_ms: number;
+  latency_samples: number[];
   samples: ExperimentRunSample[];
 };
 
 export type Task = {
-    config_id: number;
-    llm_spec: LLMSpec;
-    iterations: number;
-    template_value: string;
-    markersDict: PromptVarsDict;
-    max_retry: number;
-    input_id: number;
-    tries: number;
+  config_id: number;
+  llm_spec: LLMSpec;
+  iterations: number;
+  template_value: string;
+  markersDict: PromptVarsDict;
+  max_retry: number;
+  input_id: number;
+  tries: number;
 };
 
 export type WorkerTaskResult = {
-    success: boolean;
-    tries: number;
-    totalTokens?: number;
-    durationMs?: number;
-    responseCount?: number;
-    errorCount?: number;
+  success: boolean;
+  tries: number;
+  totalTokens?: number;
+  latencyMs?: number;
+  responseCount?: number;
+  errorCount?: number;
 };
