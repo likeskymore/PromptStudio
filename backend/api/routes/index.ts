@@ -2,6 +2,7 @@ import express, { Router } from 'express';
 import { ExperimentRoutes } from '../modules/experiment/experiment.route';
 import { ConfigRoutes } from '../modules/config/config.route';
 import { TokenRoutes } from '../modules/tokens/tokens.route';
+import { MonitoringRoutes } from '../modules/monitoring/monitoring.route';
 const router = express.Router();
 
 const apiRoutes: { path: string; route: Router }[] = [
@@ -16,6 +17,10 @@ const apiRoutes: { path: string; route: Router }[] = [
   {
     path: '/total_tokens',
     route: TokenRoutes,
+  },
+  {
+    path: '/monitoring',
+    route: MonitoringRoutes,
   },
 ];
 

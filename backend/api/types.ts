@@ -248,3 +248,12 @@ export type WorkerTaskResult = {
   responseCount?: number;
   errorCount?: number;
 };
+
+export interface ExperimentRunMetadata {
+  run_id: string;
+  experiment_name: string;
+  status: string;
+  started_at?: string;
+  finished_at?: string;
+  updated_at: string;
+}

@@ -311,7 +311,7 @@ CREATE TABLE Experiment_run(
     p50_latency_ms BIGINT UNSIGNED NOT NULL DEFAULT 0,
     p95_latency_ms BIGINT UNSIGNED NOT NULL DEFAULT 0,
     p99_latency_ms BIGINT UNSIGNED NOT NULL DEFAULT 0,
-    samples_json JSON,
+    samples JSON,
     CONSTRAINT PK_Experiment_run PRIMARY KEY (run_id)
 );
 

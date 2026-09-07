@@ -20,7 +20,7 @@ import {
   SimpleEvaluator,
 } from "../api/types";
 import {LLMSpec, PromptVarsDict} from "../typing";
-import type { ExperimentRunState } from "../api/types";
+import type { ExperimentRunMetadata, ExperimentRunState } from "../api/types";
 
 import * as fs from "fs";
 import {parse} from "csv-parse";
@@ -343,11 +343,14 @@ export async function get_all_experiments(connection: mysql.Connection | mysql.P
   }
 }
 
-export async function get_all_experiment_runs(connection: mysql.Connection | mysql.Pool = pool): Promise<ExperimentRunState[]>{
+export async function get_experiment_runs_metadata(connection: mysql.Connection | mysql.Pool = pool): Promise<ExperimentRunMetadata[]>{
   try{
-    const sql = 'SELECT * FROM Experiment_run';
+    const sql = `
+      SELECT run_id, experiment_name, status, started_at, finished_at, updated_at
+      FROM Experiment_run
+    `;
     const [rows] = await connection.execute(sql);
-    return rows as ExperimentRunState[];
+    return rows as ExperimentRunMetadata[];
   }
   catch (error) {
     console.error(error);
@@ -355,6 +358,18 @@ export async function get_all_experiment_runs(connection: mysql.Connection | mys
   }
 }
 
+export async function get_experiment_run_state_by_run_id(run_id: string, connection: mysql.Connection | mysql.Pool = pool): Promise<ExperimentRunState | undefined> {
+  try {
+    const sql = 'SELECT * FROM Experiment_run WHERE run_id = ?';
+    const [rows] = await connection.execute(sql, [run_id]);
+    if ((rows as any[]).length > 0) {
+      const row = (rows as ExperimentRunState[])[0];
+      return row;
+    }
+  } catch (error) {
+    console.error(error);
+  }
+}
 
 /**
  * Retrieves an LLM specification by its ID.
@@ -1158,7 +1173,7 @@ export async function upsert_experiment_run_snapshot(runState: ExperimentRunStat
         p50_latency_ms,
         p95_latency_ms,
         p99_latency_ms,
-        samples_json
+        samples
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON DUPLICATE KEY UPDATE
         experiment_name = VALUES(experiment_name),
@@ -1178,7 +1193,7 @@ export async function upsert_experiment_run_snapshot(runState: ExperimentRunStat
         p50_latency_ms = VALUES(p50_latency_ms),
         p95_latency_ms = VALUES(p95_latency_ms),
         p99_latency_ms = VALUES(p99_latency_ms),
-        samples_json = VALUES(samples_json)
+        samples = VALUES(samples)
     `;
 
     const values = [
