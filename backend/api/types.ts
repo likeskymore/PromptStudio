@@ -211,8 +211,10 @@ export type ExperimentRunState = {
   status: ExperimentRunStatus;
   created_at: string;
   started_at?: string;
+  paused_at?: string;
   finished_at?: string;
   updated_at: string;
+  total_paused_ms?: number;
   total_tasks: number;
   attempts: number;
   completed: number;

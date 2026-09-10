@@ -7,10 +7,18 @@ type Listener = (state: ExperimentRunState) => void;
 const experimentRuns = new Map<string, ExperimentRunState>();
 const listeners = new Map<string, Set<Listener>>();
 const snapshotTimers = new Map<string, NodeJS.Timeout>();
+const pauseRequests = new Set<string>();
 const MAX_LATENCY_SAMPLES = 10000;
 
 function now() {
   return new Date().toISOString().replace("T", " ").replace("Z", " ");
+}
+
+function elapsedSince(timestamp: string) {
+  const timestampMs = Date.parse(timestamp);
+  return Number.isFinite(timestampMs)
+    ? Math.max(0, Date.now() - timestampMs)
+    : 0;
 }
 
 function percentile(values: number[], percentile: number): number {
@@ -37,7 +45,12 @@ function percentile(values: number[], percentile: number): number {
 function cloneState(state: ExperimentRunState): ExperimentRunState {
   return {
     ...state,
-    samples: state.samples.map((sample) => ({ ...sample })),
+    samples: Array.isArray(state.samples)
+      ? state.samples.map((sample) => ({ ...sample }))
+      : [],
+    latency_samples: Array.isArray(state.latency_samples)
+      ? [...state.latency_samples]
+      : [],
   };
 }
 
@@ -138,6 +151,29 @@ function mutateRunState(
   notify(runId);
 }
 
+export function addExperimentRunState(runState: ExperimentRunState) {
+  const persistedState = runState as ExperimentRunState & { samples?: unknown };
+  const restoredState = {
+    ...runState,
+    samples: Array.isArray(persistedState.samples)
+      ? persistedState.samples
+      : typeof persistedState.samples === "string"
+        ? JSON.parse(persistedState.samples)
+        : [],
+    latency_samples: Array.isArray(runState.latency_samples)
+      ? runState.latency_samples
+      : [],
+    total_paused_ms: runState.total_paused_ms ?? 0,
+  } as ExperimentRunState;
+
+  experimentRuns.set(restoredState.run_id, restoredState);
+  getListeners(restoredState.run_id);
+  if (restoredState.status === "running") {
+    scheduleSnapshotTimer(restoredState.run_id);
+  }
+  notify(restoredState.run_id);
+}
+
 export function createExperimentRun(experiment_name: string) {
   const runId = randomUUID();
   const state: ExperimentRunState = {
@@ -155,6 +191,7 @@ export function createExperimentRun(experiment_name: string) {
     samples: [],
     total_latency_ms: 0,
     latency_count: 0,
+    total_paused_ms: 0,
     p50_latency_ms: 0,
     p95_latency_ms: 0,
     p99_latency_ms: 0,
@@ -189,19 +226,34 @@ export function subscribeExperimentRun(runId: string, listener: Listener) {
 }
 
 export function startExperimentRun(runId: string) {
+  pauseRequests.delete(runId);
   mutateRunState(runId, (state) => {
+    if (state.status === "paused" && state.paused_at) {
+      state.total_paused_ms =
+        (state.total_paused_ms ?? 0) + elapsedSince(state.paused_at);
+      state.paused_at = undefined;
+    }
     state.status = "running";
     state.started_at = state.started_at ?? now();
+    state.finished_at = undefined;
   });
 
   scheduleSnapshotTimer(runId);
 }
 
 export async function pauseExperimentRun(runId: string) {
+  if (!experimentRuns.has(runId)) {
+    throw new Error(`Run ${runId} not found`);
+  }
+
+  pauseRequests.add(runId);
 
   mutateRunState(runId, (state) => {
-    state.status = "paused";
-    pushTimelineSample(state);
+    if (state.status === "running" || state.status === "queued") {
+      state.status = "paused";
+      state.paused_at = now();
+      pushTimelineSample(state);
+    }
   });
 
   stopSnapshotTimer(runId);
@@ -221,7 +273,9 @@ export async function pauseRunningExperimentRuns() {
 
 export function recordTotalTasks(runId: string, count: number) {
   mutateRunState(runId, (state) => {
-    state.total_tasks = count;
+    if (state.total_tasks === 0) {
+      state.total_tasks = count;
+    }
   });
 }
 
@@ -258,6 +312,11 @@ export function recordTaskFailed(runId: string, errorMessage?: string) {
 
 export function completeExperimentRun(runId: string) {
   mutateRunState(runId, (state) => {
+    if (pauseRequests.has(runId)) {
+      state.status = "paused";
+      pushTimelineSample(state);
+      return;
+    }
     state.status = "completed";
     state.finished_at = now();
     pushTimelineSample(state);
@@ -277,6 +336,10 @@ export function failExperimentRun(runId: string, errorMessage: string) {
 
   stopSnapshotTimer(runId);
   persistSnapshot(runId);
+}
+
+export function isExperimentRunPauseRequested(runId: string) {
+  return pauseRequests.has(runId);
 }
 
 export function recordRequestLatency(runId: string, latencyMs: number) {

@@ -2,15 +2,16 @@ import {
     add_rows_to_dataset,
     get_configs_by_template_id,
     get_experiment_by_name,
+    get_experiment_run_state_by_run_id,
     get_links_by_experiment,
     get_nodes_by_experiment,
     save_dataset_inputs, update_final_dataset,
 } from "../database/database";
-import {Experiment, Experiment_node, Link, NodeType} from "./types";
+import {Experiment, Experiment_node, ExperimentRunState, Link, NodeType} from "./types";
 import {resolve_inputs} from "./configHandler";
 import {ExperimentRunner} from "./ExperimentRunner";
 import {EvaluatorRunner} from "./EvaluatorRunner";
-import { completeExperimentRun, createExperimentRun, failExperimentRun, startExperimentRun } from "./runState";
+import { addExperimentRunState, completeExperimentRun, createExperimentRun, failExperimentRun, isExperimentRunPauseRequested, startExperimentRun } from "./runState";
 
 
 async function execute_experiment(experiment: Experiment, api_keys: string, runState: { run_id: string }) {
@@ -20,6 +21,9 @@ async function execute_experiment(experiment: Experiment, api_keys: string, runS
     // Sort nodes topologically to ensure dependencies are resolved
     const sorted_nodes = topologicalSort(nodes, links);
     for (const node of sorted_nodes){
+        if (isExperimentRunPauseRequested(runState.run_id)) {
+            return;
+        }
         switch (node.type) {
             case NodeType.dataset:
                 // Nothing to do here
@@ -134,13 +138,26 @@ async function run_processor(processor_id: number, experiment: Experiment){
  * @param experiment_name The name of the experiment to run.
  * @param api_keys A dictionary of API keys to use for the experiment.
  */
-export async function run_experiment(experiment_name: string, api_keys: string, options?: { background?: boolean }) {
+export async function run_experiment(experiment_name: string, api_keys: string, options?: { background?: boolean; resumeRunId?: string }) {
     try{
         const experiment = await get_experiment_by_name(experiment_name);
         if (!experiment) {
             throw new Error(`Experiment ${experiment_name} not found`);
         }
-        const runState = createExperimentRun(experiment_name);
+        let runState: ExperimentRunState;
+        if (options?.resumeRunId) {
+            const persistedRun = await get_experiment_run_state_by_run_id(options.resumeRunId);
+            if (!persistedRun || persistedRun.experiment_name !== experiment_name) {
+                throw new Error(`Run ${options.resumeRunId} not found for experiment ${experiment_name}`);
+            }
+            if (persistedRun.status !== "paused") {
+                throw new Error(`Run ${options.resumeRunId} is not paused`);
+            }
+            runState = persistedRun;
+            addExperimentRunState(runState);
+        } else {
+            runState = createExperimentRun(experiment_name);
+        }
         startExperimentRun(runState.run_id);
 
         const runPromise = execute_experiment(experiment, api_keys, runState);

@@ -11,7 +11,7 @@ import {
 } from "../database/database";
 import { create_llm_spec, get_marker_map } from "./utils";
 import { Promptconfig, Task, WorkerTaskResult } from "./types";
-import { recordTaskCompleted, recordTotalTasks, recordTaskRetry, recordTaskStarted, recordTaskFailed, recordRequestLatency } from "./runState";
+import { isExperimentRunPauseRequested, recordTaskCompleted, recordTotalTasks, recordTaskRetry, recordTaskStarted, recordTaskFailed, recordRequestLatency } from "./runState";
 
 
 
@@ -69,6 +69,9 @@ export class ExperimentRunner {
         const experimentMaxRetry = experiment.max_retry ?? 0;
         // Create a task for each input inside each configuration for a prompt_template node
         for (const config of this.configs) {
+            if (this.runId && isExperimentRunPauseRequested(this.runId)) {
+                break;
+            }
             const updatedConfig = await get_config(config.id);
             const llm = await get_llm_by_id(updatedConfig.LLM_id);
             const llm_param = await get_llm_param_by_id(updatedConfig.LLM_param_id);
@@ -86,6 +89,10 @@ export class ExperimentRunner {
 
             // Create a task for each input in the final dataset
             while (input_id !== last_id) {
+                if (this.runId && isExperimentRunPauseRequested(this.runId)) {
+                    this.isProducing = false;
+                    return;
+                }
                 const input = await get_next_input(updatedConfig.final_dataset_id, input_id);
                 if (!input) break;
 
@@ -113,6 +120,10 @@ export class ExperimentRunner {
 
                 // maximum queue size check
                 while (this.taskQueue.length > maximumQueueSize) {
+                    if (this.runId && isExperimentRunPauseRequested(this.runId)) {
+                        this.isProducing = false;
+                        return;
+                    }
                     await new Promise((res) => setTimeout(res, 50));
                 }
             }
@@ -128,7 +139,10 @@ export class ExperimentRunner {
     private async taskRunner() {
         const experiment = await get_experiment_by_name(this.experiment_name);
         const experimentMaxRetry = experiment.max_retry ?? 0;
-        while (this.isProducing || this.taskQueue.length > 0 || this.failedQueue.size > 0) {
+        while (
+            (!this.runId || !isExperimentRunPauseRequested(this.runId)) &&
+            (this.isProducing || this.taskQueue.length > 0 || this.failedQueue.size > 0)
+        ) {
             let task: Task | undefined;
 
             // Prioritize main queue

@@ -1,11 +1,13 @@
 import express from "express";
 import {
-    get_experiment_run_state_by_run_id,
+  get_experiment_run_state_by_run_id,
   get_experiment_runs_metadata,
 } from "../../../database/database";
 import { ResponseCode, sendResponse } from "../../common/responseHandler";
-import { getExperimentRun, subscribeExperimentRun } from "../../runState";
-
+import {
+  getExperimentRun,
+  subscribeExperimentRun,
+} from "../../runState";
 
 const router = express.Router();
 
@@ -105,20 +107,18 @@ router.get("/states", async (req, res) => {
   }
 });
 
-router.get ("state/:runId", (req, res) => {
+router.get("/state/:runId", async (req, res) => {
   const { runId } = req.params;
-  const snapshot = get_experiment_run_state_by_run_id(runId);
+  const snapshot = await get_experiment_run_state_by_run_id(runId);
 
   if (!snapshot) {
     return res.status(404).json({ error: `Run ${runId} not found` });
   }
 
   return sendResponse(res, {
-    body: {
-      snapshot,
-    },
+    body: snapshot,
   });
-}
-);
+});
+
 
 export const MonitoringRoutes = router;

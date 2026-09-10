@@ -27,6 +27,7 @@ import {parse} from "csv-parse";
 
 import * as crypto from "crypto";
 import * as path from "node:path";
+import { run } from "node:test";
 
 export const credentialsPath = path.join(__dirname, '../../credentials.json');
 const parsed = JSON.parse(fs.readFileSync(credentialsPath, "utf-8"));
@@ -362,6 +363,19 @@ export async function get_experiment_run_state_by_run_id(run_id: string, connect
   try {
     const sql = 'SELECT * FROM Experiment_run WHERE run_id = ?';
     const [rows] = await connection.execute(sql, [run_id]);
+    if ((rows as any[]).length > 0) {
+      const row = (rows as ExperimentRunState[])[0];
+      return row;
+    }
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+export async function get_experiment_run_state_by_experiment_name(experiment_name: string, connection: mysql.Connection | mysql.Pool = pool): Promise<ExperimentRunState | undefined> {
+  try {
+    const sql = 'SELECT * FROM Experiment_run WHERE experiment_name = ?';
+    const [rows] = await connection.execute(sql, [experiment_name]);
     if ((rows as any[]).length > 0) {
       const row = (rows as ExperimentRunState[])[0];
       return row;
@@ -1159,8 +1173,10 @@ export async function upsert_experiment_run_snapshot(runState: ExperimentRunStat
         status,
         created_at,
         started_at,
+        paused_at,
         finished_at,
         updated_at,
+        total_paused_ms,
         total_tasks,
         attempts,
         completed,
@@ -1174,13 +1190,15 @@ export async function upsert_experiment_run_snapshot(runState: ExperimentRunStat
         p95_latency_ms,
         p99_latency_ms,
         samples
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON DUPLICATE KEY UPDATE
         experiment_name = VALUES(experiment_name),
         status = VALUES(status),
         started_at = VALUES(started_at),
         finished_at = VALUES(finished_at),
+        paused_at = VALUES(paused_at),
         updated_at = VALUES(updated_at),
+        total_paused_ms = VALUES(total_paused_ms),
         total_tasks = VALUES(total_tasks),
         attempts = VALUES(attempts),
         completed = VALUES(completed),
@@ -1202,8 +1220,10 @@ export async function upsert_experiment_run_snapshot(runState: ExperimentRunStat
       runState.status,
       runState.created_at,
       runState.started_at ?? null,
+      runState.paused_at ?? null,
       runState.finished_at ?? null,
       runState.updated_at,
+      runState.total_paused_ms ?? 0,
       runState.total_tasks,
       runState.attempts,
       runState.completed,
