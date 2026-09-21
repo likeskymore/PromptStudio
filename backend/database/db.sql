@@ -23,7 +23,7 @@ CREATE TABLE Node(
     experiment_id INT UNSIGNED NOT NULL,
     name VARCHAR(255) NOT NULL,
     CONSTRAINT PK_node PRIMARY KEY (id),
-    CONSTRAINT FK_experiment_id_node FOREIGN KEY (experiment_id) REFERENCES Experiment(id),
+    CONSTRAINT FK_experiment_id_node FOREIGN KEY (experiment_id) REFERENCES Experiment(id) ON DELETE CASCADE,
     CONSTRAINT unique_node_name UNIQUE (experiment_id, name)
 );
 
@@ -33,8 +33,8 @@ CREATE TABLE Link(
     source_var VARCHAR(255),
     target_var VARCHAR(255),
     CONSTRAINT PK_Link PRIMARY KEY (source_node_id, target_node_id, target_var),
-    CONSTRAINT FK_source_node_id FOREIGN KEY (source_node_id) REFERENCES Node(id),
-    CONSTRAINT FK_target_node_id FOREIGN KEY (target_node_id) REFERENCES Node(id),
+    CONSTRAINT FK_source_node_id FOREIGN KEY (source_node_id) REFERENCES Node(id) ON DELETE CASCADE,
+    CONSTRAINT FK_target_node_id FOREIGN KEY (target_node_id) REFERENCES Node(id) ON DELETE CASCADE,
     CONSTRAINT CHK_same_node CHECK (source_node_id != target_node_id)
 );
 
@@ -71,7 +71,7 @@ CREATE TABLE Llm_custom_param(
     value VARCHAR(255) NOT NULL,
     llm_param_id int UNSIGNED NOT NULL,
     CONSTRAINT PK_Llm_custom_param PRIMARY KEY (name, llm_param_id),
-    CONSTRAINT FK_llm_param FOREIGN KEY (llm_param_id) REFERENCES Llm_param(id)
+    CONSTRAINT FK_llm_param FOREIGN KEY (llm_param_id) REFERENCES Llm_param(id) ON DELETE CASCADE
 );
 
 CREATE TABLE PromptTemplate(
@@ -80,7 +80,7 @@ CREATE TABLE PromptTemplate(
     name varchar(255) NOT NULL,
     iterations int NOT NULL DEFAULT 1,
     CONSTRAINT PK_Prompt_Template PRIMARY KEY (node_id),
-    CONSTRAINT FK_node_id_prompt_template FOREIGN KEY (node_id) REFERENCES Node(id),
+    CONSTRAINT FK_node_id_prompt_template FOREIGN KEY (node_id) REFERENCES Node(id) ON DELETE CASCADE,
     CHECK ( iterations > 0 )
 );
 
@@ -90,7 +90,7 @@ CREATE TABLE Dataset(
     node_id INT UNSIGNED NOT NULL UNIQUE,
     name VARCHAR(255) NOT NULL,
     CONSTRAINT PK_Dataset PRIMARY KEY (node_id),
-    CONSTRAINT FK_node_id_dataset FOREIGN KEY (node_id) REFERENCES Node(id)
+    CONSTRAINT FK_node_id_dataset FOREIGN KEY (node_id) REFERENCES Node(id) ON DELETE CASCADE
 );
 
 CREATE TABLE Marker(
@@ -98,16 +98,19 @@ CREATE TABLE Marker(
     marker varchar(255) NOT NULL,
     dataset_id INT UNSIGNED NOT NULL,
     CONSTRAINT PK_Marker PRIMARY KEY (id),
-    CONSTRAINT FK_dataset_id_marker FOREIGN KEY (dataset_id) REFERENCES Dataset(node_id)
+    CONSTRAINT FK_dataset_id_marker FOREIGN KEY (dataset_id) REFERENCES Dataset(node_id) ON DELETE CASCADE
 );
 
 CREATE TABLE Marker_value(
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     marker_id INT UNSIGNED NOT NULL,
     value TEXT NOT NULL,
-    hash CHAR(64) GENERATED ALWAYS AS (SHA2(CONCAT(marker_id, value), 256)) STORED,
+    hash CHAR(64) NOT NULL,
+
     CONSTRAINT PK_Marker_value PRIMARY KEY (id),
-    CONSTRAINT FK_marker_id FOREIGN KEY (marker_id) REFERENCES Marker(id),
+    CONSTRAINT FK_marker_id
+        FOREIGN KEY (marker_id) REFERENCES Marker(id)
+        ON DELETE CASCADE,
     CONSTRAINT unique_marker_hash UNIQUE(hash)
 );
 
@@ -118,7 +121,7 @@ CREATE TABLE Evaluator(
     name VARCHAR(255) NOT NULL,
     return_type ENUM('string', 'number', 'boolean') NOT NULL DEFAULT 'string',
     CONSTRAINT PK_Evaluator PRIMARY KEY (node_id),
-    CONSTRAINT FK_node_id_evaluator FOREIGN KEY (node_id) REFERENCES Node(id)
+    CONSTRAINT FK_node_id_evaluator FOREIGN KEY (node_id) REFERENCES Node(id) ON DELETE CASCADE
 );
 
 CREATE TABLE Llm_evaluator(
@@ -130,7 +133,7 @@ CREATE TABLE Llm_evaluator(
     prompt TEXT NOT NULL,
     reason_before_scoring boolean NOT NULL,
     CONSTRAINT PK_llm_evaluator PRIMARY KEY (node_id),
-    CONSTRAINT FK_llm_evaluator_node_id foreign key (node_id) references Node(id),
+    CONSTRAINT FK_llm_evaluator_node_id foreign key (node_id) references Node(id) ON DELETE CASCADE,
 	CONSTRAINT FK_llm_evaluator_llm_id foreign key (llm_id) references Llm(id),
     CONSTRAINT FK_llm_evaluator_param_id FOREIGN KEY (llm_param_id) REFERENCES Llm_param(id)
 );
@@ -140,8 +143,8 @@ CREATE TABLE Multi_evaluator (
     evaluator_id INT UNSIGNED NOT NULL,
     child_evaluator_id INT UNSIGNED NOT NULL,
     CONSTRAINT PK_mapping PRIMARY KEY (evaluator_id,child_evaluator_id),
-    CONSTRAINT FK_multi_evaluator_id FOREIGN KEY (evaluator_id) REFERENCES Evaluator(node_id),
-    CONSTRAINT FK_child_evaluator_id FOREIGN KEY (child_evaluator_id) REFERENCES Evaluator(node_id)
+    CONSTRAINT FK_multi_evaluator_id FOREIGN KEY (evaluator_id) REFERENCES Evaluator(node_id) ON DELETE CASCADE,
+    CONSTRAINT FK_child_evaluator_id FOREIGN KEY (child_evaluator_id) REFERENCES Evaluator(node_id) ON DELETE CASCADE
 );
 
 CREATE TABLE Simple_evaluator (
@@ -151,7 +154,7 @@ CREATE TABLE Simple_evaluator (
     var_type TEXT,
     var_selected boolean,
     CONSTRAINT PK_simple_evaluator PRIMARY KEY (node_id),
-    CONSTRAINT FK_simple_evaluator_node_id foreign key (node_id) references Node(id)
+    CONSTRAINT FK_simple_evaluator_node_id foreign key (node_id) references Node(id) ON DELETE CASCADE
 );
 
 CREATE INDEX idx_dataset_name ON Dataset(name);
@@ -164,12 +167,12 @@ CREATE TABLE PromptConfig(
     prompt_template_id INT UNSIGNED NOT NULL,
     final_dataset_id INT UNSIGNED,
     CONSTRAINT PK_PromptConfig PRIMARY KEY (id),
-    CONSTRAINT FK_experiment_id FOREIGN KEY (experiment_id) REFERENCES Experiment(id),
+    CONSTRAINT FK_experiment_id FOREIGN KEY (experiment_id) REFERENCES Experiment(id) ON DELETE CASCADE,
     CONSTRAINT FK_LLM_id FOREIGN KEY (LLM_id) REFERENCES Llm(id),
     CONSTRAINT FK_LLM_param_id FOREIGN KEY (LLM_param_id) REFERENCES Llm_param(id),
-    CONSTRAINT FK_Prompt_template_id FOREIGN KEY (prompt_template_id) REFERENCES PromptTemplate(node_id),
+    CONSTRAINT FK_Prompt_template_id FOREIGN KEY (prompt_template_id) REFERENCES PromptTemplate(node_id) ON DELETE CASCADE,
     CONSTRAINT unique_experiment_llm_llm_param_prompt UNIQUE (experiment_id, LLM_id, LLM_param_id, prompt_template_id, final_dataset_id),
-    CONSTRAINT FK_dataset_id FOREIGN KEY (final_dataset_id) REFERENCES Dataset(node_id)
+    CONSTRAINT FK_dataset_id FOREIGN KEY (final_dataset_id) REFERENCES Dataset(node_id) ON DELETE CASCADE
 );
 
 CREATE TABLE Data_Input(
@@ -177,7 +180,7 @@ CREATE TABLE Data_Input(
     dataset_id INT UNSIGNED NOT NULL,
     oracle TEXT,
     CONSTRAINT PK_Input PRIMARY KEY (id),
-    CONSTRAINT FK_dataset_id_input FOREIGN KEY (dataset_id) REFERENCES Dataset(node_id)
+    CONSTRAINT FK_dataset_id_input FOREIGN KEY (dataset_id) REFERENCES Dataset(node_id) ON DELETE CASCADE
 );
 
 CREATE TABLE Resolved_input(
@@ -185,15 +188,15 @@ CREATE TABLE Resolved_input(
     source_input_id INT UNSIGNED NOT NULL,
     value TEXT,
     CONSTRAINT PK_resolved_input PRIMARY KEY (id),
-    CONSTRAINT PK_input_id_resolved_input FOREIGN KEY (source_input_id) REFERENCES Data_Input(id)
+    CONSTRAINT PK_input_id_resolved_input FOREIGN KEY (source_input_id) REFERENCES Data_Input(id) ON DELETE CASCADE
 );
 
 CREATE TABLE Input_marker(
     input_id INT UNSIGNED NOT NULL,
     marker_values_id INT UNSIGNED NOT NULL,
     CONSTRAINT PK_Inputs_markers PRIMARY KEY (input_id, marker_values_id),
-    CONSTRAINT FK_input_id FOREIGN KEY (input_id) REFERENCES Data_Input(id),
-    CONSTRAINT FK_marker_id_input FOREIGN KEY (marker_values_id) REFERENCES Marker_value(id)
+    CONSTRAINT FK_input_id FOREIGN KEY (input_id) REFERENCES Data_Input(id) ON DELETE CASCADE,
+    CONSTRAINT FK_marker_id_input FOREIGN KEY (marker_values_id) REFERENCES Marker_value(id) ON DELETE CASCADE
 );
 
 CREATE TABLE Result(
@@ -205,8 +208,8 @@ CREATE TABLE Result(
     end_time TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
     total_tokens INT UNSIGNED,
     CONSTRAINT PK_Result PRIMARY KEY (id),
-    CONSTRAINT FK_config_id FOREIGN KEY (config_id) REFERENCES PromptConfig(id),
-    CONSTRAINT FK_input_id_result FOREIGN KEY (input_id) REFERENCES Data_Input(id)
+    CONSTRAINT FK_config_id FOREIGN KEY (config_id) REFERENCES PromptConfig(id) ON DELETE CASCADE,
+    CONSTRAINT FK_input_id_result FOREIGN KEY (input_id) REFERENCES Data_Input(id) ON DELETE CASCADE
 );
 
 CREATE TABLE Error(
@@ -218,8 +221,8 @@ CREATE TABLE Error(
     start_time TIMESTAMP(6) NOT NULL,
     end_time TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
     CONSTRAINT PK_Error PRIMARY KEY (id),
-    CONSTRAINT FK_config_id_error FOREIGN KEY (config_id) REFERENCES PromptConfig(id),
-    CONSTRAINT FK_input_id_error FOREIGN KEY (input_id) REFERENCES Data_Input(id)
+    CONSTRAINT FK_config_id_error FOREIGN KEY (config_id) REFERENCES PromptConfig(id) ON DELETE CASCADE,
+    CONSTRAINT FK_input_id_error FOREIGN KEY (input_id) REFERENCES Data_Input(id) ON DELETE CASCADE
 );
 
 CREATE TABLE Processor(
@@ -230,7 +233,7 @@ CREATE TABLE Processor(
     selected_group_vars TEXT,
     name VARCHAR(255) NOT NULL,
     CONSTRAINT PK_processor PRIMARY KEY (node_id),
-    CONSTRAINT FK_node_id_processor FOREIGN KEY (node_id) REFERENCES Node(id)
+    CONSTRAINT FK_node_id_processor FOREIGN KEY (node_id) REFERENCES Node(id) ON DELETE CASCADE
 );
 
 CREATE TABLE Error_evaluator(
@@ -240,10 +243,10 @@ CREATE TABLE Error_evaluator(
     result_id INT UNSIGNED,
     input_id INT UNSIGNED,
     timestamp TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-    CONSTRAINT FK_input_id_evaluator_error FOREIGN KEY (input_id) REFERENCES Data_Input(id),
+    CONSTRAINT FK_input_id_evaluator_error FOREIGN KEY (input_id) REFERENCES Data_Input(id) ON DELETE CASCADE,
     CONSTRAINT PK_Error_evaluator PRIMARY KEY (id),
-    CONSTRAINT FK_evaluator_id_error_eval FOREIGN KEY (evaluator_id) REFERENCES Evaluator(node_id),
-    CONSTRAINT FK_result_id_error_eval FOREIGN KEY (result_id) REFERENCES Result(id)
+    CONSTRAINT FK_evaluator_id_error_eval FOREIGN KEY (evaluator_id) REFERENCES Evaluator(node_id) ON DELETE CASCADE,
+    CONSTRAINT FK_result_id_error_eval FOREIGN KEY (result_id) REFERENCES Result(id) ON DELETE CASCADE
 );
 
 CREATE TABLE EvaluationsResult(
@@ -253,9 +256,9 @@ CREATE TABLE EvaluationsResult(
     input_id INT UNSIGNED,
     evaluator_id INT UNSIGNED NOT NULL,
     CONSTRAINT PK_Evaluation_Result PRIMARY KEY (id),
-    CONSTRAINT FK_result_id_eval FOREIGN KEY (result_id) REFERENCES Result(id),
-    CONSTRAINT FK_input_id_evaluator FOREIGN KEY (input_id) REFERENCES Data_Input(id),
-    CONSTRAINT FK_evaluator_id FOREIGN KEY (evaluator_id) REFERENCES Evaluator(node_id)
+    CONSTRAINT FK_result_id_eval FOREIGN KEY (result_id) REFERENCES Result(id) ON DELETE CASCADE,
+    CONSTRAINT FK_input_id_evaluator FOREIGN KEY (input_id) REFERENCES Data_Input(id) ON DELETE CASCADE,
+    CONSTRAINT FK_evaluator_id FOREIGN KEY (evaluator_id) REFERENCES Evaluator(node_id) ON DELETE CASCADE
 );
 
 CREATE TABLE ProcessorResult(
@@ -268,10 +271,10 @@ CREATE TABLE ProcessorResult(
     CONSTRAINT PK_Processor_Result PRIMARY KEY (id),
     CONSTRAINT Unique_Processor_Result UNIQUE (result_id, processor_id),
     CONSTRAINT Unique_Processor_Resolved_Input UNIQUE (processor_id, resolved_input_id),
-    CONSTRAINT FK_result_id_processor FOREIGN KEY (result_id) REFERENCES Result(id),
-    CONSTRAINT FK_processor_id FOREIGN KEY (processor_id) REFERENCES Processor(node_id),
-    CONSTRAINT FK_input_id_processor FOREIGN KEY (input_id) REFERENCES Data_Input(id),
-    CONSTRAINT FK_resolved_input_id_processor FOREIGN KEY (resolved_input_id) REFERENCES Resolved_input(id),
+    CONSTRAINT FK_result_id_processor FOREIGN KEY (result_id) REFERENCES Result(id) ON DELETE CASCADE,
+    CONSTRAINT FK_processor_id FOREIGN KEY (processor_id) REFERENCES Processor(node_id) ON DELETE CASCADE,
+    CONSTRAINT FK_input_id_processor FOREIGN KEY (input_id) REFERENCES Data_Input(id) ON DELETE CASCADE,
+    CONSTRAINT FK_resolved_input_id_processor FOREIGN KEY (resolved_input_id) REFERENCES Resolved_input(id) ON DELETE CASCADE,
     CONSTRAINT CHECK (result_id is NOT NULL OR input_id is NOT NULL)
 );
 
@@ -285,14 +288,16 @@ CREATE TABLE Processor_error(
     resolved_input_id INT UNSIGNED,
     timestamp TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
     CONSTRAINT PK_Processor_Error PRIMARY KEY (id),
-    CONSTRAINT FK_resolved_input_id_processor_error FOREIGN KEY (resolved_input_id) REFERENCES Resolved_input(id),
-    CONSTRAINT FK_processor_id_error FOREIGN KEY (processor_id) REFERENCES Processor(node_id),
-    CONSTRAINT FK_result_id_processor_error FOREIGN KEY (result_id) REFERENCES Result(id),
+    CONSTRAINT FK_resolved_input_id_processor_error FOREIGN KEY (resolved_input_id) REFERENCES Resolved_input(id) ON DELETE CASCADE,
+    CONSTRAINT FK_processor_id_error FOREIGN KEY (processor_id) REFERENCES Processor(node_id) ON DELETE CASCADE,
+    CONSTRAINT FK_result_id_processor_error FOREIGN KEY (result_id) REFERENCES Result(id) ON DELETE CASCADE,
+    CONSTRAINT FK_input_id_processor_error FOREIGN KEY (input_id) REFERENCES Data_Input(id) ON DELETE CASCADE,
     CONSTRAINT CHECK (result_id is NOT NULL OR input_id is NOT NULL)
 );
 
 CREATE TABLE Experiment_run(
     run_id CHAR(36) NOT NULL,
+    experiment_id INT UNSIGNED NOT NULL,
     experiment_name VARCHAR(255) NOT NULL,
     status ENUM('queued', 'running', 'paused', 'completed', 'failed') NOT NULL,
     created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
@@ -314,7 +319,8 @@ CREATE TABLE Experiment_run(
     p95_latency_ms BIGINT UNSIGNED NOT NULL DEFAULT 0,
     p99_latency_ms BIGINT UNSIGNED NOT NULL DEFAULT 0,
     samples JSON,
-    CONSTRAINT PK_Experiment_run PRIMARY KEY (run_id)
+    CONSTRAINT PK_Experiment_run PRIMARY KEY (run_id),
+    CONSTRAINT FK_experiment_id_run FOREIGN KEY (experiment_id) REFERENCES Experiment(id) ON DELETE CASCADE
 );
 
 

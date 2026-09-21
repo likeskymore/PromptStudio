@@ -156,7 +156,7 @@ export async function run_experiment(experiment_name: string, api_keys: string, 
             runState = persistedRun;
             addExperimentRunState(runState);
         } else {
-            runState = createExperimentRun(experiment_name);
+            runState = createExperimentRun(experiment.id, experiment_name);
         }
         startExperimentRun(runState.run_id);
 

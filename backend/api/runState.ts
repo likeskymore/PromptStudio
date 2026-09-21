@@ -174,9 +174,10 @@ export function addExperimentRunState(runState: ExperimentRunState) {
   notify(restoredState.run_id);
 }
 
-export function createExperimentRun(experiment_name: string) {
+export function createExperimentRun(experiment_id: number, experiment_name: string) {
   const runId = randomUUID();
   const state: ExperimentRunState = {
+    experiment_id: experiment_id,
     run_id: runId,
     experiment_name,
     status: "queued",

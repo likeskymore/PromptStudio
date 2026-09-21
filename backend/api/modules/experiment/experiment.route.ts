@@ -3,9 +3,10 @@ import * as fs from "fs";
 import { run_experiment } from "../../runner";
 import {
   credentialsPath,
-  get_all_experiments,
+  delete_experiment_by_id,
+  get_all_experiment_names_and_ids,
   get_experiment_run_state_by_run_id,
-  get_llm_models_of_experiment_by_experiment_name,
+  get_llm_models_of_experiment_by_experiment_id,
 } from "../../../database/database";
 import { ResponseCode, sendResponse } from "../../common/responseHandler";
 import { pauseExperimentRun } from "../../runState";
@@ -41,7 +42,7 @@ router.get("/run/:name", async (req, res) => {
 
 router.get("/", async (req, res) => {
   try {
-    const experiments = await get_all_experiments();
+    const experiments = await get_all_experiment_names_and_ids();
 
     return sendResponse(res, {
       body: {
@@ -59,11 +60,12 @@ router.get("/", async (req, res) => {
   }
 });
 
-router.get("/:experiment_name/models", async (req, res) => {
+router.get("/:experiment_id/models", async (req, res) => {
   try {
-    const experiment_name = req.params.experiment_name;
-    const models =
-      await get_llm_models_of_experiment_by_experiment_name(experiment_name);
+    const experiment_id = req.params.experiment_id;
+    const models = await get_llm_models_of_experiment_by_experiment_id(
+      parseInt(experiment_id, 10),
+    );
 
     return sendResponse(res, {
       body: {
@@ -134,6 +136,41 @@ router.post("/run/:runId/resume", async (req, res) => {
       responseCode: ResponseCode.ERROR,
       body: {
         error: error instanceof Error ? error.message : "Unable to resume run",
+      },
+    });
+  }
+});
+
+router.delete("/:experiment_id", async (req, res) => {
+  try {
+    const experiment_id = parseInt(req.params.experiment_id, 10);
+    if (isNaN(experiment_id)) {
+      return sendResponse(res, {
+        statusCode: 400,
+        responseCode: ResponseCode.ERROR,
+        body: { message: "Invalid experiment ID" },
+      });
+    }
+    await delete_experiment_by_id(experiment_id);
+    return sendResponse(res, {
+      body: {
+        message: `Experiment ${experiment_id} deleted successfully.`,
+      },
+    });
+  } catch (error) {
+    if (error instanceof Error && error.name === "ExperimentDeletionConflict") {
+      return sendResponse(res, {
+        statusCode: 409,
+        responseCode: ResponseCode.ERROR,
+        body: { message: error.message },
+      });
+    }
+    console.error(error);
+    return sendResponse(res, {
+      statusCode: 500,
+      responseCode: ResponseCode.ERROR,
+      body: {
+        message: error instanceof Error ? error.message : "Internal Server Error",
       },
     });
   }

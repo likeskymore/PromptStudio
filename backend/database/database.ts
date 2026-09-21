@@ -75,7 +75,7 @@ export async function save_dataset(
     const sql_input = 'INSERT INTO Data_Input(dataset_id) VALUES (?)';
     const sql_input_marker = 'INSERT INTO Input_marker(input_id, marker_values_id) VALUES (?, ?)';
     const sql_marker = 'INSERT INTO Marker(marker, dataset_id) VALUES (?, ?)';
-    const sql_marker_value = 'INSERT INTO Marker_value(marker_id, value) VALUES (?, ?)';
+    const sql_marker_value = 'INSERT INTO Marker_value(marker_id, value, hash) VALUES (?, ?, ?)';
     const sql_oracle = 'UPDATE Data_Input SET oracle = ? WHERE id = ?';
 
     const markers_id: Record<string, number> = {};
@@ -120,7 +120,7 @@ export async function save_dataset(
 
         let marker_value_id: number;
         if ((existing as any[]).length === 0) {
-          const [resVal] = await connection.execute(sql_marker_value, [marker_id, value]);
+          const [resVal] = await connection.execute(sql_marker_value, [marker_id, value, hash]);
           marker_value_id = (resVal as any).insertId;
         } else {
           marker_value_id = (existing as any)[0].id;
@@ -332,9 +332,9 @@ export async function get_experiment_by_name(experiment_name: string, connection
   }
 }
 
-export async function get_all_experiments(connection: mysql.Connection | mysql.Pool = pool): Promise<Experiment[]>{
+export async function get_all_experiment_names_and_ids(connection: mysql.Connection | mysql.Pool = pool): Promise<Experiment[]>{
   try{
-    const sql = 'SELECT * FROM Experiment';
+    const sql = 'SELECT title, id FROM Experiment';
     const [rows] = await connection.execute(sql);
     return rows as Experiment[];
   }
@@ -926,7 +926,7 @@ export async function add_rows_to_dataset(node_id: number, inputs: PromptVarsDic
       const value_result = await connection.execute('SELECT id FROM Marker_value WHERE marker_id = ? AND hash = ?', [marker_id, hash]);
       let marker_value_id: number;
       if ((value_result[0] as any[]).length === 0) {
-        const insertValue = await connection.execute('INSERT INTO Marker_value (marker_id, value) VALUES (?, ?)', [marker_id, value]);
+        const insertValue = await connection.execute('INSERT INTO Marker_value (marker_id, value, hash) VALUES (?, ?, ?)', [marker_id, value, hash]);
         marker_value_id = (insertValue[0] as any).insertId;
       } else {
         marker_value_id = (value_result[0] as any[])[0].id;
@@ -1170,6 +1170,7 @@ export async function upsert_experiment_run_snapshot(runState: ExperimentRunStat
       INSERT INTO Experiment_run (
         run_id,
         experiment_name,
+        experiment_id,
         status,
         created_at,
         started_at,
@@ -1190,8 +1191,9 @@ export async function upsert_experiment_run_snapshot(runState: ExperimentRunStat
         p95_latency_ms,
         p99_latency_ms,
         samples
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON DUPLICATE KEY UPDATE
+        experiment_id = VALUES(experiment_id),
         experiment_name = VALUES(experiment_name),
         status = VALUES(status),
         started_at = VALUES(started_at),
@@ -1217,6 +1219,7 @@ export async function upsert_experiment_run_snapshot(runState: ExperimentRunStat
     const values = [
       runState.run_id,
       runState.experiment_name,
+      runState.experiment_id,
       runState.status,
       runState.created_at,
       runState.started_at ?? null,
@@ -1333,20 +1336,45 @@ export async function get_child_evaluator_ids_by_multi_eval_id(multi_evaluator_i
   }
 }
 
-export async function get_llm_models_of_experiment_by_experiment_name(experiment_name: string, connection: mysql.Connection | mysql.Pool = pool): Promise<Llm[]> {
+export async function get_llm_models_of_experiment_by_experiment_id(experiment_id: number, connection: mysql.Connection | mysql.Pool = pool): Promise<Llm[]> {
   try {
     const sql = `
       SELECT DISTINCT l.*
       FROM Llm l
       JOIN PromptConfig pc ON l.id = pc.llm_id
       JOIN Experiment e ON pc.experiment_id = e.id
-      WHERE e.title = ?
+      WHERE e.id = ?
     `;
-    const [rows] = await connection.execute(sql, [experiment_name]);
+    const [rows] = await connection.execute(sql, [experiment_id]);
     return rows as Llm[];
   } catch (error) {
     console.error('Error fetching LLM models for experiment:', error);
     return [];
+  }
+}
+
+export async function delete_experiment_by_id(experiment_id: number, connection: mysql.Connection | mysql.Pool = pool): Promise<void> {
+  try {
+    const [activeRuns] = await connection.execute(
+      `SELECT status
+       FROM Experiment_run
+       WHERE experiment_id = ? AND status IN ('running', 'queued')
+       LIMIT 1`,
+      [experiment_id],
+    );
+    if ((activeRuns as any[]).length > 0) {
+      const error = new Error(
+        'Cannot delete an experiment while it is running or queued.',
+      );
+      error.name = 'ExperimentDeletionConflict';
+      throw error;
+    }
+
+    const sql = 'DELETE FROM Experiment WHERE id = ?';
+    await connection.execute(sql, [experiment_id]);
+  } catch (error) {
+    console.error('Error deleting experiment by ID:', error);
+    throw error;
   }
 }
 

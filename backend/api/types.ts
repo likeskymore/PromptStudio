@@ -206,6 +206,7 @@ export type ExperimentRunSample = {
 };
 
 export type ExperimentRunState = {
+  experiment_id: number;
   run_id: string;
   experiment_name: string;
   status: ExperimentRunStatus;
