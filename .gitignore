@@ -183,6 +183,5 @@ lib/*.js
 testing
 .idea
 uploads
-files/
 chainForgeFlows/
 .vscode/

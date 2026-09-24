@@ -28,6 +28,7 @@ import {parse} from "csv-parse";
 import * as crypto from "crypto";
 import * as path from "node:path";
 import { run } from "node:test";
+import { toMySqlTimestamp } from "./helper";
 
 export const credentialsPath = path.join(__dirname, '../../credentials.json');
 const parsed = JSON.parse(fs.readFileSync(credentialsPath, "utf-8"));
@@ -541,9 +542,9 @@ export async function get_marker_by_id(marker_id: number, connection: mysql.Conn
   }
 }
 
-export async function save_response(config_id: number, output_result: string, input_id: number, start_time: string, end_time: string, total_tokens: number, connection: mysql.Connection | mysql.Pool = pool){
-  const sql = 'INSERT INTO Result(config_id, output_result, input_id, start_time, end_time, total_tokens) VALUES (?, ?, ?, ?, ?, ?)';
-  const values = [config_id, output_result, input_id, start_time, end_time, total_tokens];
+export async function save_response(run_id: string, config_id: number, output_result: string, input_id: number, start_time: string, end_time: string, total_tokens: number, connection: mysql.Connection | mysql.Pool = pool){
+  const sql = 'INSERT INTO Result(run_id, config_id, output_result, input_id, start_time, end_time, total_tokens) VALUES (?, ?, ?, ?, ?, ?, ?)';
+  const values = [run_id, config_id, output_result, input_id, start_time, end_time, total_tokens];
   try{
     const [result] = await connection.execute(sql, values);
     return (result as any).insertId;
@@ -586,6 +587,18 @@ export async function get_results(config_id: number, input_id: number, connectio
   }
   catch (error) {
     console.error(error);
+  }
+}
+
+export async function get_results_for_run(run_id: string, config_id: number, input_id: number, connection: mysql.Connection | mysql.Pool = pool): Promise<Result[]>{
+  try {
+    const sql = 'SELECT * FROM Result WHERE run_id = ? AND config_id = ? AND input_id = ?';
+    const [rows] = await connection.execute(sql, [run_id, config_id, input_id]);
+    return rows as Result[];
+  }
+  catch (error) {
+    console.error(error);
+    return [];
   }
 }
 
@@ -1163,7 +1176,6 @@ export async function save_process_result(processor_result: string, result_id: n
         console.error('Error saving process result:', error);
     }
 }
-
 export async function upsert_experiment_run_snapshot(runState: ExperimentRunState, connection: mysql.Connection | mysql.Pool = pool) {
   try {
     const sql = `
@@ -1180,6 +1192,7 @@ export async function upsert_experiment_run_snapshot(runState: ExperimentRunStat
         total_paused_ms,
         total_tasks,
         attempts,
+        in_progress,
         completed,
         failed,
         retries,
@@ -1191,7 +1204,7 @@ export async function upsert_experiment_run_snapshot(runState: ExperimentRunStat
         p95_latency_ms,
         p99_latency_ms,
         samples
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON DUPLICATE KEY UPDATE
         experiment_id = VALUES(experiment_id),
         experiment_name = VALUES(experiment_name),
@@ -1203,6 +1216,7 @@ export async function upsert_experiment_run_snapshot(runState: ExperimentRunStat
         total_paused_ms = VALUES(total_paused_ms),
         total_tasks = VALUES(total_tasks),
         attempts = VALUES(attempts),
+        in_progress = VALUES(in_progress),
         completed = VALUES(completed),
         failed = VALUES(failed),
         retries = VALUES(retries),
@@ -1221,14 +1235,15 @@ export async function upsert_experiment_run_snapshot(runState: ExperimentRunStat
       runState.experiment_name,
       runState.experiment_id,
       runState.status,
-      runState.created_at,
-      runState.started_at ?? null,
-      runState.paused_at ?? null,
-      runState.finished_at ?? null,
-      runState.updated_at,
+      toMySqlTimestamp(runState.created_at),
+      toMySqlTimestamp(runState.started_at),
+      toMySqlTimestamp(runState.paused_at),
+      toMySqlTimestamp(runState.finished_at),
+      toMySqlTimestamp(runState.updated_at),
       runState.total_paused_ms ?? 0,
       runState.total_tasks,
       runState.attempts,
+      runState.in_progress,
       runState.completed,
       runState.failed,
       runState.retries,

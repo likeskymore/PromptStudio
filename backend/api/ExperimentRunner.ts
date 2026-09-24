@@ -6,7 +6,7 @@ import {
     get_llm_by_id,
     get_llm_param_by_id,
     get_next_input,
-    get_results,
+    get_results_for_run,
     get_template_by_id
 } from "../database/database";
 import { create_llm_spec, get_marker_map } from "./utils";
@@ -37,7 +37,8 @@ export class ExperimentRunner {
         private num_workers: number,
         private configs: Promptconfig[],
         private api_keys: string,
-        private runId?: string
+        private runId?: string,
+        private rerun = false
     ) {
         this.pool = workerpool.pool(__dirname + '/worker.ts', {
             minWorkers: this.num_workers,
@@ -100,8 +101,12 @@ export class ExperimentRunner {
                 const markersDict = await get_marker_map(input);
 
                 let iterations = template.iterations;
-                const existing = await get_results(updatedConfig.id, input_id);
-                if (existing?.length) iterations -= existing.length;
+                if (!this.rerun) {
+                    const existing = this.runId
+                        ? await get_results_for_run(this.runId, updatedConfig.id, input_id)
+                        : [];
+                    if (existing?.length) iterations -= existing.length;
+                }
                 // Ensure we still have iterations to run for a given input and config
                 if (iterations <= 0) {
                     continue;
@@ -182,6 +187,7 @@ export class ExperimentRunner {
             recordTaskStarted(this.runId);
         }
         const result = await this.pool.exec('processExperiment', [
+            this.runId,
             task.config_id,
             task.llm_spec,
             task.iterations,
@@ -241,12 +247,13 @@ export class ExperimentRunner {
 
                 let iterations = template.iterations;
 
-                const existing = await get_results(
-                    updatedConfig.id,
-                    input_id
-                );
+                if (!this.rerun) {
+                    const existing = this.runId
+                        ? await get_results_for_run(this.runId, updatedConfig.id, input_id)
+                        : [];
 
-                iterations -= existing?.length ?? 0;
+                    iterations -= existing?.length ?? 0;
+                }
 
                 if (iterations > 0) {
                     totalTasks += iterations;

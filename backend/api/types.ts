@@ -118,6 +118,7 @@ export type Dataset = {
 
 export type Result = {
   id: number;
+  run_id?: string;
   config_id: number;
   output_result: string;
   input_id: number;
@@ -194,6 +195,7 @@ export type ExperimentRunSample = {
   at: string;
   total_tasks: number;
   attempts: number;
+  in_progress: number;
   completed: number;
   failed: number;
   retries: number;
@@ -218,6 +220,7 @@ export type ExperimentRunState = {
   total_paused_ms?: number;
   total_tasks: number;
   attempts: number;
+  in_progress: number;
   completed: number;
   failed: number;
   retries: number;

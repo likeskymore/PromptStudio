@@ -1,0 +1,22 @@
+experiment:
+  title: tabularCleanFlow
+  max_retry: 0
+  threads: 1
+nodes:
+  - dataset:
+      name: table-6a741468-fe42-46b3-a1f1-1dc49b96366c
+      path: ../files/table-6a741468-fe42-46b3-a1f1-1dc49b96366c.csv
+  - evaluator:
+      type: simple
+      name: simpleEval-d6bdb4f1-fd1c-41a0-9ae1-7268cf92409c
+      return_type: string
+      text_value: of Expected (meta)
+      var_value: Expected
+      var_type: meta
+      var_selected: true
+      file: ../files/simpleEval-d6bdb4f1-fd1c-41a0-9ae1-7268cf92409c.js
+links:
+  - source: table-6a741468-fe42-46b3-a1f1-1dc49b96366c
+    target: simpleEval-d6bdb4f1-fd1c-41a0-9ae1-7268cf92409c
+    source_var: Question
+    target_var: responseBatch

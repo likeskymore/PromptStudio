@@ -11,7 +11,23 @@ const pauseRequests = new Set<string>();
 const MAX_LATENCY_SAMPLES = 10000;
 
 function now() {
-  return new Date().toISOString().replace("T", " ").replace("Z", " ");
+  return new Date().toISOString();
+}
+
+function normalizeTimestamp(value: string | Date | null | undefined) {
+  if (value === null || value === undefined) {
+    return undefined;
+  }
+
+  const date =
+    value instanceof Date
+      ? value
+      : new Date(
+          /(?:Z|[+-]\d{2}:?\d{2})$/.test(value.trim())
+            ? value
+            : `${value.trim().replace(" ", "T")}Z`,
+        );
+  return Number.isNaN(date.getTime()) ? undefined : date.toISOString();
 }
 
 function elapsedSince(timestamp: string) {
@@ -90,6 +106,7 @@ function pushTimelineSample(state: ExperimentRunState) {
     at: now(),
     total_tasks: state.total_tasks,
     attempts: state.attempts,
+    in_progress: state.in_progress,
     completed: state.completed,
     failed: state.failed,
     retries: state.retries,
@@ -155,8 +172,16 @@ export function addExperimentRunState(runState: ExperimentRunState) {
   const persistedState = runState as ExperimentRunState & { samples?: unknown };
   const restoredState = {
     ...runState,
+    created_at: normalizeTimestamp(runState.created_at) ?? now(),
+    started_at: normalizeTimestamp(runState.started_at),
+    paused_at: normalizeTimestamp(runState.paused_at),
+    finished_at: normalizeTimestamp(runState.finished_at),
+    updated_at: normalizeTimestamp(runState.updated_at) ?? now(),
     samples: Array.isArray(persistedState.samples)
-      ? persistedState.samples
+      ? persistedState.samples.map((sample) => ({
+          ...sample,
+          at: normalizeTimestamp(sample.at) ?? sample.at,
+        }))
       : typeof persistedState.samples === "string"
         ? JSON.parse(persistedState.samples)
         : [],
@@ -185,6 +210,7 @@ export function createExperimentRun(experiment_id: number, experiment_name: stri
     updated_at: now(),
     total_tasks: 0,
     attempts: 0,
+    in_progress: 0,
     completed: 0,
     failed: 0,
     retries: 0,
@@ -283,11 +309,13 @@ export function recordTotalTasks(runId: string, count: number) {
 export function recordTaskStarted(runId: string) {
   mutateRunState(runId, (state) => {
     state.attempts += 1;
+    state.in_progress += 1;
   });
 }
 
 export function recordTaskRetry(runId: string, errorMessage?: string) {
   mutateRunState(runId, (state) => {
+    state.in_progress = Math.max(0, state.in_progress - 1);
     state.retries += 1;
     if (errorMessage) {
       state.last_error = errorMessage;
@@ -297,6 +325,7 @@ export function recordTaskRetry(runId: string, errorMessage?: string) {
 
 export function recordTaskCompleted(runId: string, totalTokens = 0) {
   mutateRunState(runId, (state) => {
+    state.in_progress = Math.max(0, state.in_progress - 1);
     state.completed += 1;
     state.total_tokens += totalTokens;
   });
@@ -304,6 +333,7 @@ export function recordTaskCompleted(runId: string, totalTokens = 0) {
 
 export function recordTaskFailed(runId: string, errorMessage?: string) {
   mutateRunState(runId, (state) => {
+    state.in_progress = Math.max(0, state.in_progress - 1);
     state.failed += 1;
     if (errorMessage) {
       state.last_error = errorMessage;

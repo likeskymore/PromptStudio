@@ -1,0 +1,41 @@
+experiment:
+  title: tabularSimpleEvalFlow
+  max_retry: 0
+  threads: 1
+nodes:
+  - template:
+      name: prompt-1784158998615
+      value: '{prompt}'
+      iterations: 1
+      llms:
+        - key: 6d3b0cad-fb02-4b37-8816-bda1a4b9d6b8
+          name: Qwen2.5 0.5B
+          model: Qwen2.5-0.5B-Instruct-q4f16_1-MLC
+          emoji: "\U0001F310"
+          base_model: webllm
+          temp: 0.7
+          max_tokens: 512
+          system_msg: You are a helpful assistant.
+          temperature: 0.7
+          top_p: 1
+  - dataset:
+      name: table-99e38712-1dd5-4018-bc18-905407a6face
+      path: ../files/table-99e38712-1dd5-4018-bc18-905407a6face.csv
+  - evaluator:
+      type: simple
+      name: simpleEval-051437bb-6f52-469d-9ffc-9843c17c84ce
+      return_type: string
+      text_value: of Expected (meta)
+      var_value: Expected
+      var_type: meta
+      var_selected: true
+      file: ../files/simpleEval-051437bb-6f52-469d-9ffc-9843c17c84ce.js
+links:
+  - source: table-99e38712-1dd5-4018-bc18-905407a6face
+    target: prompt-1784158998615
+    source_var: Question
+    target_var: prompt
+  - source: prompt-1784158998615
+    target: simpleEval-051437bb-6f52-469d-9ffc-9843c17c84ce
+    source_var: prompt
+    target_var: responseBatch

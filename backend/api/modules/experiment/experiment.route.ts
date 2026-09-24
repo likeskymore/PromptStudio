@@ -16,7 +16,7 @@ const router = express.Router();
 const credentials = JSON.parse(fs.readFileSync(credentialsPath, "utf-8"));
 const api_keys = JSON.stringify(credentials.api_keys ?? {});
 
-router.get("/run/:name", async (req, res) => {
+router.post("/run/:name", async (req, res) => {
   try {
     const experiment_name = req.params.name;
     const runId = await run_experiment(experiment_name, api_keys, {
@@ -25,6 +25,31 @@ router.get("/run/:name", async (req, res) => {
     return sendResponse(res, {
       body: {
         message: `Experiment ${experiment_name} started successfully.`,
+        runId,
+      },
+    });
+  } catch (error) {
+    console.error(error);
+    return sendResponse(res, {
+      statusCode: 500,
+      responseCode: ResponseCode.ERROR,
+      body: {
+        error: error instanceof Error ? error.message : "Internal Server Error",
+      },
+    });
+  }
+});
+
+router.post("/run/:name/rerun", async (req, res) => {
+  try {
+    const experiment_name = req.params.name;
+    const runId = await run_experiment(experiment_name, api_keys, {
+      background: true,
+      rerun: true,
+    });
+    return sendResponse(res, {
+      body: {
+        message: `Experiment ${experiment_name} rerun started successfully.`,
         runId,
       },
     });

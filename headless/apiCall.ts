@@ -77,10 +77,23 @@ export async function save_config(configPath: string): Promise<string | undefine
  */
 export async function run_experiment(name: string): Promise<void> {
     try {
-        const response = await axios.get(`${URL}/experiments/run/${name}`);
+        const response = await axios.post(`${URL}/experiments/run/${name}`);
         console.log(`Experiment ${name} started successfully.`);
     } catch (error) {
         console.error(`Failed to run experiment ${name}:`, error);
+    }
+}
+
+/**
+ * Starts a fresh run of an existing experiment without subtracting prior results.
+ * @param name The name of the experiment to rerun.
+ */
+export async function rerun_experiment(name: string): Promise<void> {
+    try {
+        await axios.post(`${URL}/experiments/run/${name}/rerun`);
+        console.log(`Experiment ${name} rerun started successfully.`);
+    } catch (error) {
+        console.error(`Failed to rerun experiment ${name}:`, error);
     }
 }
 

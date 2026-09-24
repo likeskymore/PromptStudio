@@ -1,0 +1,901 @@
+"Question","Expected"
+"What is 2+2?","4"
+"what is 3+3?","6"
+"what is the square root of 4?","2"
+What is the capital of France? (Variant 1),Expected answer for question variant 1.
+How does photosynthesis work? (Variant 2),Expected answer for question variant 2.
+What is the largest planet in the solar system? (Variant 3),Expected answer for question variant 3.
+Explain the concept of machine learning. (Variant 4),Expected answer for question variant 4.
+Who wrote Romeo and Juliet? (Variant 5),Expected answer for question variant 5.
+What causes rain? (Variant 6),Expected answer for question variant 6.
+How do computers store data? (Variant 7),Expected answer for question variant 7.
+What is the speed of light? (Variant 8),Expected answer for question variant 8.
+Why do leaves change color? (Variant 9),Expected answer for question variant 9.
+What is the purpose of an operating system? (Variant 10),Expected answer for question variant 10.
+What is the capital of France? (Variant 11),Expected answer for question variant 11.
+How does photosynthesis work? (Variant 12),Expected answer for question variant 12.
+What is the largest planet in the solar system? (Variant 13),Expected answer for question variant 13.
+Explain the concept of machine learning. (Variant 14),Expected answer for question variant 14.
+Who wrote Romeo and Juliet? (Variant 15),Expected answer for question variant 15.
+What causes rain? (Variant 16),Expected answer for question variant 16.
+How do computers store data? (Variant 17),Expected answer for question variant 17.
+What is the speed of light? (Variant 18),Expected answer for question variant 18.
+Why do leaves change color? (Variant 19),Expected answer for question variant 19.
+What is the purpose of an operating system? (Variant 20),Expected answer for question variant 20.
+What is the capital of France? (Variant 21),Expected answer for question variant 21.
+How does photosynthesis work? (Variant 22),Expected answer for question variant 22.
+What is the largest planet in the solar system? (Variant 23),Expected answer for question variant 23.
+Explain the concept of machine learning. (Variant 24),Expected answer for question variant 24.
+Who wrote Romeo and Juliet? (Variant 25),Expected answer for question variant 25.
+What causes rain? (Variant 26),Expected answer for question variant 26.
+How do computers store data? (Variant 27),Expected answer for question variant 27.
+What is the speed of light? (Variant 28),Expected answer for question variant 28.
+Why do leaves change color? (Variant 29),Expected answer for question variant 29.
+What is the purpose of an operating system? (Variant 30),Expected answer for question variant 30.
+What is the capital of France? (Variant 31),Expected answer for question variant 31.
+How does photosynthesis work? (Variant 32),Expected answer for question variant 32.
+What is the largest planet in the solar system? (Variant 33),Expected answer for question variant 33.
+Explain the concept of machine learning. (Variant 34),Expected answer for question variant 34.
+Who wrote Romeo and Juliet? (Variant 35),Expected answer for question variant 35.
+What causes rain? (Variant 36),Expected answer for question variant 36.
+How do computers store data? (Variant 37),Expected answer for question variant 37.
+What is the speed of light? (Variant 38),Expected answer for question variant 38.
+Why do leaves change color? (Variant 39),Expected answer for question variant 39.
+What is the purpose of an operating system? (Variant 40),Expected answer for question variant 40.
+What is the capital of France? (Variant 41),Expected answer for question variant 41.
+How does photosynthesis work? (Variant 42),Expected answer for question variant 42.
+What is the largest planet in the solar system? (Variant 43),Expected answer for question variant 43.
+Explain the concept of machine learning. (Variant 44),Expected answer for question variant 44.
+Who wrote Romeo and Juliet? (Variant 45),Expected answer for question variant 45.
+What causes rain? (Variant 46),Expected answer for question variant 46.
+How do computers store data? (Variant 47),Expected answer for question variant 47.
+What is the speed of light? (Variant 48),Expected answer for question variant 48.
+Why do leaves change color? (Variant 49),Expected answer for question variant 49.
+What is the purpose of an operating system? (Variant 50),Expected answer for question variant 50.
+What is the capital of France? (Variant 51),Expected answer for question variant 51.
+How does photosynthesis work? (Variant 52),Expected answer for question variant 52.
+What is the largest planet in the solar system? (Variant 53),Expected answer for question variant 53.
+Explain the concept of machine learning. (Variant 54),Expected answer for question variant 54.
+Who wrote Romeo and Juliet? (Variant 55),Expected answer for question variant 55.
+What causes rain? (Variant 56),Expected answer for question variant 56.
+How do computers store data? (Variant 57),Expected answer for question variant 57.
+What is the speed of light? (Variant 58),Expected answer for question variant 58.
+Why do leaves change color? (Variant 59),Expected answer for question variant 59.
+What is the purpose of an operating system? (Variant 60),Expected answer for question variant 60.
+What is the capital of France? (Variant 61),Expected answer for question variant 61.
+How does photosynthesis work? (Variant 62),Expected answer for question variant 62.
+What is the largest planet in the solar system? (Variant 63),Expected answer for question variant 63.
+Explain the concept of machine learning. (Variant 64),Expected answer for question variant 64.
+Who wrote Romeo and Juliet? (Variant 65),Expected answer for question variant 65.
+What causes rain? (Variant 66),Expected answer for question variant 66.
+How do computers store data? (Variant 67),Expected answer for question variant 67.
+What is the speed of light? (Variant 68),Expected answer for question variant 68.
+Why do leaves change color? (Variant 69),Expected answer for question variant 69.
+What is the purpose of an operating system? (Variant 70),Expected answer for question variant 70.
+What is the capital of France? (Variant 71),Expected answer for question variant 71.
+How does photosynthesis work? (Variant 72),Expected answer for question variant 72.
+What is the largest planet in the solar system? (Variant 73),Expected answer for question variant 73.
+Explain the concept of machine learning. (Variant 74),Expected answer for question variant 74.
+Who wrote Romeo and Juliet? (Variant 75),Expected answer for question variant 75.
+What causes rain? (Variant 76),Expected answer for question variant 76.
+How do computers store data? (Variant 77),Expected answer for question variant 77.
+What is the speed of light? (Variant 78),Expected answer for question variant 78.
+Why do leaves change color? (Variant 79),Expected answer for question variant 79.
+What is the purpose of an operating system? (Variant 80),Expected answer for question variant 80.
+What is the capital of France? (Variant 81),Expected answer for question variant 81.
+How does photosynthesis work? (Variant 82),Expected answer for question variant 82.
+What is the largest planet in the solar system? (Variant 83),Expected answer for question variant 83.
+Explain the concept of machine learning. (Variant 84),Expected answer for question variant 84.
+Who wrote Romeo and Juliet? (Variant 85),Expected answer for question variant 85.
+What causes rain? (Variant 86),Expected answer for question variant 86.
+How do computers store data? (Variant 87),Expected answer for question variant 87.
+What is the speed of light? (Variant 88),Expected answer for question variant 88.
+Why do leaves change color? (Variant 89),Expected answer for question variant 89.
+What is the purpose of an operating system? (Variant 90),Expected answer for question variant 90.
+What is the capital of France? (Variant 91),Expected answer for question variant 91.
+How does photosynthesis work? (Variant 92),Expected answer for question variant 92.
+What is the largest planet in the solar system? (Variant 93),Expected answer for question variant 93.
+Explain the concept of machine learning. (Variant 94),Expected answer for question variant 94.
+Who wrote Romeo and Juliet? (Variant 95),Expected answer for question variant 95.
+What causes rain? (Variant 96),Expected answer for question variant 96.
+How do computers store data? (Variant 97),Expected answer for question variant 97.
+What is the speed of light? (Variant 98),Expected answer for question variant 98.
+Why do leaves change color? (Variant 99),Expected answer for question variant 99.
+What is the purpose of an operating system? (Variant 100),Expected answer for question variant 100.
+What is the capital of France? (Variant 101),Expected answer for question variant 101.
+How does photosynthesis work? (Variant 102),Expected answer for question variant 102.
+What is the largest planet in the solar system? (Variant 103),Expected answer for question variant 103.
+Explain the concept of machine learning. (Variant 104),Expected answer for question variant 104.
+Who wrote Romeo and Juliet? (Variant 105),Expected answer for question variant 105.
+What causes rain? (Variant 106),Expected answer for question variant 106.
+How do computers store data? (Variant 107),Expected answer for question variant 107.
+What is the speed of light? (Variant 108),Expected answer for question variant 108.
+Why do leaves change color? (Variant 109),Expected answer for question variant 109.
+What is the purpose of an operating system? (Variant 110),Expected answer for question variant 110.
+What is the capital of France? (Variant 111),Expected answer for question variant 111.
+How does photosynthesis work? (Variant 112),Expected answer for question variant 112.
+What is the largest planet in the solar system? (Variant 113),Expected answer for question variant 113.
+Explain the concept of machine learning. (Variant 114),Expected answer for question variant 114.
+Who wrote Romeo and Juliet? (Variant 115),Expected answer for question variant 115.
+What causes rain? (Variant 116),Expected answer for question variant 116.
+How do computers store data? (Variant 117),Expected answer for question variant 117.
+What is the speed of light? (Variant 118),Expected answer for question variant 118.
+Why do leaves change color? (Variant 119),Expected answer for question variant 119.
+What is the purpose of an operating system? (Variant 120),Expected answer for question variant 120.
+What is the capital of France? (Variant 121),Expected answer for question variant 121.
+How does photosynthesis work? (Variant 122),Expected answer for question variant 122.
+What is the largest planet in the solar system? (Variant 123),Expected answer for question variant 123.
+Explain the concept of machine learning. (Variant 124),Expected answer for question variant 124.
+Who wrote Romeo and Juliet? (Variant 125),Expected answer for question variant 125.
+What causes rain? (Variant 126),Expected answer for question variant 126.
+How do computers store data? (Variant 127),Expected answer for question variant 127.
+What is the speed of light? (Variant 128),Expected answer for question variant 128.
+Why do leaves change color? (Variant 129),Expected answer for question variant 129.
+What is the purpose of an operating system? (Variant 130),Expected answer for question variant 130.
+What is the capital of France? (Variant 131),Expected answer for question variant 131.
+How does photosynthesis work? (Variant 132),Expected answer for question variant 132.
+What is the largest planet in the solar system? (Variant 133),Expected answer for question variant 133.
+Explain the concept of machine learning. (Variant 134),Expected answer for question variant 134.
+Who wrote Romeo and Juliet? (Variant 135),Expected answer for question variant 135.
+What causes rain? (Variant 136),Expected answer for question variant 136.
+How do computers store data? (Variant 137),Expected answer for question variant 137.
+What is the speed of light? (Variant 138),Expected answer for question variant 138.
+Why do leaves change color? (Variant 139),Expected answer for question variant 139.
+What is the purpose of an operating system? (Variant 140),Expected answer for question variant 140.
+What is the capital of France? (Variant 141),Expected answer for question variant 141.
+How does photosynthesis work? (Variant 142),Expected answer for question variant 142.
+What is the largest planet in the solar system? (Variant 143),Expected answer for question variant 143.
+Explain the concept of machine learning. (Variant 144),Expected answer for question variant 144.
+Who wrote Romeo and Juliet? (Variant 145),Expected answer for question variant 145.
+What causes rain? (Variant 146),Expected answer for question variant 146.
+How do computers store data? (Variant 147),Expected answer for question variant 147.
+What is the speed of light? (Variant 148),Expected answer for question variant 148.
+Why do leaves change color? (Variant 149),Expected answer for question variant 149.
+What is the purpose of an operating system? (Variant 150),Expected answer for question variant 150.
+What is the capital of France? (Variant 151),Expected answer for question variant 151.
+How does photosynthesis work? (Variant 152),Expected answer for question variant 152.
+What is the largest planet in the solar system? (Variant 153),Expected answer for question variant 153.
+Explain the concept of machine learning. (Variant 154),Expected answer for question variant 154.
+Who wrote Romeo and Juliet? (Variant 155),Expected answer for question variant 155.
+What causes rain? (Variant 156),Expected answer for question variant 156.
+How do computers store data? (Variant 157),Expected answer for question variant 157.
+What is the speed of light? (Variant 158),Expected answer for question variant 158.
+Why do leaves change color? (Variant 159),Expected answer for question variant 159.
+What is the purpose of an operating system? (Variant 160),Expected answer for question variant 160.
+What is the capital of France? (Variant 161),Expected answer for question variant 161.
+How does photosynthesis work? (Variant 162),Expected answer for question variant 162.
+What is the largest planet in the solar system? (Variant 163),Expected answer for question variant 163.
+Explain the concept of machine learning. (Variant 164),Expected answer for question variant 164.
+Who wrote Romeo and Juliet? (Variant 165),Expected answer for question variant 165.
+What causes rain? (Variant 166),Expected answer for question variant 166.
+How do computers store data? (Variant 167),Expected answer for question variant 167.
+What is the speed of light? (Variant 168),Expected answer for question variant 168.
+Why do leaves change color? (Variant 169),Expected answer for question variant 169.
+What is the purpose of an operating system? (Variant 170),Expected answer for question variant 170.
+What is the capital of France? (Variant 171),Expected answer for question variant 171.
+How does photosynthesis work? (Variant 172),Expected answer for question variant 172.
+What is the largest planet in the solar system? (Variant 173),Expected answer for question variant 173.
+Explain the concept of machine learning. (Variant 174),Expected answer for question variant 174.
+Who wrote Romeo and Juliet? (Variant 175),Expected answer for question variant 175.
+What causes rain? (Variant 176),Expected answer for question variant 176.
+How do computers store data? (Variant 177),Expected answer for question variant 177.
+What is the speed of light? (Variant 178),Expected answer for question variant 178.
+Why do leaves change color? (Variant 179),Expected answer for question variant 179.
+What is the purpose of an operating system? (Variant 180),Expected answer for question variant 180.
+What is the capital of France? (Variant 181),Expected answer for question variant 181.
+How does photosynthesis work? (Variant 182),Expected answer for question variant 182.
+What is the largest planet in the solar system? (Variant 183),Expected answer for question variant 183.
+Explain the concept of machine learning. (Variant 184),Expected answer for question variant 184.
+Who wrote Romeo and Juliet? (Variant 185),Expected answer for question variant 185.
+What causes rain? (Variant 186),Expected answer for question variant 186.
+How do computers store data? (Variant 187),Expected answer for question variant 187.
+What is the speed of light? (Variant 188),Expected answer for question variant 188.
+Why do leaves change color? (Variant 189),Expected answer for question variant 189.
+What is the purpose of an operating system? (Variant 190),Expected answer for question variant 190.
+What is the capital of France? (Variant 191),Expected answer for question variant 191.
+How does photosynthesis work? (Variant 192),Expected answer for question variant 192.
+What is the largest planet in the solar system? (Variant 193),Expected answer for question variant 193.
+Explain the concept of machine learning. (Variant 194),Expected answer for question variant 194.
+Who wrote Romeo and Juliet? (Variant 195),Expected answer for question variant 195.
+What causes rain? (Variant 196),Expected answer for question variant 196.
+How do computers store data? (Variant 197),Expected answer for question variant 197.
+What is the speed of light? (Variant 198),Expected answer for question variant 198.
+Why do leaves change color? (Variant 199),Expected answer for question variant 199.
+What is the purpose of an operating system? (Variant 200),Expected answer for question variant 200.
+What is the capital of France? (Variant 201),Expected answer for question variant 201.
+How does photosynthesis work? (Variant 202),Expected answer for question variant 202.
+What is the largest planet in the solar system? (Variant 203),Expected answer for question variant 203.
+Explain the concept of machine learning. (Variant 204),Expected answer for question variant 204.
+Who wrote Romeo and Juliet? (Variant 205),Expected answer for question variant 205.
+What causes rain? (Variant 206),Expected answer for question variant 206.
+How do computers store data? (Variant 207),Expected answer for question variant 207.
+What is the speed of light? (Variant 208),Expected answer for question variant 208.
+Why do leaves change color? (Variant 209),Expected answer for question variant 209.
+What is the purpose of an operating system? (Variant 210),Expected answer for question variant 210.
+What is the capital of France? (Variant 211),Expected answer for question variant 211.
+How does photosynthesis work? (Variant 212),Expected answer for question variant 212.
+What is the largest planet in the solar system? (Variant 213),Expected answer for question variant 213.
+Explain the concept of machine learning. (Variant 214),Expected answer for question variant 214.
+Who wrote Romeo and Juliet? (Variant 215),Expected answer for question variant 215.
+What causes rain? (Variant 216),Expected answer for question variant 216.
+How do computers store data? (Variant 217),Expected answer for question variant 217.
+What is the speed of light? (Variant 218),Expected answer for question variant 218.
+Why do leaves change color? (Variant 219),Expected answer for question variant 219.
+What is the purpose of an operating system? (Variant 220),Expected answer for question variant 220.
+What is the capital of France? (Variant 221),Expected answer for question variant 221.
+How does photosynthesis work? (Variant 222),Expected answer for question variant 222.
+What is the largest planet in the solar system? (Variant 223),Expected answer for question variant 223.
+Explain the concept of machine learning. (Variant 224),Expected answer for question variant 224.
+Who wrote Romeo and Juliet? (Variant 225),Expected answer for question variant 225.
+What causes rain? (Variant 226),Expected answer for question variant 226.
+How do computers store data? (Variant 227),Expected answer for question variant 227.
+What is the speed of light? (Variant 228),Expected answer for question variant 228.
+Why do leaves change color? (Variant 229),Expected answer for question variant 229.
+What is the purpose of an operating system? (Variant 230),Expected answer for question variant 230.
+What is the capital of France? (Variant 231),Expected answer for question variant 231.
+How does photosynthesis work? (Variant 232),Expected answer for question variant 232.
+What is the largest planet in the solar system? (Variant 233),Expected answer for question variant 233.
+Explain the concept of machine learning. (Variant 234),Expected answer for question variant 234.
+Who wrote Romeo and Juliet? (Variant 235),Expected answer for question variant 235.
+What causes rain? (Variant 236),Expected answer for question variant 236.
+How do computers store data? (Variant 237),Expected answer for question variant 237.
+What is the speed of light? (Variant 238),Expected answer for question variant 238.
+Why do leaves change color? (Variant 239),Expected answer for question variant 239.
+What is the purpose of an operating system? (Variant 240),Expected answer for question variant 240.
+What is the capital of France? (Variant 241),Expected answer for question variant 241.
+How does photosynthesis work? (Variant 242),Expected answer for question variant 242.
+What is the largest planet in the solar system? (Variant 243),Expected answer for question variant 243.
+Explain the concept of machine learning. (Variant 244),Expected answer for question variant 244.
+Who wrote Romeo and Juliet? (Variant 245),Expected answer for question variant 245.
+What causes rain? (Variant 246),Expected answer for question variant 246.
+How do computers store data? (Variant 247),Expected answer for question variant 247.
+What is the speed of light? (Variant 248),Expected answer for question variant 248.
+Why do leaves change color? (Variant 249),Expected answer for question variant 249.
+What is the purpose of an operating system? (Variant 250),Expected answer for question variant 250.
+What is the capital of France? (Variant 251),Expected answer for question variant 251.
+How does photosynthesis work? (Variant 252),Expected answer for question variant 252.
+What is the largest planet in the solar system? (Variant 253),Expected answer for question variant 253.
+Explain the concept of machine learning. (Variant 254),Expected answer for question variant 254.
+Who wrote Romeo and Juliet? (Variant 255),Expected answer for question variant 255.
+What causes rain? (Variant 256),Expected answer for question variant 256.
+How do computers store data? (Variant 257),Expected answer for question variant 257.
+What is the speed of light? (Variant 258),Expected answer for question variant 258.
+Why do leaves change color? (Variant 259),Expected answer for question variant 259.
+What is the purpose of an operating system? (Variant 260),Expected answer for question variant 260.
+What is the capital of France? (Variant 261),Expected answer for question variant 261.
+How does photosynthesis work? (Variant 262),Expected answer for question variant 262.
+What is the largest planet in the solar system? (Variant 263),Expected answer for question variant 263.
+Explain the concept of machine learning. (Variant 264),Expected answer for question variant 264.
+Who wrote Romeo and Juliet? (Variant 265),Expected answer for question variant 265.
+What causes rain? (Variant 266),Expected answer for question variant 266.
+How do computers store data? (Variant 267),Expected answer for question variant 267.
+What is the speed of light? (Variant 268),Expected answer for question variant 268.
+Why do leaves change color? (Variant 269),Expected answer for question variant 269.
+What is the purpose of an operating system? (Variant 270),Expected answer for question variant 270.
+What is the capital of France? (Variant 271),Expected answer for question variant 271.
+How does photosynthesis work? (Variant 272),Expected answer for question variant 272.
+What is the largest planet in the solar system? (Variant 273),Expected answer for question variant 273.
+Explain the concept of machine learning. (Variant 274),Expected answer for question variant 274.
+Who wrote Romeo and Juliet? (Variant 275),Expected answer for question variant 275.
+What causes rain? (Variant 276),Expected answer for question variant 276.
+How do computers store data? (Variant 277),Expected answer for question variant 277.
+What is the speed of light? (Variant 278),Expected answer for question variant 278.
+Why do leaves change color? (Variant 279),Expected answer for question variant 279.
+What is the purpose of an operating system? (Variant 280),Expected answer for question variant 280.
+What is the capital of France? (Variant 281),Expected answer for question variant 281.
+How does photosynthesis work? (Variant 282),Expected answer for question variant 282.
+What is the largest planet in the solar system? (Variant 283),Expected answer for question variant 283.
+Explain the concept of machine learning. (Variant 284),Expected answer for question variant 284.
+Who wrote Romeo and Juliet? (Variant 285),Expected answer for question variant 285.
+What causes rain? (Variant 286),Expected answer for question variant 286.
+How do computers store data? (Variant 287),Expected answer for question variant 287.
+What is the speed of light? (Variant 288),Expected answer for question variant 288.
+Why do leaves change color? (Variant 289),Expected answer for question variant 289.
+What is the purpose of an operating system? (Variant 290),Expected answer for question variant 290.
+What is the capital of France? (Variant 291),Expected answer for question variant 291.
+How does photosynthesis work? (Variant 292),Expected answer for question variant 292.
+What is the largest planet in the solar system? (Variant 293),Expected answer for question variant 293.
+Explain the concept of machine learning. (Variant 294),Expected answer for question variant 294.
+Who wrote Romeo and Juliet? (Variant 295),Expected answer for question variant 295.
+What causes rain? (Variant 296),Expected answer for question variant 296.
+How do computers store data? (Variant 297),Expected answer for question variant 297.
+What is the speed of light? (Variant 298),Expected answer for question variant 298.
+Why do leaves change color? (Variant 299),Expected answer for question variant 299.
+What is the purpose of an operating system? (Variant 300),Expected answer for question variant 300.
+What is the capital of France? (Variant 301),Expected answer for question variant 301.
+How does photosynthesis work? (Variant 302),Expected answer for question variant 302.
+What is the largest planet in the solar system? (Variant 303),Expected answer for question variant 303.
+Explain the concept of machine learning. (Variant 304),Expected answer for question variant 304.
+Who wrote Romeo and Juliet? (Variant 305),Expected answer for question variant 305.
+What causes rain? (Variant 306),Expected answer for question variant 306.
+How do computers store data? (Variant 307),Expected answer for question variant 307.
+What is the speed of light? (Variant 308),Expected answer for question variant 308.
+Why do leaves change color? (Variant 309),Expected answer for question variant 309.
+What is the purpose of an operating system? (Variant 310),Expected answer for question variant 310.
+What is the capital of France? (Variant 311),Expected answer for question variant 311.
+How does photosynthesis work? (Variant 312),Expected answer for question variant 312.
+What is the largest planet in the solar system? (Variant 313),Expected answer for question variant 313.
+Explain the concept of machine learning. (Variant 314),Expected answer for question variant 314.
+Who wrote Romeo and Juliet? (Variant 315),Expected answer for question variant 315.
+What causes rain? (Variant 316),Expected answer for question variant 316.
+How do computers store data? (Variant 317),Expected answer for question variant 317.
+What is the speed of light? (Variant 318),Expected answer for question variant 318.
+Why do leaves change color? (Variant 319),Expected answer for question variant 319.
+What is the purpose of an operating system? (Variant 320),Expected answer for question variant 320.
+What is the capital of France? (Variant 321),Expected answer for question variant 321.
+How does photosynthesis work? (Variant 322),Expected answer for question variant 322.
+What is the largest planet in the solar system? (Variant 323),Expected answer for question variant 323.
+Explain the concept of machine learning. (Variant 324),Expected answer for question variant 324.
+Who wrote Romeo and Juliet? (Variant 325),Expected answer for question variant 325.
+What causes rain? (Variant 326),Expected answer for question variant 326.
+How do computers store data? (Variant 327),Expected answer for question variant 327.
+What is the speed of light? (Variant 328),Expected answer for question variant 328.
+Why do leaves change color? (Variant 329),Expected answer for question variant 329.
+What is the purpose of an operating system? (Variant 330),Expected answer for question variant 330.
+What is the capital of France? (Variant 331),Expected answer for question variant 331.
+How does photosynthesis work? (Variant 332),Expected answer for question variant 332.
+What is the largest planet in the solar system? (Variant 333),Expected answer for question variant 333.
+Explain the concept of machine learning. (Variant 334),Expected answer for question variant 334.
+Who wrote Romeo and Juliet? (Variant 335),Expected answer for question variant 335.
+What causes rain? (Variant 336),Expected answer for question variant 336.
+How do computers store data? (Variant 337),Expected answer for question variant 337.
+What is the speed of light? (Variant 338),Expected answer for question variant 338.
+Why do leaves change color? (Variant 339),Expected answer for question variant 339.
+What is the purpose of an operating system? (Variant 340),Expected answer for question variant 340.
+What is the capital of France? (Variant 341),Expected answer for question variant 341.
+How does photosynthesis work? (Variant 342),Expected answer for question variant 342.
+What is the largest planet in the solar system? (Variant 343),Expected answer for question variant 343.
+Explain the concept of machine learning. (Variant 344),Expected answer for question variant 344.
+Who wrote Romeo and Juliet? (Variant 345),Expected answer for question variant 345.
+What causes rain? (Variant 346),Expected answer for question variant 346.
+How do computers store data? (Variant 347),Expected answer for question variant 347.
+What is the speed of light? (Variant 348),Expected answer for question variant 348.
+Why do leaves change color? (Variant 349),Expected answer for question variant 349.
+What is the purpose of an operating system? (Variant 350),Expected answer for question variant 350.
+What is the capital of France? (Variant 351),Expected answer for question variant 351.
+How does photosynthesis work? (Variant 352),Expected answer for question variant 352.
+What is the largest planet in the solar system? (Variant 353),Expected answer for question variant 353.
+Explain the concept of machine learning. (Variant 354),Expected answer for question variant 354.
+Who wrote Romeo and Juliet? (Variant 355),Expected answer for question variant 355.
+What causes rain? (Variant 356),Expected answer for question variant 356.
+How do computers store data? (Variant 357),Expected answer for question variant 357.
+What is the speed of light? (Variant 358),Expected answer for question variant 358.
+Why do leaves change color? (Variant 359),Expected answer for question variant 359.
+What is the purpose of an operating system? (Variant 360),Expected answer for question variant 360.
+What is the capital of France? (Variant 361),Expected answer for question variant 361.
+How does photosynthesis work? (Variant 362),Expected answer for question variant 362.
+What is the largest planet in the solar system? (Variant 363),Expected answer for question variant 363.
+Explain the concept of machine learning. (Variant 364),Expected answer for question variant 364.
+Who wrote Romeo and Juliet? (Variant 365),Expected answer for question variant 365.
+What causes rain? (Variant 366),Expected answer for question variant 366.
+How do computers store data? (Variant 367),Expected answer for question variant 367.
+What is the speed of light? (Variant 368),Expected answer for question variant 368.
+Why do leaves change color? (Variant 369),Expected answer for question variant 369.
+What is the purpose of an operating system? (Variant 370),Expected answer for question variant 370.
+What is the capital of France? (Variant 371),Expected answer for question variant 371.
+How does photosynthesis work? (Variant 372),Expected answer for question variant 372.
+What is the largest planet in the solar system? (Variant 373),Expected answer for question variant 373.
+Explain the concept of machine learning. (Variant 374),Expected answer for question variant 374.
+Who wrote Romeo and Juliet? (Variant 375),Expected answer for question variant 375.
+What causes rain? (Variant 376),Expected answer for question variant 376.
+How do computers store data? (Variant 377),Expected answer for question variant 377.
+What is the speed of light? (Variant 378),Expected answer for question variant 378.
+Why do leaves change color? (Variant 379),Expected answer for question variant 379.
+What is the purpose of an operating system? (Variant 380),Expected answer for question variant 380.
+What is the capital of France? (Variant 381),Expected answer for question variant 381.
+How does photosynthesis work? (Variant 382),Expected answer for question variant 382.
+What is the largest planet in the solar system? (Variant 383),Expected answer for question variant 383.
+Explain the concept of machine learning. (Variant 384),Expected answer for question variant 384.
+Who wrote Romeo and Juliet? (Variant 385),Expected answer for question variant 385.
+What causes rain? (Variant 386),Expected answer for question variant 386.
+How do computers store data? (Variant 387),Expected answer for question variant 387.
+What is the speed of light? (Variant 388),Expected answer for question variant 388.
+Why do leaves change color? (Variant 389),Expected answer for question variant 389.
+What is the purpose of an operating system? (Variant 390),Expected answer for question variant 390.
+What is the capital of France? (Variant 391),Expected answer for question variant 391.
+How does photosynthesis work? (Variant 392),Expected answer for question variant 392.
+What is the largest planet in the solar system? (Variant 393),Expected answer for question variant 393.
+Explain the concept of machine learning. (Variant 394),Expected answer for question variant 394.
+Who wrote Romeo and Juliet? (Variant 395),Expected answer for question variant 395.
+What causes rain? (Variant 396),Expected answer for question variant 396.
+How do computers store data? (Variant 397),Expected answer for question variant 397.
+What is the speed of light? (Variant 398),Expected answer for question variant 398.
+Why do leaves change color? (Variant 399),Expected answer for question variant 399.
+What is the purpose of an operating system? (Variant 400),Expected answer for question variant 400.
+What is the capital of France? (Variant 401),Expected answer for question variant 401.
+How does photosynthesis work? (Variant 402),Expected answer for question variant 402.
+What is the largest planet in the solar system? (Variant 403),Expected answer for question variant 403.
+Explain the concept of machine learning. (Variant 404),Expected answer for question variant 404.
+Who wrote Romeo and Juliet? (Variant 405),Expected answer for question variant 405.
+What causes rain? (Variant 406),Expected answer for question variant 406.
+How do computers store data? (Variant 407),Expected answer for question variant 407.
+What is the speed of light? (Variant 408),Expected answer for question variant 408.
+Why do leaves change color? (Variant 409),Expected answer for question variant 409.
+What is the purpose of an operating system? (Variant 410),Expected answer for question variant 410.
+What is the capital of France? (Variant 411),Expected answer for question variant 411.
+How does photosynthesis work? (Variant 412),Expected answer for question variant 412.
+What is the largest planet in the solar system? (Variant 413),Expected answer for question variant 413.
+Explain the concept of machine learning. (Variant 414),Expected answer for question variant 414.
+Who wrote Romeo and Juliet? (Variant 415),Expected answer for question variant 415.
+What causes rain? (Variant 416),Expected answer for question variant 416.
+How do computers store data? (Variant 417),Expected answer for question variant 417.
+What is the speed of light? (Variant 418),Expected answer for question variant 418.
+Why do leaves change color? (Variant 419),Expected answer for question variant 419.
+What is the purpose of an operating system? (Variant 420),Expected answer for question variant 420.
+What is the capital of France? (Variant 421),Expected answer for question variant 421.
+How does photosynthesis work? (Variant 422),Expected answer for question variant 422.
+What is the largest planet in the solar system? (Variant 423),Expected answer for question variant 423.
+Explain the concept of machine learning. (Variant 424),Expected answer for question variant 424.
+Who wrote Romeo and Juliet? (Variant 425),Expected answer for question variant 425.
+What causes rain? (Variant 426),Expected answer for question variant 426.
+How do computers store data? (Variant 427),Expected answer for question variant 427.
+What is the speed of light? (Variant 428),Expected answer for question variant 428.
+Why do leaves change color? (Variant 429),Expected answer for question variant 429.
+What is the purpose of an operating system? (Variant 430),Expected answer for question variant 430.
+What is the capital of France? (Variant 431),Expected answer for question variant 431.
+How does photosynthesis work? (Variant 432),Expected answer for question variant 432.
+What is the largest planet in the solar system? (Variant 433),Expected answer for question variant 433.
+Explain the concept of machine learning. (Variant 434),Expected answer for question variant 434.
+Who wrote Romeo and Juliet? (Variant 435),Expected answer for question variant 435.
+What causes rain? (Variant 436),Expected answer for question variant 436.
+How do computers store data? (Variant 437),Expected answer for question variant 437.
+What is the speed of light? (Variant 438),Expected answer for question variant 438.
+Why do leaves change color? (Variant 439),Expected answer for question variant 439.
+What is the purpose of an operating system? (Variant 440),Expected answer for question variant 440.
+What is the capital of France? (Variant 441),Expected answer for question variant 441.
+How does photosynthesis work? (Variant 442),Expected answer for question variant 442.
+What is the largest planet in the solar system? (Variant 443),Expected answer for question variant 443.
+Explain the concept of machine learning. (Variant 444),Expected answer for question variant 444.
+Who wrote Romeo and Juliet? (Variant 445),Expected answer for question variant 445.
+What causes rain? (Variant 446),Expected answer for question variant 446.
+How do computers store data? (Variant 447),Expected answer for question variant 447.
+What is the speed of light? (Variant 448),Expected answer for question variant 448.
+Why do leaves change color? (Variant 449),Expected answer for question variant 449.
+What is the purpose of an operating system? (Variant 450),Expected answer for question variant 450.
+What is the capital of France? (Variant 451),Expected answer for question variant 451.
+How does photosynthesis work? (Variant 452),Expected answer for question variant 452.
+What is the largest planet in the solar system? (Variant 453),Expected answer for question variant 453.
+Explain the concept of machine learning. (Variant 454),Expected answer for question variant 454.
+Who wrote Romeo and Juliet? (Variant 455),Expected answer for question variant 455.
+What causes rain? (Variant 456),Expected answer for question variant 456.
+How do computers store data? (Variant 457),Expected answer for question variant 457.
+What is the speed of light? (Variant 458),Expected answer for question variant 458.
+Why do leaves change color? (Variant 459),Expected answer for question variant 459.
+What is the purpose of an operating system? (Variant 460),Expected answer for question variant 460.
+What is the capital of France? (Variant 461),Expected answer for question variant 461.
+How does photosynthesis work? (Variant 462),Expected answer for question variant 462.
+What is the largest planet in the solar system? (Variant 463),Expected answer for question variant 463.
+Explain the concept of machine learning. (Variant 464),Expected answer for question variant 464.
+Who wrote Romeo and Juliet? (Variant 465),Expected answer for question variant 465.
+What causes rain? (Variant 466),Expected answer for question variant 466.
+How do computers store data? (Variant 467),Expected answer for question variant 467.
+What is the speed of light? (Variant 468),Expected answer for question variant 468.
+Why do leaves change color? (Variant 469),Expected answer for question variant 469.
+What is the purpose of an operating system? (Variant 470),Expected answer for question variant 470.
+What is the capital of France? (Variant 471),Expected answer for question variant 471.
+How does photosynthesis work? (Variant 472),Expected answer for question variant 472.
+What is the largest planet in the solar system? (Variant 473),Expected answer for question variant 473.
+Explain the concept of machine learning. (Variant 474),Expected answer for question variant 474.
+Who wrote Romeo and Juliet? (Variant 475),Expected answer for question variant 475.
+What causes rain? (Variant 476),Expected answer for question variant 476.
+How do computers store data? (Variant 477),Expected answer for question variant 477.
+What is the speed of light? (Variant 478),Expected answer for question variant 478.
+Why do leaves change color? (Variant 479),Expected answer for question variant 479.
+What is the purpose of an operating system? (Variant 480),Expected answer for question variant 480.
+What is the capital of France? (Variant 481),Expected answer for question variant 481.
+How does photosynthesis work? (Variant 482),Expected answer for question variant 482.
+What is the largest planet in the solar system? (Variant 483),Expected answer for question variant 483.
+Explain the concept of machine learning. (Variant 484),Expected answer for question variant 484.
+Who wrote Romeo and Juliet? (Variant 485),Expected answer for question variant 485.
+What causes rain? (Variant 486),Expected answer for question variant 486.
+How do computers store data? (Variant 487),Expected answer for question variant 487.
+What is the speed of light? (Variant 488),Expected answer for question variant 488.
+Why do leaves change color? (Variant 489),Expected answer for question variant 489.
+What is the purpose of an operating system? (Variant 490),Expected answer for question variant 490.
+What is the capital of France? (Variant 491),Expected answer for question variant 491.
+How does photosynthesis work? (Variant 492),Expected answer for question variant 492.
+What is the largest planet in the solar system? (Variant 493),Expected answer for question variant 493.
+Explain the concept of machine learning. (Variant 494),Expected answer for question variant 494.
+Who wrote Romeo and Juliet? (Variant 495),Expected answer for question variant 495.
+What causes rain? (Variant 496),Expected answer for question variant 496.
+How do computers store data? (Variant 497),Expected answer for question variant 497.
+What is the speed of light? (Variant 498),Expected answer for question variant 498.
+Why do leaves change color? (Variant 499),Expected answer for question variant 499.
+What is the purpose of an operating system? (Variant 500),Expected answer for question variant 500.
+What is the capital of France? (Variant 501),Expected answer for question variant 501.
+How does photosynthesis work? (Variant 502),Expected answer for question variant 502.
+What is the largest planet in the solar system? (Variant 503),Expected answer for question variant 503.
+Explain the concept of machine learning. (Variant 504),Expected answer for question variant 504.
+Who wrote Romeo and Juliet? (Variant 505),Expected answer for question variant 505.
+What causes rain? (Variant 506),Expected answer for question variant 506.
+How do computers store data? (Variant 507),Expected answer for question variant 507.
+What is the speed of light? (Variant 508),Expected answer for question variant 508.
+Why do leaves change color? (Variant 509),Expected answer for question variant 509.
+What is the purpose of an operating system? (Variant 510),Expected answer for question variant 510.
+What is the capital of France? (Variant 511),Expected answer for question variant 511.
+How does photosynthesis work? (Variant 512),Expected answer for question variant 512.
+What is the largest planet in the solar system? (Variant 513),Expected answer for question variant 513.
+Explain the concept of machine learning. (Variant 514),Expected answer for question variant 514.
+Who wrote Romeo and Juliet? (Variant 515),Expected answer for question variant 515.
+What causes rain? (Variant 516),Expected answer for question variant 516.
+How do computers store data? (Variant 517),Expected answer for question variant 517.
+What is the speed of light? (Variant 518),Expected answer for question variant 518.
+Why do leaves change color? (Variant 519),Expected answer for question variant 519.
+What is the purpose of an operating system? (Variant 520),Expected answer for question variant 520.
+What is the capital of France? (Variant 521),Expected answer for question variant 521.
+How does photosynthesis work? (Variant 522),Expected answer for question variant 522.
+What is the largest planet in the solar system? (Variant 523),Expected answer for question variant 523.
+Explain the concept of machine learning. (Variant 524),Expected answer for question variant 524.
+Who wrote Romeo and Juliet? (Variant 525),Expected answer for question variant 525.
+What causes rain? (Variant 526),Expected answer for question variant 526.
+How do computers store data? (Variant 527),Expected answer for question variant 527.
+What is the speed of light? (Variant 528),Expected answer for question variant 528.
+Why do leaves change color? (Variant 529),Expected answer for question variant 529.
+What is the purpose of an operating system? (Variant 530),Expected answer for question variant 530.
+What is the capital of France? (Variant 531),Expected answer for question variant 531.
+How does photosynthesis work? (Variant 532),Expected answer for question variant 532.
+What is the largest planet in the solar system? (Variant 533),Expected answer for question variant 533.
+Explain the concept of machine learning. (Variant 534),Expected answer for question variant 534.
+Who wrote Romeo and Juliet? (Variant 535),Expected answer for question variant 535.
+What causes rain? (Variant 536),Expected answer for question variant 536.
+How do computers store data? (Variant 537),Expected answer for question variant 537.
+What is the speed of light? (Variant 538),Expected answer for question variant 538.
+Why do leaves change color? (Variant 539),Expected answer for question variant 539.
+What is the purpose of an operating system? (Variant 540),Expected answer for question variant 540.
+What is the capital of France? (Variant 541),Expected answer for question variant 541.
+How does photosynthesis work? (Variant 542),Expected answer for question variant 542.
+What is the largest planet in the solar system? (Variant 543),Expected answer for question variant 543.
+Explain the concept of machine learning. (Variant 544),Expected answer for question variant 544.
+Who wrote Romeo and Juliet? (Variant 545),Expected answer for question variant 545.
+What causes rain? (Variant 546),Expected answer for question variant 546.
+How do computers store data? (Variant 547),Expected answer for question variant 547.
+What is the speed of light? (Variant 548),Expected answer for question variant 548.
+Why do leaves change color? (Variant 549),Expected answer for question variant 549.
+What is the purpose of an operating system? (Variant 550),Expected answer for question variant 550.
+What is the capital of France? (Variant 551),Expected answer for question variant 551.
+How does photosynthesis work? (Variant 552),Expected answer for question variant 552.
+What is the largest planet in the solar system? (Variant 553),Expected answer for question variant 553.
+Explain the concept of machine learning. (Variant 554),Expected answer for question variant 554.
+Who wrote Romeo and Juliet? (Variant 555),Expected answer for question variant 555.
+What causes rain? (Variant 556),Expected answer for question variant 556.
+How do computers store data? (Variant 557),Expected answer for question variant 557.
+What is the speed of light? (Variant 558),Expected answer for question variant 558.
+Why do leaves change color? (Variant 559),Expected answer for question variant 559.
+What is the purpose of an operating system? (Variant 560),Expected answer for question variant 560.
+What is the capital of France? (Variant 561),Expected answer for question variant 561.
+How does photosynthesis work? (Variant 562),Expected answer for question variant 562.
+What is the largest planet in the solar system? (Variant 563),Expected answer for question variant 563.
+Explain the concept of machine learning. (Variant 564),Expected answer for question variant 564.
+Who wrote Romeo and Juliet? (Variant 565),Expected answer for question variant 565.
+What causes rain? (Variant 566),Expected answer for question variant 566.
+How do computers store data? (Variant 567),Expected answer for question variant 567.
+What is the speed of light? (Variant 568),Expected answer for question variant 568.
+Why do leaves change color? (Variant 569),Expected answer for question variant 569.
+What is the purpose of an operating system? (Variant 570),Expected answer for question variant 570.
+What is the capital of France? (Variant 571),Expected answer for question variant 571.
+How does photosynthesis work? (Variant 572),Expected answer for question variant 572.
+What is the largest planet in the solar system? (Variant 573),Expected answer for question variant 573.
+Explain the concept of machine learning. (Variant 574),Expected answer for question variant 574.
+Who wrote Romeo and Juliet? (Variant 575),Expected answer for question variant 575.
+What causes rain? (Variant 576),Expected answer for question variant 576.
+How do computers store data? (Variant 577),Expected answer for question variant 577.
+What is the speed of light? (Variant 578),Expected answer for question variant 578.
+Why do leaves change color? (Variant 579),Expected answer for question variant 579.
+What is the purpose of an operating system? (Variant 580),Expected answer for question variant 580.
+What is the capital of France? (Variant 581),Expected answer for question variant 581.
+How does photosynthesis work? (Variant 582),Expected answer for question variant 582.
+What is the largest planet in the solar system? (Variant 583),Expected answer for question variant 583.
+Explain the concept of machine learning. (Variant 584),Expected answer for question variant 584.
+Who wrote Romeo and Juliet? (Variant 585),Expected answer for question variant 585.
+What causes rain? (Variant 586),Expected answer for question variant 586.
+How do computers store data? (Variant 587),Expected answer for question variant 587.
+What is the speed of light? (Variant 588),Expected answer for question variant 588.
+Why do leaves change color? (Variant 589),Expected answer for question variant 589.
+What is the purpose of an operating system? (Variant 590),Expected answer for question variant 590.
+What is the capital of France? (Variant 591),Expected answer for question variant 591.
+How does photosynthesis work? (Variant 592),Expected answer for question variant 592.
+What is the largest planet in the solar system? (Variant 593),Expected answer for question variant 593.
+Explain the concept of machine learning. (Variant 594),Expected answer for question variant 594.
+Who wrote Romeo and Juliet? (Variant 595),Expected answer for question variant 595.
+What causes rain? (Variant 596),Expected answer for question variant 596.
+How do computers store data? (Variant 597),Expected answer for question variant 597.
+What is the speed of light? (Variant 598),Expected answer for question variant 598.
+Why do leaves change color? (Variant 599),Expected answer for question variant 599.
+What is the purpose of an operating system? (Variant 600),Expected answer for question variant 600.
+What is the capital of France? (Variant 601),Expected answer for question variant 601.
+How does photosynthesis work? (Variant 602),Expected answer for question variant 602.
+What is the largest planet in the solar system? (Variant 603),Expected answer for question variant 603.
+Explain the concept of machine learning. (Variant 604),Expected answer for question variant 604.
+Who wrote Romeo and Juliet? (Variant 605),Expected answer for question variant 605.
+What causes rain? (Variant 606),Expected answer for question variant 606.
+How do computers store data? (Variant 607),Expected answer for question variant 607.
+What is the speed of light? (Variant 608),Expected answer for question variant 608.
+Why do leaves change color? (Variant 609),Expected answer for question variant 609.
+What is the purpose of an operating system? (Variant 610),Expected answer for question variant 610.
+What is the capital of France? (Variant 611),Expected answer for question variant 611.
+How does photosynthesis work? (Variant 612),Expected answer for question variant 612.
+What is the largest planet in the solar system? (Variant 613),Expected answer for question variant 613.
+Explain the concept of machine learning. (Variant 614),Expected answer for question variant 614.
+Who wrote Romeo and Juliet? (Variant 615),Expected answer for question variant 615.
+What causes rain? (Variant 616),Expected answer for question variant 616.
+How do computers store data? (Variant 617),Expected answer for question variant 617.
+What is the speed of light? (Variant 618),Expected answer for question variant 618.
+Why do leaves change color? (Variant 619),Expected answer for question variant 619.
+What is the purpose of an operating system? (Variant 620),Expected answer for question variant 620.
+What is the capital of France? (Variant 621),Expected answer for question variant 621.
+How does photosynthesis work? (Variant 622),Expected answer for question variant 622.
+What is the largest planet in the solar system? (Variant 623),Expected answer for question variant 623.
+Explain the concept of machine learning. (Variant 624),Expected answer for question variant 624.
+Who wrote Romeo and Juliet? (Variant 625),Expected answer for question variant 625.
+What causes rain? (Variant 626),Expected answer for question variant 626.
+How do computers store data? (Variant 627),Expected answer for question variant 627.
+What is the speed of light? (Variant 628),Expected answer for question variant 628.
+Why do leaves change color? (Variant 629),Expected answer for question variant 629.
+What is the purpose of an operating system? (Variant 630),Expected answer for question variant 630.
+What is the capital of France? (Variant 631),Expected answer for question variant 631.
+How does photosynthesis work? (Variant 632),Expected answer for question variant 632.
+What is the largest planet in the solar system? (Variant 633),Expected answer for question variant 633.
+Explain the concept of machine learning. (Variant 634),Expected answer for question variant 634.
+Who wrote Romeo and Juliet? (Variant 635),Expected answer for question variant 635.
+What causes rain? (Variant 636),Expected answer for question variant 636.
+How do computers store data? (Variant 637),Expected answer for question variant 637.
+What is the speed of light? (Variant 638),Expected answer for question variant 638.
+Why do leaves change color? (Variant 639),Expected answer for question variant 639.
+What is the purpose of an operating system? (Variant 640),Expected answer for question variant 640.
+What is the capital of France? (Variant 641),Expected answer for question variant 641.
+How does photosynthesis work? (Variant 642),Expected answer for question variant 642.
+What is the largest planet in the solar system? (Variant 643),Expected answer for question variant 643.
+Explain the concept of machine learning. (Variant 644),Expected answer for question variant 644.
+Who wrote Romeo and Juliet? (Variant 645),Expected answer for question variant 645.
+What causes rain? (Variant 646),Expected answer for question variant 646.
+How do computers store data? (Variant 647),Expected answer for question variant 647.
+What is the speed of light? (Variant 648),Expected answer for question variant 648.
+Why do leaves change color? (Variant 649),Expected answer for question variant 649.
+What is the purpose of an operating system? (Variant 650),Expected answer for question variant 650.
+What is the capital of France? (Variant 651),Expected answer for question variant 651.
+How does photosynthesis work? (Variant 652),Expected answer for question variant 652.
+What is the largest planet in the solar system? (Variant 653),Expected answer for question variant 653.
+Explain the concept of machine learning. (Variant 654),Expected answer for question variant 654.
+Who wrote Romeo and Juliet? (Variant 655),Expected answer for question variant 655.
+What causes rain? (Variant 656),Expected answer for question variant 656.
+How do computers store data? (Variant 657),Expected answer for question variant 657.
+What is the speed of light? (Variant 658),Expected answer for question variant 658.
+Why do leaves change color? (Variant 659),Expected answer for question variant 659.
+What is the purpose of an operating system? (Variant 660),Expected answer for question variant 660.
+What is the capital of France? (Variant 661),Expected answer for question variant 661.
+How does photosynthesis work? (Variant 662),Expected answer for question variant 662.
+What is the largest planet in the solar system? (Variant 663),Expected answer for question variant 663.
+Explain the concept of machine learning. (Variant 664),Expected answer for question variant 664.
+Who wrote Romeo and Juliet? (Variant 665),Expected answer for question variant 665.
+What causes rain? (Variant 666),Expected answer for question variant 666.
+How do computers store data? (Variant 667),Expected answer for question variant 667.
+What is the speed of light? (Variant 668),Expected answer for question variant 668.
+Why do leaves change color? (Variant 669),Expected answer for question variant 669.
+What is the purpose of an operating system? (Variant 670),Expected answer for question variant 670.
+What is the capital of France? (Variant 671),Expected answer for question variant 671.
+How does photosynthesis work? (Variant 672),Expected answer for question variant 672.
+What is the largest planet in the solar system? (Variant 673),Expected answer for question variant 673.
+Explain the concept of machine learning. (Variant 674),Expected answer for question variant 674.
+Who wrote Romeo and Juliet? (Variant 675),Expected answer for question variant 675.
+What causes rain? (Variant 676),Expected answer for question variant 676.
+How do computers store data? (Variant 677),Expected answer for question variant 677.
+What is the speed of light? (Variant 678),Expected answer for question variant 678.
+Why do leaves change color? (Variant 679),Expected answer for question variant 679.
+What is the purpose of an operating system? (Variant 680),Expected answer for question variant 680.
+What is the capital of France? (Variant 681),Expected answer for question variant 681.
+How does photosynthesis work? (Variant 682),Expected answer for question variant 682.
+What is the largest planet in the solar system? (Variant 683),Expected answer for question variant 683.
+Explain the concept of machine learning. (Variant 684),Expected answer for question variant 684.
+Who wrote Romeo and Juliet? (Variant 685),Expected answer for question variant 685.
+What causes rain? (Variant 686),Expected answer for question variant 686.
+How do computers store data? (Variant 687),Expected answer for question variant 687.
+What is the speed of light? (Variant 688),Expected answer for question variant 688.
+Why do leaves change color? (Variant 689),Expected answer for question variant 689.
+What is the purpose of an operating system? (Variant 690),Expected answer for question variant 690.
+What is the capital of France? (Variant 691),Expected answer for question variant 691.
+How does photosynthesis work? (Variant 692),Expected answer for question variant 692.
+What is the largest planet in the solar system? (Variant 693),Expected answer for question variant 693.
+Explain the concept of machine learning. (Variant 694),Expected answer for question variant 694.
+Who wrote Romeo and Juliet? (Variant 695),Expected answer for question variant 695.
+What causes rain? (Variant 696),Expected answer for question variant 696.
+How do computers store data? (Variant 697),Expected answer for question variant 697.
+What is the speed of light? (Variant 698),Expected answer for question variant 698.
+Why do leaves change color? (Variant 699),Expected answer for question variant 699.
+What is the purpose of an operating system? (Variant 700),Expected answer for question variant 700.
+What is the capital of France? (Variant 701),Expected answer for question variant 701.
+How does photosynthesis work? (Variant 702),Expected answer for question variant 702.
+What is the largest planet in the solar system? (Variant 703),Expected answer for question variant 703.
+Explain the concept of machine learning. (Variant 704),Expected answer for question variant 704.
+Who wrote Romeo and Juliet? (Variant 705),Expected answer for question variant 705.
+What causes rain? (Variant 706),Expected answer for question variant 706.
+How do computers store data? (Variant 707),Expected answer for question variant 707.
+What is the speed of light? (Variant 708),Expected answer for question variant 708.
+Why do leaves change color? (Variant 709),Expected answer for question variant 709.
+What is the purpose of an operating system? (Variant 710),Expected answer for question variant 710.
+What is the capital of France? (Variant 711),Expected answer for question variant 711.
+How does photosynthesis work? (Variant 712),Expected answer for question variant 712.
+What is the largest planet in the solar system? (Variant 713),Expected answer for question variant 713.
+Explain the concept of machine learning. (Variant 714),Expected answer for question variant 714.
+Who wrote Romeo and Juliet? (Variant 715),Expected answer for question variant 715.
+What causes rain? (Variant 716),Expected answer for question variant 716.
+How do computers store data? (Variant 717),Expected answer for question variant 717.
+What is the speed of light? (Variant 718),Expected answer for question variant 718.
+Why do leaves change color? (Variant 719),Expected answer for question variant 719.
+What is the purpose of an operating system? (Variant 720),Expected answer for question variant 720.
+What is the capital of France? (Variant 721),Expected answer for question variant 721.
+How does photosynthesis work? (Variant 722),Expected answer for question variant 722.
+What is the largest planet in the solar system? (Variant 723),Expected answer for question variant 723.
+Explain the concept of machine learning. (Variant 724),Expected answer for question variant 724.
+Who wrote Romeo and Juliet? (Variant 725),Expected answer for question variant 725.
+What causes rain? (Variant 726),Expected answer for question variant 726.
+How do computers store data? (Variant 727),Expected answer for question variant 727.
+What is the speed of light? (Variant 728),Expected answer for question variant 728.
+Why do leaves change color? (Variant 729),Expected answer for question variant 729.
+What is the purpose of an operating system? (Variant 730),Expected answer for question variant 730.
+What is the capital of France? (Variant 731),Expected answer for question variant 731.
+How does photosynthesis work? (Variant 732),Expected answer for question variant 732.
+What is the largest planet in the solar system? (Variant 733),Expected answer for question variant 733.
+Explain the concept of machine learning. (Variant 734),Expected answer for question variant 734.
+Who wrote Romeo and Juliet? (Variant 735),Expected answer for question variant 735.
+What causes rain? (Variant 736),Expected answer for question variant 736.
+How do computers store data? (Variant 737),Expected answer for question variant 737.
+What is the speed of light? (Variant 738),Expected answer for question variant 738.
+Why do leaves change color? (Variant 739),Expected answer for question variant 739.
+What is the purpose of an operating system? (Variant 740),Expected answer for question variant 740.
+What is the capital of France? (Variant 741),Expected answer for question variant 741.
+How does photosynthesis work? (Variant 742),Expected answer for question variant 742.
+What is the largest planet in the solar system? (Variant 743),Expected answer for question variant 743.
+Explain the concept of machine learning. (Variant 744),Expected answer for question variant 744.
+Who wrote Romeo and Juliet? (Variant 745),Expected answer for question variant 745.
+What causes rain? (Variant 746),Expected answer for question variant 746.
+How do computers store data? (Variant 747),Expected answer for question variant 747.
+What is the speed of light? (Variant 748),Expected answer for question variant 748.
+Why do leaves change color? (Variant 749),Expected answer for question variant 749.
+What is the purpose of an operating system? (Variant 750),Expected answer for question variant 750.
+What is the capital of France? (Variant 751),Expected answer for question variant 751.
+How does photosynthesis work? (Variant 752),Expected answer for question variant 752.
+What is the largest planet in the solar system? (Variant 753),Expected answer for question variant 753.
+Explain the concept of machine learning. (Variant 754),Expected answer for question variant 754.
+Who wrote Romeo and Juliet? (Variant 755),Expected answer for question variant 755.
+What causes rain? (Variant 756),Expected answer for question variant 756.
+How do computers store data? (Variant 757),Expected answer for question variant 757.
+What is the speed of light? (Variant 758),Expected answer for question variant 758.
+Why do leaves change color? (Variant 759),Expected answer for question variant 759.
+What is the purpose of an operating system? (Variant 760),Expected answer for question variant 760.
+What is the capital of France? (Variant 761),Expected answer for question variant 761.
+How does photosynthesis work? (Variant 762),Expected answer for question variant 762.
+What is the largest planet in the solar system? (Variant 763),Expected answer for question variant 763.
+Explain the concept of machine learning. (Variant 764),Expected answer for question variant 764.
+Who wrote Romeo and Juliet? (Variant 765),Expected answer for question variant 765.
+What causes rain? (Variant 766),Expected answer for question variant 766.
+How do computers store data? (Variant 767),Expected answer for question variant 767.
+What is the speed of light? (Variant 768),Expected answer for question variant 768.
+Why do leaves change color? (Variant 769),Expected answer for question variant 769.
+What is the purpose of an operating system? (Variant 770),Expected answer for question variant 770.
+What is the capital of France? (Variant 771),Expected answer for question variant 771.
+How does photosynthesis work? (Variant 772),Expected answer for question variant 772.
+What is the largest planet in the solar system? (Variant 773),Expected answer for question variant 773.
+Explain the concept of machine learning. (Variant 774),Expected answer for question variant 774.
+Who wrote Romeo and Juliet? (Variant 775),Expected answer for question variant 775.
+What causes rain? (Variant 776),Expected answer for question variant 776.
+How do computers store data? (Variant 777),Expected answer for question variant 777.
+What is the speed of light? (Variant 778),Expected answer for question variant 778.
+Why do leaves change color? (Variant 779),Expected answer for question variant 779.
+What is the purpose of an operating system? (Variant 780),Expected answer for question variant 780.
+What is the capital of France? (Variant 781),Expected answer for question variant 781.
+How does photosynthesis work? (Variant 782),Expected answer for question variant 782.
+What is the largest planet in the solar system? (Variant 783),Expected answer for question variant 783.
+Explain the concept of machine learning. (Variant 784),Expected answer for question variant 784.
+Who wrote Romeo and Juliet? (Variant 785),Expected answer for question variant 785.
+What causes rain? (Variant 786),Expected answer for question variant 786.
+How do computers store data? (Variant 787),Expected answer for question variant 787.
+What is the speed of light? (Variant 788),Expected answer for question variant 788.
+Why do leaves change color? (Variant 789),Expected answer for question variant 789.
+What is the purpose of an operating system? (Variant 790),Expected answer for question variant 790.
+What is the capital of France? (Variant 791),Expected answer for question variant 791.
+How does photosynthesis work? (Variant 792),Expected answer for question variant 792.
+What is the largest planet in the solar system? (Variant 793),Expected answer for question variant 793.
+Explain the concept of machine learning. (Variant 794),Expected answer for question variant 794.
+Who wrote Romeo and Juliet? (Variant 795),Expected answer for question variant 795.
+What causes rain? (Variant 796),Expected answer for question variant 796.
+How do computers store data? (Variant 797),Expected answer for question variant 797.
+What is the speed of light? (Variant 798),Expected answer for question variant 798.
+Why do leaves change color? (Variant 799),Expected answer for question variant 799.
+What is the purpose of an operating system? (Variant 800),Expected answer for question variant 800.
+What is the capital of France? (Variant 801),Expected answer for question variant 801.
+How does photosynthesis work? (Variant 802),Expected answer for question variant 802.
+What is the largest planet in the solar system? (Variant 803),Expected answer for question variant 803.
+Explain the concept of machine learning. (Variant 804),Expected answer for question variant 804.
+Who wrote Romeo and Juliet? (Variant 805),Expected answer for question variant 805.
+What causes rain? (Variant 806),Expected answer for question variant 806.
+How do computers store data? (Variant 807),Expected answer for question variant 807.
+What is the speed of light? (Variant 808),Expected answer for question variant 808.
+Why do leaves change color? (Variant 809),Expected answer for question variant 809.
+What is the purpose of an operating system? (Variant 810),Expected answer for question variant 810.
+What is the capital of France? (Variant 811),Expected answer for question variant 811.
+How does photosynthesis work? (Variant 812),Expected answer for question variant 812.
+What is the largest planet in the solar system? (Variant 813),Expected answer for question variant 813.
+Explain the concept of machine learning. (Variant 814),Expected answer for question variant 814.
+Who wrote Romeo and Juliet? (Variant 815),Expected answer for question variant 815.
+What causes rain? (Variant 816),Expected answer for question variant 816.
+How do computers store data? (Variant 817),Expected answer for question variant 817.
+What is the speed of light? (Variant 818),Expected answer for question variant 818.
+Why do leaves change color? (Variant 819),Expected answer for question variant 819.
+What is the purpose of an operating system? (Variant 820),Expected answer for question variant 820.
+What is the capital of France? (Variant 821),Expected answer for question variant 821.
+How does photosynthesis work? (Variant 822),Expected answer for question variant 822.
+What is the largest planet in the solar system? (Variant 823),Expected answer for question variant 823.
+Explain the concept of machine learning. (Variant 824),Expected answer for question variant 824.
+Who wrote Romeo and Juliet? (Variant 825),Expected answer for question variant 825.
+What causes rain? (Variant 826),Expected answer for question variant 826.
+How do computers store data? (Variant 827),Expected answer for question variant 827.
+What is the speed of light? (Variant 828),Expected answer for question variant 828.
+Why do leaves change color? (Variant 829),Expected answer for question variant 829.
+What is the purpose of an operating system? (Variant 830),Expected answer for question variant 830.
+What is the capital of France? (Variant 831),Expected answer for question variant 831.
+How does photosynthesis work? (Variant 832),Expected answer for question variant 832.
+What is the largest planet in the solar system? (Variant 833),Expected answer for question variant 833.
+Explain the concept of machine learning. (Variant 834),Expected answer for question variant 834.
+Who wrote Romeo and Juliet? (Variant 835),Expected answer for question variant 835.
+What causes rain? (Variant 836),Expected answer for question variant 836.
+How do computers store data? (Variant 837),Expected answer for question variant 837.
+What is the speed of light? (Variant 838),Expected answer for question variant 838.
+Why do leaves change color? (Variant 839),Expected answer for question variant 839.
+What is the purpose of an operating system? (Variant 840),Expected answer for question variant 840.
+What is the capital of France? (Variant 841),Expected answer for question variant 841.
+How does photosynthesis work? (Variant 842),Expected answer for question variant 842.
+What is the largest planet in the solar system? (Variant 843),Expected answer for question variant 843.
+Explain the concept of machine learning. (Variant 844),Expected answer for question variant 844.
+Who wrote Romeo and Juliet? (Variant 845),Expected answer for question variant 845.
+What causes rain? (Variant 846),Expected answer for question variant 846.
+How do computers store data? (Variant 847),Expected answer for question variant 847.
+What is the speed of light? (Variant 848),Expected answer for question variant 848.
+Why do leaves change color? (Variant 849),Expected answer for question variant 849.
+What is the purpose of an operating system? (Variant 850),Expected answer for question variant 850.
+What is the capital of France? (Variant 851),Expected answer for question variant 851.
+How does photosynthesis work? (Variant 852),Expected answer for question variant 852.
+What is the largest planet in the solar system? (Variant 853),Expected answer for question variant 853.
+Explain the concept of machine learning. (Variant 854),Expected answer for question variant 854.
+Who wrote Romeo and Juliet? (Variant 855),Expected answer for question variant 855.
+What causes rain? (Variant 856),Expected answer for question variant 856.
+How do computers store data? (Variant 857),Expected answer for question variant 857.
+What is the speed of light? (Variant 858),Expected answer for question variant 858.
+Why do leaves change color? (Variant 859),Expected answer for question variant 859.
+What is the purpose of an operating system? (Variant 860),Expected answer for question variant 860.
+What is the capital of France? (Variant 861),Expected answer for question variant 861.
+How does photosynthesis work? (Variant 862),Expected answer for question variant 862.
+What is the largest planet in the solar system? (Variant 863),Expected answer for question variant 863.
+Explain the concept of machine learning. (Variant 864),Expected answer for question variant 864.
+Who wrote Romeo and Juliet? (Variant 865),Expected answer for question variant 865.
+What causes rain? (Variant 866),Expected answer for question variant 866.
+How do computers store data? (Variant 867),Expected answer for question variant 867.
+What is the speed of light? (Variant 868),Expected answer for question variant 868.
+Why do leaves change color? (Variant 869),Expected answer for question variant 869.
+What is the purpose of an operating system? (Variant 870),Expected answer for question variant 870.
+What is the capital of France? (Variant 871),Expected answer for question variant 871.
+How does photosynthesis work? (Variant 872),Expected answer for question variant 872.
+What is the largest planet in the solar system? (Variant 873),Expected answer for question variant 873.
+Explain the concept of machine learning. (Variant 874),Expected answer for question variant 874.
+Who wrote Romeo and Juliet? (Variant 875),Expected answer for question variant 875.
+What causes rain? (Variant 876),Expected answer for question variant 876.
+How do computers store data? (Variant 877),Expected answer for question variant 877.
+What is the speed of light? (Variant 878),Expected answer for question variant 878.
+Why do leaves change color? (Variant 879),Expected answer for question variant 879.
+What is the purpose of an operating system? (Variant 880),Expected answer for question variant 880.
+What is the capital of France? (Variant 881),Expected answer for question variant 881.
+How does photosynthesis work? (Variant 882),Expected answer for question variant 882.
+What is the largest planet in the solar system? (Variant 883),Expected answer for question variant 883.
+Explain the concept of machine learning. (Variant 884),Expected answer for question variant 884.
+Who wrote Romeo and Juliet? (Variant 885),Expected answer for question variant 885.
+What causes rain? (Variant 886),Expected answer for question variant 886.
+How do computers store data? (Variant 887),Expected answer for question variant 887.
+What is the speed of light? (Variant 888),Expected answer for question variant 888.
+Why do leaves change color? (Variant 889),Expected answer for question variant 889.
+What is the purpose of an operating system? (Variant 890),Expected answer for question variant 890.
+What is the capital of France? (Variant 891),Expected answer for question variant 891.
+How does photosynthesis work? (Variant 892),Expected answer for question variant 892.
+What is the largest planet in the solar system? (Variant 893),Expected answer for question variant 893.
+Explain the concept of machine learning. (Variant 894),Expected answer for question variant 894.
+Who wrote Romeo and Juliet? (Variant 895),Expected answer for question variant 895.
+What causes rain? (Variant 896),Expected answer for question variant 896.
+How do computers store data? (Variant 897),Expected answer for question variant 897.

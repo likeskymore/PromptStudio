@@ -1,14 +1,14 @@
 # PromptStudio
 
-PromptStudio is a local tool for engineering, running, and evaluating prompts for large language models. It combines a React workspace, an Express API, and a headless experiment runner for testing prompts against structured datasets.
+PromptStudio is a local tool for designing, running, and evaluating prompts for large language models. Its execution pipeline combines an Express backend API with a headless runner that calls it.
 
-Experiment configurations can be imported from ChainForge-compatible YAML files. Supported integrations include OpenAI, Google, Anthropic, Azure OpenAI, and Amazon Bedrock.
+We also provide an installable dashboard for experiment monitoring, available [here](https://github.com/likeskymore/prompt-studio-dashboard)
+
+Experiment configurations can be imported from [ChainForge](https://github.com/ianarawjo/ChainForge)-compatible YAML files.
 
 ## Key features
 
-- Build and compare prompt workflows.
-- Run experiments against CSV datasets.
-- Add custom processors and evaluators.
+- Run YAML-exported ChainForge experiments
 - Estimate input-token usage before execution.
 - Save and rerun experiments.
 - Persist experiments and results in MySQL.
@@ -52,13 +52,9 @@ Start the backend in one terminal:
 npx tsx backend/api/server.ts
 ```
 
-Start the frontend in another:
+*The frontend dashboard is optional. If you want to use it, run the frontend separately by following the instructions provided in the dashboard project's README.*
 
-```bash
-npm start
-```
-
-The API uses port `3001` by default, and the frontend development server normally uses port `3000`.
+The backend and frontend listen on ports `3001` and `3005`, respectively, by default.
 
 ## Run an experiment
 
@@ -80,24 +76,15 @@ The runner estimates input-token usage and asks for confirmation before executio
 
 ### For users
 
-- [User guide](docs/user-guide.md): overview of the user documentation.
 - [Getting started](docs/getting-started.md): install PromptStudio and run a first experiment.
 - [Experiment workflows](docs/experiments.md): datasets, YAML configuration, CLI usage, providers, and troubleshooting.
 
 ### For developers
 
-- [Developer guide](docs/developer-guide.md): overview of the developer documentation.
+- [Developer guide](docs/developer-guide.md): setup, repository layout, development workflow, testing, and contribution baseline.
 - [Architecture](docs/architecture.md): repository layout, runtime responsibilities, and module boundaries.
 - [Testing and quality](docs/testing.md): test commands, quality checks, and provider mocking.
 - [Contributing](docs/contributing.md): pull request and documentation expectations.
-
-## Development commands
-
-```bash
-npm test      # Format, lint, and run Jest
-npm run build # Format, lint, and create a production build
-npm run clean # Format and lint only
-```
 
 ## Security
 

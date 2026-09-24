@@ -27,20 +27,15 @@ Run the backend in one terminal:
 npx tsx backend/api/server.ts
 ```
 
-Run the frontend in another:
+*The frontend dashboard is optional. If you want to use it, run the frontend separately by following the instructions provided in the dashboard project's README.*
 
-```bash
-npm start
-```
-
-The backend listens on port `3001` by default. The frontend development server normally uses port `3000`.
+The backend and frontend listen on ports `3001` and `3005`, respectively, by default.
 
 ## Create your first experiment
 
-1. Prepare a CSV dataset.
-2. Create or export a ChainForge-compatible YAML configuration.
-3. Place the YAML file and supporting files in `files/`.
-4. Open the frontend and author or import the workflow.
-5. Run the experiment and inspect its outputs and evaluations.
+1. Create or export a ChainForge-compatible YAML configuration.
+2. Place the YAML file and supporting files in `files/`.
+3. Open the frontend and author or import the workflow.
+4. Run the experiment and inspect its outputs and evaluations.
 
 See [Experiment workflows](experiments.md) for file organization and CLI usage.

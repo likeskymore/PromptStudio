@@ -1,5 +1,5 @@
 import { Command } from "commander";
-import {getTotalTokenCountForExperiment, run_experiment, save_config} from "./apiCall";
+import {getTotalTokenCountForExperiment, rerun_experiment, run_experiment, save_config} from "./apiCall";
 import * as fs from "fs";
 import * as path from "node:path";
 
@@ -69,7 +69,7 @@ async function main() {
             console.log("Experiment run cancelled.");
             process.exit(0);
         }
-        await run_experiment(options.name);
+        await rerun_experiment(options.name);
     }
     else {
         console.error("Please provide a configuration file or an experiment name.");

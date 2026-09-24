@@ -12,9 +12,12 @@ import {resolve_inputs} from "./configHandler";
 import {ExperimentRunner} from "./ExperimentRunner";
 import {EvaluatorRunner} from "./EvaluatorRunner";
 import { addExperimentRunState, completeExperimentRun, createExperimentRun, failExperimentRun, isExperimentRunPauseRequested, startExperimentRun } from "./runState";
+import { randomUUID } from "crypto";
+
+const activeExecutionTokens = new Map<string, string>();
 
 
-async function execute_experiment(experiment: Experiment, api_keys: string, runState: { run_id: string }) {
+async function execute_experiment(experiment: Experiment, api_keys: string, runState: { run_id: string }, executionToken: string, rerun = false) {
     try {
     const nodes = await get_nodes_by_experiment(experiment.id);
     const links = await get_links_by_experiment(experiment.id);
@@ -29,7 +32,7 @@ async function execute_experiment(experiment: Experiment, api_keys: string, runS
                 // Nothing to do here
                 break;
             case NodeType.prompt_template:
-                await run_template(node.id, api_keys, experiment, runState.run_id);
+                await run_template(node.id, api_keys, experiment, runState.run_id, rerun);
                 break;
             case NodeType.evaluator:
                 await run_evaluator(node.id, experiment);
@@ -41,9 +44,15 @@ async function execute_experiment(experiment: Experiment, api_keys: string, runS
                 console.warn(`Unknown node type for node ${node.id}`);
         }
     }
-    completeExperimentRun(runState.run_id);
+    if (activeExecutionTokens.get(runState.run_id) === executionToken) {
+        completeExperimentRun(runState.run_id);
+        activeExecutionTokens.delete(runState.run_id);
+    }
     } catch (error) {
-        failExperimentRun(runState.run_id, error instanceof Error ? error.message : String(error));
+        if (activeExecutionTokens.get(runState.run_id) === executionToken) {
+            failExperimentRun(runState.run_id, error instanceof Error ? error.message : String(error));
+            activeExecutionTokens.delete(runState.run_id);
+        }
         console.error(`Error running experiment ${experiment.title}:`, error);
     }
 }
@@ -57,7 +66,7 @@ async function execute_experiment(experiment: Experiment, api_keys: string, runS
  * @param api_keys A dictionary of API keys to use for the experiment.
  * @param experiment The experiment object containing details like title and threads.
  */
-async function run_template(node_id: number, api_keys: string, experiment: Experiment, runId?: string) {
+async function run_template(node_id: number, api_keys: string, experiment: Experiment, runId?: string, rerun = false) {
     try{
         const resolvedInputs = await resolve_inputs(node_id);
         const inputs = resolvedInputs.map(input => input.vars);
@@ -68,7 +77,9 @@ async function run_template(node_id: number, api_keys: string, experiment: Exper
             if (config.final_dataset_id){
                 dataset_id = config.final_dataset_id;
                 // If we have a final dataset, we can skip the dataset creation step, but we need to add the new inputs to it
-                await add_rows_to_dataset(dataset_id, inputs);
+                if (!rerun) {
+                    await add_rows_to_dataset(dataset_id, inputs);
+                }
                 break;
             }
         }
@@ -89,7 +100,7 @@ async function run_template(node_id: number, api_keys: string, experiment: Exper
         }
         await Promise.all(promises);
         const num_workers = experiment.threads || 1;
-        const runner = new ExperimentRunner(experiment.title, num_workers, configs, api_keys, runId);
+        const runner = new ExperimentRunner(experiment.title, num_workers, configs, api_keys, runId, rerun);
         await runner.run();
     }
     catch (error) {
@@ -138,7 +149,7 @@ async function run_processor(processor_id: number, experiment: Experiment){
  * @param experiment_name The name of the experiment to run.
  * @param api_keys A dictionary of API keys to use for the experiment.
  */
-export async function run_experiment(experiment_name: string, api_keys: string, options?: { background?: boolean; resumeRunId?: string }) {
+export async function run_experiment(experiment_name: string, api_keys: string, options?: { background?: boolean; resumeRunId?: string; rerun?: boolean }) {
     try{
         const experiment = await get_experiment_by_name(experiment_name);
         if (!experiment) {
@@ -158,9 +169,11 @@ export async function run_experiment(experiment_name: string, api_keys: string, 
         } else {
             runState = createExperimentRun(experiment.id, experiment_name);
         }
+        const executionToken = randomUUID();
+        activeExecutionTokens.set(runState.run_id, executionToken);
         startExperimentRun(runState.run_id);
 
-        const runPromise = execute_experiment(experiment, api_keys, runState);
+        const runPromise = execute_experiment(experiment, api_keys, runState, executionToken, options?.rerun);
 
         if (!options?.background) {
             await runPromise;
