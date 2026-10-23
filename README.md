@@ -83,6 +83,7 @@ The runner estimates input-token usage and asks for confirmation before executio
 
 - [Developer guide](docs/developer-guide.md): setup, repository layout, development workflow, testing, and contribution baseline.
 - [Architecture](docs/architecture.md): repository layout, runtime responsibilities, and module boundaries.
+- [Database](docs/database.md): MySQL backend behavior, schema responsibilities, and generated schema artifacts.
 - [Testing and quality](docs/testing.md): test commands, quality checks, and provider mocking.
 - [Contributing](docs/contributing.md): pull request and documentation expectations.
 
