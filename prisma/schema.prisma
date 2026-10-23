@@ -1,0 +1,427 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+enum NodeType {
+  prompt_template
+  processor
+  evaluator
+  dataset
+}
+
+enum EvaluatorType {
+  simple
+  javascript
+  python
+  llm
+  multieval
+}
+
+enum EvaluatorReturnType {
+  string
+  number
+  boolean
+}
+
+enum ProcessorType {
+  join
+  split
+  javascript
+  python
+}
+
+enum ExperimentRunStatus {
+  queued
+  running
+  paused
+  completed
+  failed
+}
+
+model Experiment {
+  id            Int             @id @default(autoincrement()) @db.UnsignedInt
+  title         String          @unique @db.VarChar(255)
+  datetime      DateTime        @default(now()) @db.Timestamp(6)
+  totalRequests Int             @default(0) @map("total_requests") @db.UnsignedInt
+  maxRetry      Int             @default(0) @map("max_retry") @db.UnsignedInt
+  threads       Int             @default(1) @db.UnsignedInt
+  nodes         Node[]
+  promptConfigs PromptConfig[]
+  runs          ExperimentRun[]
+
+  @@index([title], map: "idx_experiment_title")
+  @@map("Experiment")
+}
+
+model Node {
+  id             Int             @id @default(autoincrement()) @db.UnsignedInt
+  type           NodeType
+  experimentId   Int             @map("experiment_id") @db.UnsignedInt
+  name           String          @db.VarChar(255)
+  experiment     Experiment      @relation(fields: [experimentId], references: [id], onDelete: Cascade, map: "FK_experiment_id_node")
+  sourceLinks    Link[]          @relation("NodeSourceLinks")
+  targetLinks    Link[]          @relation("NodeTargetLinks")
+  promptTemplate PromptTemplate?
+  dataset        Dataset?
+  evaluator      Evaluator?
+  processor      Processor?
+
+  @@unique([experimentId, name], map: "unique_node_name")
+  @@map("Node")
+}
+
+model Link {
+  sourceNodeId Int     @map("source_node_id") @db.UnsignedInt
+  targetNodeId Int     @map("target_node_id") @db.UnsignedInt
+  sourceVar    String? @map("source_var") @db.VarChar(255)
+  targetVar    String  @map("target_var") @db.VarChar(255)
+  sourceNode   Node    @relation("NodeSourceLinks", fields: [sourceNodeId], references: [id], onDelete: Cascade, map: "FK_source_node_id")
+  targetNode   Node    @relation("NodeTargetLinks", fields: [targetNodeId], references: [id], onDelete: Cascade, map: "FK_target_node_id")
+
+  @@id([sourceNodeId, targetNodeId, targetVar])
+  @@map("Link")
+}
+
+model Llm {
+  id            Int            @id @default(autoincrement()) @db.UnsignedInt
+  baseModel     String         @unique @map("base_model") @db.VarChar(255)
+  name          String         @db.VarChar(255)
+  model         String         @db.VarChar(255)
+  promptConfigs PromptConfig[]
+  evaluators    LlmEvaluator[]
+
+  @@index([baseModel], map: "idx_llm_base_model")
+  @@map("Llm")
+}
+
+model LlmParam {
+  id               Int              @id @default(autoincrement()) @db.UnsignedInt
+  temperature      Float?
+  maxTokens        Int?             @map("max_tokens") @db.UnsignedInt
+  topP             Float?           @map("top_p")
+  topK             Int?             @map("top_k") @db.UnsignedInt
+  stopSequence     String?          @map("stop_sequence") @db.Text
+  frequencyPenalty Float?           @map("frequency_penalty")
+  presencePenalty  Float?           @map("presence_penalty")
+  customParams     LlmCustomParam[]
+  promptConfigs    PromptConfig[]
+  evaluators       LlmEvaluator[]
+
+  @@map("Llm_param")
+}
+
+model LlmCustomParam {
+  name       String   @db.VarChar(255)
+  value      String   @db.VarChar(255)
+  llmParamId Int      @map("llm_param_id") @db.UnsignedInt
+  llmParam   LlmParam @relation(fields: [llmParamId], references: [id], onDelete: Cascade, map: "FK_llm_param")
+
+  @@id([name, llmParamId])
+  @@map("Llm_custom_param")
+}
+
+model PromptTemplate {
+  nodeId        Int            @id @map("node_id") @db.UnsignedInt
+  value         String         @db.Text
+  name          String         @db.VarChar(255)
+  iterations    Int            @default(1)
+  node          Node           @relation(fields: [nodeId], references: [id], onDelete: Cascade, map: "FK_node_id_prompt_template")
+  promptConfigs PromptConfig[]
+
+  @@index([name], map: "idx_prompt_template_name")
+  @@map("PromptTemplate")
+}
+
+model Dataset {
+  nodeId        Int            @id @map("node_id") @db.UnsignedInt
+  name          String         @db.VarChar(255)
+  node          Node           @relation(fields: [nodeId], references: [id], onDelete: Cascade, map: "FK_node_id_dataset")
+  markers       Marker[]
+  promptConfigs PromptConfig[] @relation("FinalDataset")
+  inputs        DataInput[]
+
+  @@index([name], map: "idx_dataset_name")
+  @@map("Dataset")
+}
+
+model Marker {
+  id        Int           @id @default(autoincrement()) @db.UnsignedInt
+  marker    String        @db.VarChar(255)
+  datasetId Int           @map("dataset_id") @db.UnsignedInt
+  dataset   Dataset       @relation(fields: [datasetId], references: [nodeId], onDelete: Cascade, map: "FK_dataset_id_marker")
+  values    MarkerValue[]
+
+  @@map("Marker")
+}
+
+model MarkerValue {
+  id           Int           @id @default(autoincrement()) @db.UnsignedInt
+  markerId     Int           @map("marker_id") @db.UnsignedInt
+  value        String        @db.Text
+  hash         String        @unique @db.Char(64)
+  marker       Marker        @relation(fields: [markerId], references: [id], onDelete: Cascade, map: "FK_marker_id")
+  inputMarkers InputMarker[]
+
+  @@map("Marker_value")
+}
+
+model Evaluator {
+  nodeId            Int                 @id @db.UnsignedInt
+  type              EvaluatorType
+  code              String?             @db.MediumText
+  name              String              @db.VarChar(255)
+  returnType        EvaluatorReturnType @default(string) @map("return_type")
+  node              Node                @relation(fields: [nodeId], references: [id], onDelete: Cascade, map: "FK_node_id_evaluator")
+  llmEvaluator      LlmEvaluator?
+  simpleEvaluator   SimpleEvaluator?
+  parentMappings    MultiEvaluator[]    @relation("ParentEvaluator")
+  childMappings     MultiEvaluator[]    @relation("ChildEvaluator")
+  errors            ErrorEvaluator[]
+  evaluationResults EvaluationsResult[]
+
+  @@map("Evaluator")
+}
+
+model LlmEvaluator {
+  nodeId              Int       @id @map("node_id") @db.UnsignedInt
+  name                String    @db.VarChar(255)
+  llmParamId          Int       @map("llm_param_id") @db.UnsignedInt
+  llmId               Int       @map("llm_id") @db.UnsignedInt
+  format              String    @db.Text
+  prompt              String    @db.Text
+  reasonBeforeScoring Boolean   @map("reason_before_scoring")
+  evaluator           Evaluator @relation(fields: [nodeId], references: [nodeId], onDelete: Cascade, map: "FK_llm_evaluator_node_id")
+  llmParam            LlmParam  @relation(fields: [llmParamId], references: [id], map: "FK_llm_evaluator_param_id")
+  llm                 Llm       @relation(fields: [llmId], references: [id], map: "FK_llm_evaluator_llm_id")
+
+  @@map("Llm_evaluator")
+}
+
+model MultiEvaluator {
+  evaluatorId      Int       @map("evaluator_id") @db.UnsignedInt
+  childEvaluatorId Int       @map("child_evaluator_id") @db.UnsignedInt
+  evaluator        Evaluator @relation("ParentEvaluator", fields: [evaluatorId], references: [nodeId], onDelete: Cascade, map: "FK_multi_evaluator_id")
+  childEvaluator   Evaluator @relation("ChildEvaluator", fields: [childEvaluatorId], references: [nodeId], onDelete: Cascade, map: "FK_child_evaluator_id")
+
+  @@id([evaluatorId, childEvaluatorId])
+  @@map("Multi_evaluator")
+}
+
+model SimpleEvaluator {
+  nodeId      Int       @id @map("node_id") @db.UnsignedInt
+  textValue   String    @map("text_value") @db.Text
+  varValue    String?   @map("var_value") @db.Text
+  varType     String?   @map("var_type") @db.Text
+  varSelected Boolean?  @map("var_selected")
+  evaluator   Evaluator @relation(fields: [nodeId], references: [nodeId], onDelete: Cascade, map: "FK_simple_evaluator_node_id")
+
+  @@map("Simple_evaluator")
+}
+
+model PromptConfig {
+  id               Int            @id @default(autoincrement()) @db.UnsignedInt
+  experimentId     Int            @map("experiment_id") @db.UnsignedInt
+  llmId            Int            @map("LLM_id") @db.UnsignedInt
+  llmParamId       Int            @map("LLM_param_id") @db.UnsignedInt
+  promptTemplateId Int            @map("prompt_template_id") @db.UnsignedInt
+  finalDatasetId   Int?           @map("final_dataset_id") @db.UnsignedInt
+  experiment       Experiment     @relation(fields: [experimentId], references: [id], onDelete: Cascade, map: "FK_experiment_id")
+  llm              Llm            @relation(fields: [llmId], references: [id], map: "FK_LLM_id")
+  llmParam         LlmParam       @relation(fields: [llmParamId], references: [id], map: "FK_LLM_param_id")
+  promptTemplate   PromptTemplate @relation(fields: [promptTemplateId], references: [nodeId], onDelete: Cascade, map: "FK_Prompt_template_id")
+  finalDataset     Dataset?       @relation("FinalDataset", fields: [finalDatasetId], references: [nodeId], onDelete: Cascade, map: "FK_dataset_id")
+  results          Result[]
+  errors           Error[]
+
+  @@unique([experimentId, llmId, llmParamId, promptTemplateId, finalDatasetId], map: "unique_experiment_llm_llm_param_prompt")
+  @@map("PromptConfig")
+}
+
+model DataInput {
+  id                Int                 @id @default(autoincrement()) @db.UnsignedInt
+  datasetId         Int                 @map("dataset_id") @db.UnsignedInt
+  oracle            String?             @db.Text
+  dataset           Dataset             @relation(fields: [datasetId], references: [nodeId], onDelete: Cascade, map: "FK_dataset_id_input")
+  resolvedInputs    ResolvedInput[]
+  inputMarkers      InputMarker[]
+  results           Result[]
+  errors            Error[]
+  evaluationResults EvaluationsResult[]
+  processorResults  ProcessorResult[]
+  processorErrors   ProcessorError[]
+  errorEvaluators   ErrorEvaluator[]
+
+  @@map("Data_Input")
+}
+
+model ResolvedInput {
+  id               Int               @id @default(autoincrement()) @db.UnsignedInt
+  sourceInputId    Int               @map("source_input_id") @db.UnsignedInt
+  value            String?           @db.Text
+  sourceInput      DataInput         @relation(fields: [sourceInputId], references: [id], onDelete: Cascade, map: "PK_input_id_resolved_input")
+  processorResults ProcessorResult[]
+  processorErrors  ProcessorError[]
+
+  @@map("Resolved_input")
+}
+
+model InputMarker {
+  inputId        Int         @map("input_id") @db.UnsignedInt
+  markerValuesId Int         @map("marker_values_id") @db.UnsignedInt
+  input          DataInput   @relation(fields: [inputId], references: [id], onDelete: Cascade, map: "FK_input_id")
+  markerValue    MarkerValue @relation(fields: [markerValuesId], references: [id], onDelete: Cascade, map: "FK_marker_id_input")
+
+  @@id([inputId, markerValuesId])
+  @@map("Input_marker")
+}
+
+model Result {
+  id                Int                 @id @default(autoincrement()) @db.UnsignedInt
+  runId             String?             @map("run_id") @db.VarChar(36)
+  configId          Int                 @map("config_id") @db.UnsignedInt
+  outputResult      String              @map("output_result") @db.Text
+  inputId           Int                 @map("input_id") @db.UnsignedInt
+  startTime         DateTime            @default(now()) @map("start_time") @db.Timestamp(6)
+  endTime           DateTime            @default(now()) @map("end_time") @db.Timestamp(6)
+  totalTokens       Int?                @map("total_tokens") @db.UnsignedInt
+  config            PromptConfig        @relation(fields: [configId], references: [id], onDelete: Cascade, map: "FK_config_id")
+  input             DataInput           @relation(fields: [inputId], references: [id], onDelete: Cascade, map: "FK_input_id_result")
+  evaluationResults EvaluationsResult[]
+  processorResults  ProcessorResult[]
+  evaluatorErrors   ErrorEvaluator[]
+  processorErrors   ProcessorError[]
+
+  @@map("Result")
+}
+
+model Error {
+  id           Int          @id @default(autoincrement()) @db.UnsignedInt
+  configId     Int          @map("config_id") @db.UnsignedInt
+  inputId      Int          @map("input_id") @db.UnsignedInt
+  errorMessage String       @map("error_message") @db.Text
+  errorCode    Int          @map("error_code") @db.UnsignedInt
+  startTime    DateTime     @map("start_time") @db.Timestamp(6)
+  endTime      DateTime     @default(now()) @map("end_time") @db.Timestamp(6)
+  config       PromptConfig @relation(fields: [configId], references: [id], onDelete: Cascade, map: "FK_config_id_error")
+  input        DataInput    @relation(fields: [inputId], references: [id], onDelete: Cascade, map: "FK_input_id_error")
+
+  @@map("Error")
+}
+
+model Processor {
+  nodeId            Int               @id @map("node_id") @db.UnsignedInt
+  type              ProcessorType
+  code              String?           @db.MediumText
+  format            String?           @db.Text
+  selectedGroupVars String?           @map("selected_group_vars") @db.Text
+  name              String            @db.VarChar(255)
+  node              Node              @relation(fields: [nodeId], references: [id], onDelete: Cascade, map: "FK_node_id_processor")
+  results           ProcessorResult[]
+  errors            ProcessorError[]
+
+  @@map("Processor")
+}
+
+model ErrorEvaluator {
+  id           Int        @id @default(autoincrement()) @db.UnsignedInt
+  evaluatorId  Int        @map("evaluator_id") @db.UnsignedInt
+  errorMessage String     @map("error_message") @db.Text
+  resultId     Int?       @map("result_id") @db.UnsignedInt
+  inputId      Int?       @map("input_id") @db.UnsignedInt
+  timestamp    DateTime   @default(now()) @db.Timestamp(6)
+  evaluator    Evaluator  @relation(fields: [evaluatorId], references: [nodeId], onDelete: Cascade, map: "FK_evaluator_id_error_eval")
+  result       Result?    @relation(fields: [resultId], references: [id], onDelete: Cascade, map: "FK_result_id_error_eval")
+  input        DataInput? @relation(fields: [inputId], references: [id], onDelete: Cascade, map: "FK_input_id_evaluator_error")
+
+  @@map("Error_evaluator")
+}
+
+model EvaluationsResult {
+  id               Int        @id @default(autoincrement()) @db.UnsignedInt
+  evaluationResult String     @map("evaluation_result") @db.Text
+  resultId         Int?       @map("result_id") @db.UnsignedInt
+  inputId          Int?       @map("input_id") @db.UnsignedInt
+  evaluatorId      Int        @map("evaluator_id") @db.UnsignedInt
+  result           Result?    @relation(fields: [resultId], references: [id], onDelete: Cascade, map: "FK_result_id_eval")
+  input            DataInput? @relation(fields: [inputId], references: [id], onDelete: Cascade, map: "FK_input_id_evaluator")
+  evaluator        Evaluator  @relation(fields: [evaluatorId], references: [nodeId], onDelete: Cascade, map: "FK_evaluator_id")
+
+  @@map("EvaluationsResult")
+}
+
+model ProcessorResult {
+  id              Int            @id @default(autoincrement()) @db.UnsignedInt
+  processorResult String         @map("processor_result") @db.Text
+  resultId        Int?           @map("result_id") @db.UnsignedInt
+  resolvedInputId Int?           @map("resolved_input_id") @db.UnsignedInt
+  processorId     Int            @map("processor_id") @db.UnsignedInt
+  inputId         Int?           @map("input_id") @db.UnsignedInt
+  result          Result?        @relation(fields: [resultId], references: [id], onDelete: Cascade, map: "FK_result_id_processor")
+  resolvedInput   ResolvedInput? @relation(fields: [resolvedInputId], references: [id], onDelete: Cascade, map: "FK_resolved_input_id_processor")
+  processor       Processor      @relation(fields: [processorId], references: [nodeId], onDelete: Cascade, map: "FK_processor_id")
+  input           DataInput?     @relation(fields: [inputId], references: [id], onDelete: Cascade, map: "FK_input_id_processor")
+
+  @@unique([resultId, processorId], map: "Unique_Processor_Result")
+  @@unique([processorId, resolvedInputId], map: "Unique_Processor_Resolved_Input")
+  @@map("ProcessorResult")
+}
+
+model ProcessorError {
+  id              Int            @id @default(autoincrement()) @db.UnsignedInt
+  processorId     Int            @map("processor_id") @db.UnsignedInt
+  errorMessage    String         @map("error_message") @db.Text
+  resultId        Int?           @map("result_id") @db.UnsignedInt
+  inputId         Int?           @map("input_id") @db.UnsignedInt
+  resolvedInputId Int?           @map("resolved_input_id") @db.UnsignedInt
+  timestamp       DateTime       @default(now()) @db.Timestamp(6)
+  resolvedInput   ResolvedInput? @relation(fields: [resolvedInputId], references: [id], onDelete: Cascade, map: "FK_resolved_input_id_processor_error")
+  processor       Processor      @relation(fields: [processorId], references: [nodeId], onDelete: Cascade, map: "FK_processor_id_error")
+  result          Result?        @relation(fields: [resultId], references: [id], onDelete: Cascade, map: "FK_result_id_processor_error")
+  input           DataInput?     @relation(fields: [inputId], references: [id], onDelete: Cascade, map: "FK_input_id_processor_error")
+
+  @@map("Processor_error")
+}
+
+model ExperimentRun {
+  runId          String              @id @map("run_id") @db.Char(36)
+  experimentId   Int                 @map("experiment_id") @db.UnsignedInt
+  experimentName String              @map("experiment_name") @db.VarChar(255)
+  status         ExperimentRunStatus
+  createdAt      DateTime            @default(now()) @map("created_at") @db.Timestamp(6)
+  startedAt      DateTime?           @map("started_at") @db.Timestamp(6)
+  pausedAt       DateTime?           @map("paused_at") @db.Timestamp(6)
+  finishedAt     DateTime?           @map("finished_at") @db.Timestamp(6)
+  updatedAt      DateTime            @updatedAt @map("updated_at") @db.Timestamp(6)
+  totalPausedMs  BigInt              @default(0) @map("total_paused_ms") @db.UnsignedBigInt
+  totalTasks     Int                 @default(0) @map("total_tasks") @db.UnsignedInt
+  attempts       Int                 @default(0) @db.UnsignedInt
+  inProgress     Int                 @default(0) @map("in_progress") @db.UnsignedInt
+  completed      Int                 @default(0) @db.UnsignedInt
+  failed         Int                 @default(0) @db.UnsignedInt
+  retries        Int                 @default(0) @db.UnsignedInt
+  totalTokens    BigInt              @default(0) @map("total_tokens") @db.UnsignedBigInt
+  lastError      String?             @map("last_error") @db.Text
+  totalLatencyMs BigInt              @default(0) @map("total_latency_ms") @db.UnsignedBigInt
+  latencyCount   Int                 @default(0) @map("latency_count") @db.UnsignedInt
+  minLatencyMs   BigInt              @default(0) @map("min_latency_ms") @db.UnsignedBigInt
+  p25LatencyMs   BigInt              @default(0) @map("p25_latency_ms") @db.UnsignedBigInt
+  p50LatencyMs   BigInt              @default(0) @map("p50_latency_ms") @db.UnsignedBigInt
+  p75LatencyMs   BigInt              @default(0) @map("p75_latency_ms") @db.UnsignedBigInt
+  p95LatencyMs   BigInt              @default(0) @map("p95_latency_ms") @db.UnsignedBigInt
+  p99LatencyMs   BigInt              @default(0) @map("p99_latency_ms") @db.UnsignedBigInt
+  maxLatencyMs   BigInt              @default(0) @map("max_latency_ms") @db.UnsignedBigInt
+  samples        Json?
+  experiment     Experiment          @relation(fields: [experimentId], references: [id], onDelete: Cascade, map: "FK_experiment_id_run")
+
+  @@map("Experiment_run")
+}

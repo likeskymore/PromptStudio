@@ -2,6 +2,7 @@ import { Command } from "commander";
 import {getTotalTokenCountForExperiment, rerun_experiment, run_experiment, save_config} from "./apiCall";
 import * as fs from "fs";
 import * as path from "node:path";
+import readline from "node:readline";
 
 /**
  * Validates if the user wants to run the experiment by checking the total token count.
@@ -10,14 +11,14 @@ import * as path from "node:path";
 async function validateRun(name: string): Promise<boolean> {
     console.log(`Calculating total token estimation for experiment: ${name}...`);
     console.log("Total estimate input tokens: ", await getTotalTokenCountForExperiment(name));
-    const readline = require("readline").createInterface({
+    const rl = readline.createInterface({
         input: process.stdin,
         output: process.stdout,
     });
 
     return new Promise((resolve) => {
-        readline.question("Are you sure you want to run this experiment? (Y/N) ", (answer: string) => {
-            readline.close();
+        rl.question("Are you sure you want to run this experiment? (Y/N) ", (answer: string) => {
+            rl.close();
             resolve(answer.toLowerCase() === "y");
         });
     });

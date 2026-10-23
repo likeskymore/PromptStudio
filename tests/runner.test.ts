@@ -1,8 +1,8 @@
 import {save_config} from "../headless/apiCall";
 import * as workerpool from 'workerpool';
 import * as path from "node:path";
-import {get_results_by_experiment_name, pool as dbPool} from "../backend/database/database";
-import { run_experiment } from "../backend/api/runner";
+import {get_results_by_experiment_name, pool as dbPool} from "../backend/api/archive/database";
+import { run_experiment } from "../backend/api/archive/runner";
 
 
 jest.setTimeout(200000);

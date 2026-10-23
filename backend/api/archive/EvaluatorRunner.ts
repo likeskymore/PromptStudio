@@ -1,0 +1,363 @@
+// import {LLMSpec, PromptVarsDict, ResolvedInput} from "./modules/LLM/types";
+// import { Processor_type, ProcessorResult } from "./types";
+// import * as workerpool from "workerpool";
+// import {
+//     get_config, get_evaluation_result,
+//     get_input_by_id,
+//     get_links_by_target,
+//     get_llm_param_by_id,
+//     get_node_by_id,
+//     get_processor_by_id,
+//     get_processor_result_by_input_id, get_processor_result_by_result_id,
+//     get_result_by_id,
+//     get_results_by_processor,
+//     get_results_by_template,
+//     save_resolved_input
+// } from "../database/database";
+// import {fillTemplate, resolve_inputs} from "./configHandler";
+// import {create_llm_spec, get_marker_map} from "./common/utils";
+// import { tokenRepository } from "./modules/tokens/repository";
+// import { NodeType } from "./modules/experiment_config/types";
+
+// type EvaluationTask = {
+//     evaluator_id: number;
+//     llm_spec: LLMSpec | null;
+//     markersDict: PromptVarsDict | null;
+//     template_value: string | null;
+//     result: TaskResult;
+//     input_id: number | null;
+//     resolved_input_id?: number | null;
+//     resolved_inputs?: ResolvedInput[] | null;
+// }
+
+// type TaskResult = {
+//     id?: number;
+//     run_id?: string;
+//     config_id?: number;
+//     output_result: string | null;
+//     input_id?: number;
+//     start_time?: Date;
+//     end_time?: Date;
+// };
+
+// /**
+//  * Produces evaluator or processor tasks and consumes them with worker threads.
+//  * Join and split processors use resolved-input tasks instead of individual LLM results.
+//  */
+// export class EvaluatorRunner {
+//     private taskQueue: EvaluationTask[] = [];
+//     private isProducing = true;
+//     private errors = 0;
+//     private pool: workerpool.Pool;
+//     constructor(
+//         private experiment_name: string,
+//         private num_workers: number,
+//         private node_id: number
+//     ) {
+//         this.pool = workerpool.pool(__dirname + '/worker.ts', {
+//             minWorkers: this.num_workers,
+//             maxWorkers: this.num_workers,
+//             workerType: 'thread',
+//             workerThreadOpts: {
+//                 execArgv: ['--require', 'tsx']
+//             }
+//         });
+//     }
+
+//     /**
+//      * Evaluates the results by producing tasks and processing them using worker threads.
+//      * It retrieves links by target node, fetches inputs and results, and adds them to the task queue.
+//      * Each worker thread will execute the `evaluate` function to process the tasks
+//      */
+//     public async evaluate(){
+//         await Promise.all([
+//             this.produceTasks(),
+//             ...Array.from({ length: this.num_workers }, () => this.taskEvaluator())
+//         ]);
+//         await this.pool.terminate();
+//     }
+
+//     /**
+//      * Processes the results by producing tasks and processing them using worker threads.
+//      * It retrieves links by target node, fetches inputs and processor results, and adds them
+//      * to the task queue.
+//      * Each worker thread will execute the `process` function to process the tasks.
+//      */
+//     public async process(){
+//         await Promise.all([
+//             this.produceTasks(),
+//             ...Array.from({length: this.num_workers }, () => this.taskProcessor())
+//         ]);
+//         await this.pool.terminate();
+//     }
+
+//     /**
+//      * Process tasks for join and split processors. It retrieves resolved inputs and creates tasks based on the processor type.
+//      * For join processors, a single task is created with all resolved inputs.
+//      * For split processors, individual tasks are created for each resolved input.
+//      * @param parent_node_id The ID of the parent node (dataset) from which to retrieve resolved inputs.
+//      * @param processor_type The type of the processor (join or split) to determine how to create tasks.
+//      * @returns An array of EvaluationTask objects representing the tasks to be processed.
+//      */
+//     private async formulateJoinAndSplitTasks(
+//         parent_node_id: number, processor_type: Processor_type
+//     ): Promise<EvaluationTask[]> {
+
+//         const tasks: EvaluationTask[] = [];
+//         const resolvedInputs = await resolve_inputs(parent_node_id);
+
+//         if (processor_type === Processor_type.join) {
+//             tasks.push({
+//                 evaluator_id: this.node_id,
+//                 llm_spec: null,
+//                 markersDict: null,
+//                 template_value: null,
+//                 result: {
+//                     output_result: null,
+//                     id: undefined,
+//                     config_id: undefined,
+//                     input_id: undefined,
+//                     start_time: undefined,
+//                     end_time: undefined,
+//                 },
+//                 input_id: null,
+//                 resolved_input_id: null,
+//                 resolved_inputs: resolvedInputs,
+//             });
+
+//             return tasks;
+//         }
+
+//         if (processor_type === Processor_type.split) {
+//             for (const resolvedInput of resolvedInputs) {
+//                 const output_result = fillTemplate(
+//                     resolvedInput.vars.output ?? "",
+//                     resolvedInput.vars,
+//                 );
+
+//                 const resolved_input_id = await save_resolved_input(
+//                     resolvedInput.input_id,
+//                     output_result,
+//                 );
+
+//                 tasks.push({
+//                     evaluator_id: this.node_id,
+//                     llm_spec: null,
+//                     markersDict: null,
+//                     template_value: null,
+//                     result: {
+//                         output_result,
+//                         id: undefined,
+//                         config_id: undefined,
+//                         input_id: undefined,
+//                         start_time: undefined,
+//                         end_time: undefined,
+//                     },
+//                     input_id: resolvedInput.input_id,
+//                     resolved_input_id,
+//                 });
+//             }
+//         }
+//         return tasks;
+//     }
+
+//     /**
+//      * Produces tasks for evaluation or processing based on the node type.
+//      * It retrieves links by target node, fetches inputs and results, and adds them to the task queue.
+//      * The tasks are created based on the type of the parent node (dataset, prompt template, or processor).
+//      * @param maximumQueueSize The maximum size of the task queue to prevent memory overflow.
+//      */
+//     private async produceTasks(maximumQueueSize: number = 1000){
+//         const current_node = await get_node_by_id(this.node_id);
+//         if (!current_node) {
+//             throw new Error(`Node ${this.node_id} was not found`);
+//         }
+//         const links = await get_links_by_target(this.node_id);
+//         for (const link of links){
+//             const parent_node = await get_node_by_id(link.source_node_id);
+//             if (!parent_node) {
+//                 continue;
+//             }
+//             if (parent_node.type === NodeType.dataset){
+//                 if (current_node.type === NodeType.processor) {
+//                     const processor = await get_processor_by_id(this.node_id);
+
+//                     if (
+//                         processor?.type === Processor_type.join ||
+//                         processor?.type === Processor_type.split
+//                     ) {
+//                         const tasks = await this.formulateJoinAndSplitTasks(parent_node.id, processor?.type);
+//                         this.taskQueue.push(...tasks);
+//                         continue;
+//                     }
+//                 }
+//                 let input_id = 0;
+//                 const last_id = await tokenRepository.getLastInputId(parent_node.id);
+//                 while (input_id !== last_id) {
+//                     const input = await tokenRepository.getNextInput(parent_node.id, input_id);
+//                     if (!input) break;
+//                     input_id = input.id;
+//                     const markersDict = await get_marker_map(input);
+//                     const marker = link.source_var;
+//                     const markerValue = marker ? markersDict[marker] : undefined;
+//                     const output_result = markerValue ?? "";
+//                     // Check in processor_result if the input is already processed
+//                     const result = await get_processor_result_by_input_id(input.id, this.node_id);
+//                     if (result) {
+//                         // If the input is already processed, skip it
+//                         continue;
+//                     }
+//                     const task: EvaluationTask = {
+//                         evaluator_id: this.node_id,
+//                         llm_spec: null,
+//                         markersDict: markersDict,
+//                         template_value: null,
+//                         result: {
+//                             output_result: output_result,
+//                             id: undefined,
+//                             config_id: undefined,
+//                             input_id: undefined,
+//                             start_time: undefined,
+//                             end_time: undefined
+//                         },
+//                         input_id: input_id,
+//                     }
+//                     this.taskQueue.push(task);
+//                 }
+//             }
+//             else if(parent_node.type === NodeType.prompt_template){
+//                 // Get results by template and add them to the task queue
+//                 const results = await get_results_by_template(parent_node.id.toString());
+//                 const template = await tokenRepository.getTemplateById(parent_node.id);
+//                 const template_value = template.value;
+//                 for (const result of results){
+//                     // Check if the result is already processed
+//                     // Get the node to know where to check for the result
+//                     if (current_node.type === NodeType.evaluator) {
+//                         const eval_result = await get_evaluation_result(result.id, this.node_id);
+//                         if (eval_result) {
+//                             // If the result is already processed, skip it
+//                             continue;
+//                         }
+//                     }
+//                     else if (current_node.type === NodeType.processor) {
+//                         const processor_result = await get_processor_result_by_result_id(result.id, this.node_id);
+//                         if (processor_result) {
+//                             // If the result is already processed, skip it
+//                             continue;
+//                         }
+//                     }
+//                     const config = await get_config(result.config_id);
+//                     const llm = await tokenRepository.getLlmById(config.LLM_id);
+//                     const llm_param = await get_llm_param_by_id(config.LLM_param_id);
+//                     const llm_spec = create_llm_spec(llm, llm_param);
+//                     const input = await get_input_by_id(result.input_id);
+//                     const markersDict = await get_marker_map(input);
+//                     const task: EvaluationTask = {
+//                         evaluator_id: this.node_id,
+//                         llm_spec: llm_spec,
+//                         markersDict: markersDict,
+//                         template_value: template_value,
+//                         result: result,
+//                         input_id: null,
+//                     }
+//                     this.taskQueue.push(task);
+//                 }
+//             }
+//             else if (parent_node.type === NodeType.processor){
+//                 // Get results from the processor one by one and add them to the task queue
+//                 const processor_results: ProcessorResult[] = await get_processor_results_by_processor_id(parent_node.id);
+//                 for (const processor_result of processor_results){
+//                     if (processor_result.result_id === undefined) {
+//                         continue;
+//                     }
+//                     if (current_node.type === NodeType.evaluator) {
+//                         const eval_result = await get_evaluation_result(processor_result.result_id, this.node_id);
+//                         if (eval_result) {
+//                             // If the result is already processed, skip it
+//                             continue;
+//                         }
+//                     }
+//                     else if (current_node.type === NodeType.processor) {
+//                         const process_result = await get_processor_result_by_result_id(processor_result.result_id, this.node_id);
+//                         if (process_result) {
+//                             // If the result is already processed, skip it
+//                             continue;
+//                         }
+//                     }
+//                     const result = await get_result_by_id(processor_result.result_id);
+//                     if (!result) {
+//                         continue;
+//                     }
+//                     const config = await get_config(result.config_id);
+//                     const llm = await tokenRepository.getLlmById(config.LLM_id);
+//                     const llm_param = await get_llm_param_by_id(config.LLM_param_id);
+//                     const llm_spec = create_llm_spec(llm, llm_param);
+//                     const input = await get_input_by_id(result.input_id);
+//                     const markersDict = await get_marker_map(input);
+//                     const template = await tokenRepository.getTemplateById(config.prompt_template_id);
+//                     const updated_result = {...result, output_result: processor_result.processor_result}
+//                     const task: EvaluationTask = {
+//                         evaluator_id: this.node_id,
+//                         llm_spec: llm_spec,
+//                         markersDict: markersDict,
+//                         template_value: template.value,
+//                         result: updated_result,
+//                         input_id: processor_result.input_id ?? null,
+//                     }
+//                     this.taskQueue.push(task);
+//                 }
+//             }
+//             // maximum queue size check
+//             while (this.taskQueue.length > maximumQueueSize) {
+//                 await new Promise((res) => setTimeout(res, 50));
+//             }
+//         }
+//         this.isProducing = false;
+//     }
+
+//     /**
+//      * Evaluates tasks in the task queue using worker threads.
+//      */
+//     private async taskEvaluator() {
+//         while (this.isProducing || this.taskQueue.length > 0) {
+//             if (this.taskQueue.length === 0) {
+//                 await new Promise((resolve) => setTimeout(resolve, 50));
+//                 continue;
+//             }
+//             const task = this.taskQueue.shift();
+//             if (!task) continue;
+
+//             try {
+//                 const {evaluator_id, llm_spec, markersDict, template_value, result, input_id} = task;
+//                 await this.pool.exec('evaluate', [evaluator_id, llm_spec, markersDict, template_value, result, input_id]);
+//             } catch (error) {
+//                 console.error('Error processing task:', error && (error as any).message ? (error as any).message : error);
+//                 this.errors++;
+//             }
+//         }
+//     }
+
+//     /**
+//      * Processes tasks in the task queue using worker threads.
+//      * This method is similar to taskEvaluator but is used for processing data rather than evaluating it.
+//      */
+//     private async taskProcessor() {
+//         while (this.isProducing || this.taskQueue.length > 0) {
+//             if (this.taskQueue.length === 0) {
+//                 await new Promise((resolve) => setTimeout(resolve, 50));
+//                 continue;
+//             }
+//             const task = this.taskQueue.shift();
+//             if (!task) continue;
+
+//             try {
+//                 const {evaluator_id, llm_spec, markersDict, template_value, result, input_id, resolved_input_id, resolved_inputs} = task;
+//                 await this.pool.exec('process', [evaluator_id, llm_spec, markersDict, template_value, result, input_id, resolved_input_id, resolved_inputs]);
+//             } catch (error) {
+//                 console.error('Error processing task:', error && (error as any).message ? (error as any).message : error);
+//                 this.errors++;
+//             }
+//         }
+//     }
+// }

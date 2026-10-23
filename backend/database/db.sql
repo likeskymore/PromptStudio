@@ -317,9 +317,13 @@ CREATE TABLE Experiment_run(
     last_error TEXT,
     total_latency_ms BIGINT UNSIGNED NOT NULL DEFAULT 0,
     latency_count INT UNSIGNED NOT NULL DEFAULT 0,
+    min_latency_ms BIGINT UNSIGNED NOT NULL DEFAULT 0,
+    p25_latency_ms BIGINT UNSIGNED NOT NULL DEFAULT 0,
     p50_latency_ms BIGINT UNSIGNED NOT NULL DEFAULT 0,
+    p75_latency_ms BIGINT UNSIGNED NOT NULL DEFAULT 0,
     p95_latency_ms BIGINT UNSIGNED NOT NULL DEFAULT 0,
     p99_latency_ms BIGINT UNSIGNED NOT NULL DEFAULT 0,
+    max_latency_ms BIGINT UNSIGNED NOT NULL DEFAULT 0,
     samples JSON,
     CONSTRAINT PK_Experiment_run PRIMARY KEY (run_id),
     CONSTRAINT FK_experiment_id_run FOREIGN KEY (experiment_id) REFERENCES Experiment(id) ON DELETE CASCADE

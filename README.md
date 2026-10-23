@@ -2,9 +2,9 @@
 
 PromptStudio is a local tool for designing, running, and evaluating prompts for large language models. Its execution pipeline combines an Express backend API with a headless runner that calls it.
 
-We also provide an installable dashboard for experiment monitoring, available [here](https://github.com/likeskymore/prompt-studio-dashboard)
+> **Important:** PromptStudio is built to run and evaluate [ChainForge](https://github.com/ianarawjo/ChainForge) flows. Build your workflow in ChainForge, then export it as a YAML (`.yml`) file before running it with PromptStudio.
 
-Experiment configurations can be imported from [ChainForge](https://github.com/ianarawjo/ChainForge)-compatible YAML files.
+We also provide an installable dashboard for experiment monitoring, available [here](https://github.com/likeskymore/prompt-studio-dashboard)
 
 ## Key features
 
@@ -58,7 +58,7 @@ The backend and frontend listen on ports `3001` and `3005`, respectively, by def
 
 ## Run an experiment
 
-Place a YAML configuration and its supporting files in `files/`, then run:
+Export your flow from [ChainForge](https://github.com/ianarawjo/ChainForge) in YAML format (`.yml`), place the exported configuration and its supporting files in `files/`, then run:
 
 ```bash
 npx tsx headless/cli.ts --config files/YOUR_CONFIG_FILE.yml

@@ -104,8 +104,8 @@ export async function rerun_experiment(name: string): Promise<void> {
  */
 export async function getTotalTokenCountForExperiment(experiment_name: string): Promise<number> {
     try {
-        const response = await axios.get(`${URL}/total_tokens/${experiment_name}`);
-        return response.data.total_tokens;
+        const response = await axios.get(`${URL}/experiments/${experiment_name}/tokens`);
+        return response.data.body.total_tokens;
     } catch (error) {
         console.error(`Failed to get total token count for experiment ${experiment_name}:`, error);
         return 0;

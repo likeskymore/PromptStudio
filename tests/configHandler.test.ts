@@ -1,5 +1,5 @@
-import {cartesianProduct, fillTemplate} from '../backend/api/configHandler';
-import {PromptVarsDict} from "../backend/typing";
+import {cartesianProduct, fillTemplate} from '../backend/api/archive/configHandler';
+import {PromptVarsDict} from '../backend/api/modules/LLM/types';
 
 jest.mock('../backend/database/database', () => ({
     pool: jest.fn(),

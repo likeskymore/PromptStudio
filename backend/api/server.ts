@@ -1,5 +1,6 @@
 import app from "./app";
-import { pauseRunningExperimentRuns } from "./runState";
+import { ExperimentStateService } from "./modules/experiment_state/service";
+
 
 const PORT = process.env.PORT || 3001;
 
@@ -19,7 +20,7 @@ async function shutdown(reason: string, error?: unknown) {
   }
 
   try {
-    await pauseRunningExperimentRuns();
+    await ExperimentStateService.pauseRunningExperimentRuns();
     console.log("Running experiments paused successfully.");
   } catch (shutdownError) {
     console.error("Failed to pause running experiments:", shutdownError);
