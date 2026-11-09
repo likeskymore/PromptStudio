@@ -79,6 +79,29 @@ export const ResultRepository = {
       return [];
     }
   },
+  async get_results_for_run_and_config(
+    run_id: string,
+    config_id: number,
+    connection: DatabaseClient = prisma,
+  ): Promise<Result[]> {
+    try {
+      const rows = await getClient(connection).result.findMany({
+        where: { runId: run_id, configId: config_id },
+      });
+      return rows.map((row) => ({
+        id: row.id,
+        run_id: row.runId ?? undefined,
+        config_id: row.configId,
+        output_result: row.outputResult,
+        input_id: row.inputId,
+        start_time: row.startTime,
+        end_time: row.endTime,
+      })) as Result[];
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  },
   async get_results_by_template(
     template_id: string,
     connection: DatabaseClient = prisma,

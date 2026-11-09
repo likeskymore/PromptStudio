@@ -42,6 +42,17 @@ export const ResultService = {
       connection,
     );
   },
+  async get_results_for_run_and_config(
+    run_id: string,
+    config_id: number,
+    connection: DatabaseClient = prisma,
+  ): Promise<Result[]> {
+    return await ResultRepository.get_results_for_run_and_config(
+      run_id,
+      config_id,
+      connection,
+    );
+  },
   async handle_save_response(
     run_id: string,
     config_id: number,

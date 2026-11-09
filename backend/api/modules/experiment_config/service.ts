@@ -217,17 +217,19 @@ export const ExperimentConfigService = {
     // Otherwise recursively resolve each parent
     for (const parent_id of dataset_parents) {
       const parent_inputs = await this.resolve_inputs(parent_id);
+      const targetLinks = await NodeService.get_links_by_target(node_id);
+      const targetVars = new Map(
+        targetLinks
+          .filter((link) => link.source_node_id === parent_id)
+          .map((link) => [link.source_var, link.target_var]),
+      );
       const mapped_inputs: ResolvedInput[] = [];
 
       for (const input of parent_inputs) {
         const vars: PromptVarsDict = {};
 
         for (const marker of Object.keys(input.vars)) {
-          const target_var = await NodeService.get_target_var(
-            parent_id,
-            node_id,
-            marker,
-          );
+          const target_var = targetVars.get(marker);
           vars[target_var ?? marker] = input.vars[marker];
         }
 

@@ -3,6 +3,7 @@ import { Task, WorkerTaskResult } from "./types";
 import * as workerpool from "workerpool";
 import { fileURLToPath } from "node:url";
 import { ExperimentConfigService } from "../experiment_config/service";
+import { ExperimentConfigRepository } from "../experiment_config/repository";
 import { LlmService } from "../LLM/service";
 import { ExperimentStateService } from "../experiment_state/service";
 import { ExperimentService } from "../experiment/service";
@@ -93,10 +94,27 @@ export class PromptRunner {
       if (!llm || !template) continue;
       const llm_spec = LlmService.create_llm_spec(llm, llm_param);
 
-      let input_id = 0;
-      const last_id = await ExperimentConfigService.get_last_input_id(
-        updatedConfig.final_dataset_id,
-      );
+      const inputs =
+        await ExperimentConfigRepository.get_data_inputs_by_dataset(
+          updatedConfig.final_dataset_id,
+        );
+      const existingResults =
+        this.runId && !this.rerun
+          ? await ResultService.get_results_for_run_and_config(
+              this.runId,
+              updatedConfig.id,
+            )
+          : [];
+      const existingResultsByInput = new Map<number, number>();
+      for (const result of existingResults) {
+        const inputId = result.input_id;
+        if (inputId !== undefined) {
+          existingResultsByInput.set(
+            inputId,
+            (existingResultsByInput.get(inputId) ?? 0) + 1,
+          );
+        }
+      }
 
       const totalTasks = await this.calculateTotalTasks();
 
@@ -105,7 +123,7 @@ export class PromptRunner {
       }
 
       // Create a task for each input in the final dataset
-      while (input_id !== last_id) {
+      for (const [inputId, markersDict] of Object.entries(inputs)) {
         if (
           this.runId &&
           ExperimentStateService.isExperimentRunPauseRequested(this.runId)
@@ -113,27 +131,12 @@ export class PromptRunner {
           this.isProducing = false;
           return;
         }
-        const input = await ExperimentConfigService.get_next_input(
-          updatedConfig.final_dataset_id,
-          input_id,
-        );
-        if (!input) break;
 
-        input_id = input.id;
-        const markersDict = await ExperimentConfigService.get_marker_map(input);
-
+        const input_id = Number(inputId);
         let iterations = template.iterations;
         if (!this.rerun) {
-          const existing = this.runId
-            ? await ResultService.get_results_for_run(
-                this.runId,
-                updatedConfig.id,
-                input_id,
-              )
-            : [];
-          if (existing?.length) iterations -= existing.length;
+          iterations -= existingResultsByInput.get(input_id) ?? 0;
         }
-        // Ensure we still have iterations to run for a given input and config
         if (iterations <= 0) {
           continue;
         }
@@ -149,7 +152,6 @@ export class PromptRunner {
           tries: 0,
         });
 
-        // maximum queue size check
         while (this.taskQueue.length > maximumQueueSize) {
           if (
             this.runId &&
@@ -282,37 +284,36 @@ export class PromptRunner {
       );
       if (!template) continue;
 
-      let input_id = 0;
-      const last_id = await ExperimentConfigService.get_last_input_id(
-        updatedConfig.final_dataset_id,
-      );
-
-      while (input_id !== last_id) {
-        const input = await ExperimentConfigService.get_next_input(
+      const inputs =
+        await ExperimentConfigRepository.get_data_inputs_by_dataset(
           updatedConfig.final_dataset_id,
-          input_id,
         );
-
-        if (!input) break;
-
-        input_id = input.id;
-
-        let iterations = template.iterations;
-
-        if (!this.rerun) {
-          const existing = this.runId
-            ? await ResultService.get_results_for_run(
-                this.runId,
-                updatedConfig.id,
-                input_id,
-              )
-            : [];
-
-          iterations -= existing?.length ?? 0;
+      const existingResults =
+        this.runId && !this.rerun
+          ? await ResultService.get_results_for_run_and_config(
+              this.runId,
+              updatedConfig.id,
+            )
+          : [];
+      const existingResultsByInput = new Map<number, number>();
+      for (const result of existingResults) {
+        const inputId = result.input_id;
+        if (inputId !== undefined) {
+          existingResultsByInput.set(
+            inputId,
+            (existingResultsByInput.get(inputId) ?? 0) + 1,
+          );
         }
+      }
 
-        if (iterations > 0) {
-          totalTasks += iterations;
+      for (const inputId of Object.keys(inputs)) {
+        const remainingIterations =
+          template.iterations -
+          (existingResultsByInput.get(Number(inputId)) ?? 0);
+        if (this.rerun || remainingIterations > 0) {
+          totalTasks += this.rerun
+            ? template.iterations
+            : remainingIterations;
         }
       }
     }

@@ -285,24 +285,106 @@ export const ExperimentConfigRepository = {
     connection: DatabaseClient = prisma,
   ): Promise<void> {
     const client = getClient(connection);
+    const existingRows = await client.dataInput.findMany({
+      where: { datasetId: node_id },
+      include: {
+        inputMarkers: {
+          include: { markerValue: { include: { marker: true } } },
+        },
+      },
+    });
+    if (existingRows.length === 0 && inputs.length > 0) {
+      const markerNames = new Set(
+        inputs.flatMap((input) => Object.keys(input)),
+      );
+      const markerIds = new Map<string, number>();
+
+      for (const marker of markerNames) {
+        const row = await client.marker.create({
+          data: { marker, datasetId: node_id },
+        });
+        markerIds.set(marker, row.id);
+      }
+
+      await client.dataInput.createMany({
+        data: inputs.map(() => ({ datasetId: node_id })),
+      });
+      const savedInputs = await client.dataInput.findMany({
+        where: { datasetId: node_id },
+        orderBy: { id: "asc" },
+        select: { id: true },
+      });
+      const markerValues = inputs.flatMap((input) =>
+        Object.entries(input).map(([marker, value]) => ({
+          markerId: markerIds.get(marker)!,
+          value,
+          hash: computeMarkerValueHash(markerIds.get(marker)!, value),
+        })),
+      );
+      await client.markerValue.createMany({
+        data: markerValues,
+        skipDuplicates: true,
+      });
+      const savedMarkerValues = await client.markerValue.findMany({
+        where: { hash: { in: markerValues.map(({ hash }) => hash) } },
+        select: { id: true, hash: true },
+      });
+      const markerValueIds = new Map(
+        savedMarkerValues.map(({ hash, id }) => [hash, id]),
+      );
+      await client.inputMarker.createMany({
+        data: inputs.flatMap((input, inputIndex) =>
+          Object.entries(input).map(([marker, value]) => ({
+            inputId: savedInputs[inputIndex].id,
+            markerValuesId: markerValueIds.get(
+              computeMarkerValueHash(markerIds.get(marker)!, value),
+            )!,
+          })),
+        ),
+      });
+      return;
+    }
+
+    const inputSignature = (input: PromptVarsDict) =>
+      JSON.stringify(
+        Object.entries(input).sort(([left], [right]) =>
+          left.localeCompare(right),
+        ),
+      );
+    const existingSignatures = new Set(
+      existingRows.map((row) =>
+        inputSignature(
+          Object.fromEntries(
+            row.inputMarkers.map(({ markerValue }) => [
+              markerValue.marker.marker,
+              markerValue.value,
+            ]),
+          ),
+        ),
+      ),
+    );
+    const markerIds = new Map<string, number>();
+    for (const row of existingRows) {
+      for (const { markerValue } of row.inputMarkers) {
+        markerIds.set(markerValue.marker.marker, markerValue.markerId);
+      }
+    }
+
     for (const input of inputs) {
-      // Check if input already exists
-      const exists = await this.input_exists(node_id, input, connection);
-      if (exists) continue;
+      if (existingSignatures.has(inputSignature(input))) continue;
 
       const savedInput = await client.dataInput.create({
         data: { datasetId: node_id },
       });
       for (const [marker, value] of Object.entries(input)) {
-        const markerRow = await client.marker.findFirst({
-          where: { marker, datasetId: node_id },
-        });
-        const markerRecord =
-          markerRow ??
-          (await client.marker.create({
+        let marker_id = markerIds.get(marker);
+        if (marker_id === undefined) {
+          const markerRecord = await client.marker.create({
             data: { marker, datasetId: node_id },
-          }));
-        const marker_id = markerRecord.id;
+          });
+          marker_id = markerRecord.id;
+          markerIds.set(marker, marker_id);
+        }
         const hash = computeMarkerValueHash(marker_id, value);
         const markerValue = await client.markerValue.upsert({
           where: { hash },
@@ -313,6 +395,7 @@ export const ExperimentConfigRepository = {
           data: { inputId: savedInput.id, markerValuesId: markerValue.id },
         });
       }
+      existingSignatures.add(inputSignature(input));
     }
   },
   async save_dataset_inputs(

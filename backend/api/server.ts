@@ -1,3 +1,4 @@
+import { prisma } from "../database/prisma";
 import app from "./app";
 import { ExperimentStateService } from "./modules/experiment_state/service";
 
@@ -50,6 +51,16 @@ process.on("unhandledRejection", (error) => {
   );
 });
 
-app.listen(PORT, () => {
-  console.log(`Server is running at http://localhost:${PORT}`);
+async function startServer() {
+  console.log("Connecting to database...");
+  await prisma.$connect();
+
+  app.listen(PORT, () => {
+    console.log(`Server is running at http://localhost:${PORT}`);
+  });
+}
+
+void startServer().catch((error: unknown) => {
+  console.error("Failed to connect to database. Server will not start.", error);
+  process.exit(1);
 });
