@@ -189,7 +189,9 @@ export const ExperimentService = {
       const sorted_nodes = topologicalSort(nodes, links);
       for (const node of sorted_nodes) {
         if (
-          ExperimentStateService.isExperimentRunPauseRequested(runState.run_id)
+          ExperimentStateService.is_experiment_run_pause_requested(
+            runState.run_id,
+          )
         ) {
           return;
         }
@@ -211,6 +213,7 @@ export const ExperimentService = {
               experiment.title,
               experiment.threads || 1,
               node.id,
+              api_keys,
             ).evaluate();
             break;
           case NodeType.processor:
@@ -218,6 +221,7 @@ export const ExperimentService = {
               experiment.title,
               experiment.threads || 1,
               node.id,
+              api_keys,
             ).process();
             break;
           default:
@@ -225,12 +229,12 @@ export const ExperimentService = {
         }
       }
       if (activeExecutionTokens.get(runState.run_id) === executionToken) {
-        ExperimentStateService.completeExperimentRun(runState.run_id);
+        ExperimentStateService.complete_experiment_run(runState.run_id);
         activeExecutionTokens.delete(runState.run_id);
       }
     } catch (error) {
       if (activeExecutionTokens.get(runState.run_id) === executionToken) {
-        ExperimentStateService.failExperimentRun(
+        ExperimentStateService.fail_experiment_run(
           runState.run_id,
           error instanceof Error ? error.message : String(error),
         );
@@ -274,16 +278,16 @@ export const ExperimentService = {
           throw new Error(`Run ${options.resumeRunId} is not paused`);
         }
         runState = persistedRun;
-        ExperimentStateService.addExperimentRunState(runState);
+        ExperimentStateService.add_experiment_run_state(runState);
       } else {
-        runState = ExperimentStateService.createExperimentRun(
+        runState = ExperimentStateService.create_experiment_run(
           experiment.id,
           experiment_name,
         );
       }
       const executionToken = randomUUID();
       activeExecutionTokens.set(runState.run_id, executionToken);
-      ExperimentStateService.startExperimentRun(runState.run_id);
+      ExperimentStateService.start_experiment_run(runState.run_id);
 
       const runPromise = this.execute_experiment(
         experiment,
@@ -321,11 +325,10 @@ export const ExperimentService = {
     experiment_name: string,
     connection: DatabaseClient = prisma,
   ): Promise<Experiment | undefined> {
-    const experiment =
-      await ExperimentRepository.get_experiment_by_name(
-        experiment_name,
-        connection,
-      );
+    const experiment = await ExperimentRepository.get_experiment_by_name(
+      experiment_name,
+      connection,
+    );
     return experiment;
   },
 };

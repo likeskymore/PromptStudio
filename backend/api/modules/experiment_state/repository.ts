@@ -7,8 +7,6 @@ import {
 } from "./types";
 import { toBigIntMilliseconds } from "./helpers";
 
-
-
 function mapRunState(row: any): ExperimentRunState {
   return {
     experiment_id: row.experimentId,

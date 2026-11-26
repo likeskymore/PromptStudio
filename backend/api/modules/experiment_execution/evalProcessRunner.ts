@@ -5,7 +5,7 @@ import { Processor_type, ProcessorResult } from "../processor/types";
 import { PromptService } from "../prompt/service";
 import { EvaluationTask } from "./types";
 import * as workerpool from "workerpool";
-import { fileURLToPath } from "node:url";
+import path from "node:path";
 import { NodeService } from "../node/service";
 import { ProcessorService } from "../processor/service";
 import { ResultService } from "../result/service";
@@ -24,9 +24,11 @@ export class EvalProcessRunner {
     private experiment_name: string,
     private num_workers: number,
     private node_id: number,
+    private api_keys = "{}",
   ) {
-    const workerPath = fileURLToPath(
-      new URL("../worker/worker.ts", import.meta.url),
+    const workerPath = path.resolve(
+      process.cwd(),
+      "backend/api/modules/worker/worker.ts",
     );
     this.pool = workerpool.pool(workerPath, {
       minWorkers: this.num_workers,
@@ -150,9 +152,7 @@ export class EvalProcessRunner {
     }
     const links = await NodeService.get_links_by_target(this.node_id);
     for (const link of links) {
-      const parent_node = await NodeService.get_node_by_id(
-        link.source_node_id,
-      );
+      const parent_node = await NodeService.get_node_by_id(link.source_node_id);
       if (!parent_node) {
         continue;
       }
@@ -399,6 +399,7 @@ export class EvalProcessRunner {
           template_value,
           result,
           input_id,
+          this.api_keys,
         ]);
       } catch (error) {
         console.error(

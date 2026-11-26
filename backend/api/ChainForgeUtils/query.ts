@@ -1,8 +1,14 @@
 import { v4 as uuid } from "uuid";
 import {
-  PromptPermutationGenerator, PromptTemplate, // PromptPermutationGenerator
+  PromptPermutationGenerator,
+  PromptTemplate, // PromptPermutationGenerator
 } from "./template";
-import { LLM, LLMProvider, NativeLLM, RateLimiter } from "../modules/LLM/models";
+import {
+  LLM,
+  LLMProvider,
+  NativeLLM,
+  RateLimiter,
+} from "../modules/LLM/models";
 import {
   Dict,
   LLMResponseError,
@@ -92,7 +98,8 @@ export class PromptPipeline {
     // Check for selective failure
     if (!query && response instanceof LLMResponseError)
       return response; // yield the LLMResponseException
-    else if (response === undefined) { // @ts-ignore
+    else if (response === undefined) {
+      // @ts-ignore
       return new LLMResponseError("Unknown");
     }
 
@@ -223,7 +230,7 @@ export class PromptPipeline {
       // Loop over any present chat histories. (If none, will have a single pass with 'undefined' as chat_history value.)
       for (const chat_history of _chat_histories) {
         // If there's chat history, we need to fill any special (#) vars from the carried chat_history vars and metavars:
-/*        if (chat_history !== undefined) {
+        /*        if (chat_history !== undefined) {
           prompt.fill_special_vars({
             ...chat_history?.fill_history,
             ...chat_history?.metavars,
@@ -249,7 +256,7 @@ export class PromptPipeline {
         let cached_resp_idx = -1;
         // Find an individual response obj that matches the chat history + (if present) settings vars:
         // TODO Replace this with the database lookup
-/*        for (let i = 0; i < cached_resps.length; i++) {
+        /*        for (let i = 0; i < cached_resps.length; i++) {
           if (
             isEqualChatHistory(
               cached_resps[i].chat_history,
@@ -335,7 +342,8 @@ export class PromptPipeline {
     [key: string]: RawLLMResponseObject | RawLLMResponseObject[];
   } {
     if (this._storageKey === undefined) return {};
-    const data: Record<string, RawLLMResponseObject | RawLLMResponseObject[]> = {};
+    const data: Record<string, RawLLMResponseObject | RawLLMResponseObject[]> =
+      {};
 
     // Before retuning, verify data integrity: check that uids are present for all responses.
     return repairCachedResponses(data, this._storageKey);
@@ -345,7 +353,8 @@ export class PromptPipeline {
    * Stores the JSON responses to the local cache.
    * (Overrides the existing responses stored in the cache.)
    */
-  _cache_responses(responses: Dict): void {/*
+  _cache_responses(responses: Dict): void {
+    /*
     if (this._storageKey !== undefined)
       StorageCache.store(this._storageKey, responses);*/
   }
@@ -383,7 +392,7 @@ export class PromptPipeline {
 
     // Array of images (as media UIDs) to send to the LLM
     const images: string[] = [];
-/*    if (prompt.fill_history) {
+    /*    if (prompt.fill_history) {
       for (const value of Object.values(prompt.fill_history)) {
         if (!isImageResponseData(value)) continue;
         // NOTE: We only check if the UID is present here,
@@ -419,7 +428,7 @@ export class PromptPipeline {
       // When/if we emerge from getting a response, check if this process has been canceled in the meantime:
       if (should_cancel && should_cancel()) throw new UserForcedPrematureExit();
     } catch (err) {
-      if (err instanceof UserForcedPrematureExit) throw err;// bubble cancels up
+      if (err instanceof UserForcedPrematureExit) throw err; // bubble cancels up
       return {
         prompt,
         query: undefined,
@@ -428,7 +437,6 @@ export class PromptPipeline {
         past_resp_obj_cache_idx: -1,
       };
     }
-
 
     return {
       prompt,

@@ -1,18 +1,27 @@
-import * as workerpool from 'workerpool';
+import * as workerpool from "workerpool";
 import { LlmService } from "../LLM/service";
-import { LLMResponseError, LLMSpec, Llm_params } from "../LLM/types";
+import {
+  LLMResponse,
+  LLMResponseError,
+  LLMSpec,
+  Llm_params,
+} from "../LLM/types";
 import { PromptVarsDict, ResolvedInput } from "../experiment_config/types";
 import { Eval_type } from "../evaluator/types";
 import { Processor_type } from "../processor/types";
 import { Result } from "../result/types";
 import { EvalProcessService } from "../eval_process/service";
 import { PromptService } from "../prompt/service";
-import { ResultService } from '../result/service';
-import { EvaluatorService } from '../evaluator/service';
-import { ProcessorService } from '../processor/service';
+import { ResultService } from "../result/service";
+import { EvaluatorService } from "../evaluator/service";
+import { ProcessorService } from "../processor/service";
+import {
+  applyLlmStubLatency,
+  getLlmStubLatencyConfig,
+  isLlmStubEnabled,
+} from "./llmStubLatency";
 
-
-/** 
+/**
  * Processes an experiment by querying the LLM with the given parameters and saving the responses.
  * This function is designed to be run in a worker thread, allowing for parallel processing.
  * @param config_id The ID of the configuration to use for the experiment.
@@ -24,45 +33,122 @@ import { ProcessorService } from '../processor/service';
  * @param tries The current number of tries for the experiment, used for retry logic.
  * @param api_keys A dictionary of API keys to use for the LLM query.
  */
-async function processExperiment(run_id: string, config_id: number, llm_spec: LLMSpec, iterations: number,
-                                 template_value: string, markersDict: PromptVarsDict,
-                                 input_id: number, api_keys: string, tries: number = 0 ): Promise<{success: boolean, tries: number, totalTokens?: number, latencyMs?: number, responseCount?: number, errorCount?: number}> {
-    let safe_api_keys = {};
-    if (api_keys){
-        safe_api_keys = JSON.parse(api_keys);
-    }
-    const start_time = new Date().toISOString().replace('T', ' ').replace('Z', ' ');
+async function processExperiment(
+  run_id: string,
+  config_id: number,
+  llm_spec: LLMSpec,
+  iterations: number,
+  template_value: string,
+  markersDict: PromptVarsDict,
+  input_id: number,
+  api_keys: string,
+  tries: number = 0,
+): Promise<{
+  success: boolean;
+  tries: number;
+  totalTokens?: number;
+  latencyMs?: number;
+  responseCount?: number;
+  errorCount?: number;
+}> {
+  let safe_api_keys = {};
+  if (api_keys) {
+    safe_api_keys = JSON.parse(api_keys);
+  }
+  const start_time = new Date()
+    .toISOString()
+    .replace("T", " ")
+    .replace("Z", " ");
 
-    const llmStartedAt = performance.now();
+  const llmStartedAt = performance.now();
 
-    const responses = await LlmService.queryLLM(
-        config_id.toString(),
-        [llm_spec],
-        iterations,
-        template_value,
-        markersDict,
-        safe_api_keys);
-        
-    const latency_ms = performance.now() - llmStartedAt;
-    const end_time = new Date().toISOString().replace('T', ' ').replace('Z', ' ');
-    let total_tokens = 0;
-    for (const response of responses.responses) {
-        const responseTokens = response.tokens?.total_tokens ?? 0;
-        total_tokens += responseTokens;
-        for (const llm_response of response.responses) {
-            await ResultService.handle_save_response(run_id, config_id, llm_response, input_id, start_time, end_time, responseTokens / Math.max(responses.responses.length, 1));
-        }
+  // const responses = await LlmService.queryLLM(
+  //     config_id.toString(),
+  //     [llm_spec],
+  //     iterations,
+  //     template_value,
+  //     markersDict,
+  //     safe_api_keys);
+
+  let responses: {
+    responses: LLMResponse[];
+    errors: Record<string, LLMResponseError[]>;
+  };
+
+  if (isLlmStubEnabled()) {
+    responses = {
+      responses: Array.from({ length: iterations }, (_, index) => ({
+        uid: `mock-${run_id}-${config_id}-${input_id}-${index}`,
+        prompt: template_value,
+        vars: markersDict,
+        metavars: {},
+        llm: llm_spec,
+        tokens: { total_tokens: 100 },
+        responses: [`Mock response ${index + 1}`],
+      })),
+      errors: {},
+    };
+    await applyLlmStubLatency(getLlmStubLatencyConfig());
+  } else {
+    responses = await LlmService.queryLLM(
+      config_id.toString(),
+      [llm_spec],
+      iterations,
+      template_value,
+      markersDict,
+      safe_api_keys,
+    );
+  }
+
+  const latency_ms = performance.now() - llmStartedAt;
+  const end_time = new Date().toISOString().replace("T", " ").replace("Z", " ");
+  let total_tokens = 0;
+  for (const response of responses.responses) {
+    const responseTokens = response.tokens?.total_tokens ?? 0;
+    total_tokens += responseTokens;
+    for (const llm_response of response.responses) {
+      await ResultService.handle_save_response(
+        run_id,
+        config_id,
+        llm_response,
+        input_id,
+        start_time,
+        end_time,
+        responseTokens / Math.max(responses.responses.length, 1),
+      );
     }
-    if (responses.errors && Object.keys(responses.errors).length > 0){
-        for (const key of Object.keys(responses.errors)) {
-            for (const err of responses.errors[key]) {
-                await ResultService.handle_save_error(config_id, err.message, err.getStatus() || 0, input_id, start_time, end_time);
-                tries++;
-                return {success: false, tries: tries, totalTokens: total_tokens, latencyMs: latency_ms, responseCount: responses.responses.length, errorCount: 1};
-            }
-        }
+  }
+  if (responses.errors && Object.keys(responses.errors).length > 0) {
+    for (const key of Object.keys(responses.errors)) {
+      for (const err of responses.errors[key]) {
+        await ResultService.handle_save_error(
+          config_id,
+          err.message,
+          err.getStatus() || 0,
+          input_id,
+          start_time,
+          end_time,
+        );
+        tries++;
+        return {
+          success: false,
+          tries: tries,
+          totalTokens: total_tokens,
+          latencyMs: latency_ms,
+          responseCount: responses.responses.length,
+          errorCount: 1,
+        };
+      }
     }
-    return {success: true, tries: tries, totalTokens: total_tokens, latencyMs: latency_ms, responseCount: responses.responses.length, errorCount: 0};
+  }
+  return {
+    success: true,
+    tries: tries,
+    totalTokens: total_tokens,
+    latencyMs: latency_ms,
+    responseCount: responses.responses.length,
+    errorCount: 0,
+  };
 }
 
 /**
@@ -76,100 +162,222 @@ async function processExperiment(run_id: string, config_id: number, llm_spec: LL
  * @param result The result to evaluate, which contains the response from the LLM.
  * @param input_id The ID of the input associated with the evaluator.
  */
-async function evaluate(evaluator_id: number, LLMSpec: LLMSpec, markersDict: PromptVarsDict, template_value: string, result: Result, input_id: number) {
-    const evaluator = await EvaluatorService.get_evaluator_by_id(evaluator_id);
-    const llmName = LLMSpec?.base_model ?? "";
-    const prompt = template_value ?? "";
-    let eval_result;
-    if (!evaluator) {
+async function evaluate(
+  evaluator_id: number,
+  LLMSpec: LLMSpec,
+  markersDict: PromptVarsDict,
+  template_value: string,
+  result: Result,
+  input_id: number,
+  api_keys = "{}",
+) {
+  const evaluator = await EvaluatorService.get_evaluator_by_id(evaluator_id);
+  const llmName = LLMSpec?.base_model ?? "";
+  const prompt = template_value ?? "";
+  let eval_result;
+  if (!evaluator) {
+    return;
+  }
+  // If evaluator is a multieval, find its child evaluators and run them sequentially
+  if (evaluator?.type === Eval_type.multieval) {
+    const child_ids =
+      await EvaluatorService.get_child_evaluator_ids_by_multi_eval_id(
+        evaluator.node_id,
+      );
+    for (const child_id of child_ids) {
+      await evaluate(
+        child_id,
+        LLMSpec,
+        markersDict,
+        template_value,
+        result,
+        input_id,
+        api_keys,
+      );
+    }
+    return; // Exit after processing all child evaluators
+  }
+  if (evaluator?.type === Eval_type.llm) {
+    const llmEvaluator = await EvaluatorService.get_llm_evaluator_by_id(
+      evaluator.node_id,
+    );
+    if (!llmEvaluator) {
+      await EvaluatorService.handle_save_error_evaluator(
+        evaluator.node_id,
+        "LLM evaluator not found",
+        result.id,
+        input_id,
+        new Date().toISOString().replace("T", " ").replace("Z", " "),
+      );
+      return;
+    }
+    try {
+      const graderParams: Llm_params = await LlmService.get_llm_param_by_id(
+        llmEvaluator.llm_param_id,
+      );
+      const grader = await LlmService.get_llm_by_id(llmEvaluator.llm_id);
+      if (!grader) {
+        throw new Error("Grader LLM not found");
+      }
+      const graderSpec = LlmService.create_llm_spec(grader, graderParams);
+      const gradingPromptTemplate: string = llmEvaluator.prompt ?? "{response}";
+
+      const evalVars = {
+        ...markersDict,
+        response: result.output_result,
+      } as PromptVarsDict;
+      const gradingPrompt = PromptService.fillTemplate(
+        gradingPromptTemplate,
+        evalVars,
+      );
+
+      const graderApiKeys = JSON.parse(api_keys);
+      const responses = await LlmService.queryLLM(
+        llmEvaluator.node_id.toString(),
+        [graderSpec],
+        1,
+        gradingPrompt,
+        evalVars,
+        graderApiKeys,
+      );
+      const firstResp =
+        responses.responses && responses.responses.length > 0
+          ? responses.responses[0]
+          : undefined;
+      const graderOut =
+        firstResp && firstResp.responses && firstResp.responses.length > 0
+          ? firstResp.responses[0]
+          : undefined;
+      if (!graderOut) {
+        await EvaluatorService.handle_save_error_evaluator(
+          llmEvaluator.node_id,
+          "No grader output",
+          result.id,
+          input_id,
+          new Date().toISOString().replace("T", " ").replace("Z", " "),
+        );
         return;
+      }
+      await EvaluatorService.handle_save_eval_result(
+        graderOut,
+        result.id,
+        input_id,
+        llmEvaluator.node_id,
+      );
+    } catch (err) {
+      await EvaluatorService.handle_save_error_evaluator(
+        llmEvaluator.node_id,
+        String(err),
+        result.id,
+        input_id,
+        new Date().toISOString().replace("T", " ").replace("Z", " "),
+      );
     }
-    // If evaluator is a multieval, find its child evaluators and run them sequentially
-    if (evaluator?.type === Eval_type.multieval) {
-        const child_ids = await EvaluatorService.get_child_evaluator_ids_by_multi_eval_id(evaluator.node_id);
-        for (const child_id of child_ids) {
-            await evaluate(child_id, LLMSpec, markersDict, template_value, result, input_id);
-        }
-        return; // Exit after processing all child evaluators
-    }
-    if (evaluator?.type === Eval_type.llm) {
-        const llmEvaluator = await EvaluatorService.get_llm_evaluator_by_id(evaluator.node_id);
-        if (!llmEvaluator) {
-            await EvaluatorService.handle_save_error_evaluator(evaluator.node_id, 'LLM evaluator not found', result.id, input_id, new Date().toISOString().replace('T', ' ').replace('Z', ' '));
-            return;
-        }
-        try {
-            const graderParams: Llm_params = await LlmService.get_llm_param_by_id(llmEvaluator.llm_param_id);
-            const grader = await LlmService.get_llm_by_id(llmEvaluator.llm_id);
-            if (!grader) {
-                throw new Error("Grader LLM not found");
-            }
-            const graderSpec = LlmService.create_llm_spec(grader, graderParams);
-            const gradingPromptTemplate: string = llmEvaluator.prompt ?? '{response}';
+    return;
+  }
 
-            const evalVars = { ...markersDict, response: result.output_result } as PromptVarsDict;
-            const gradingPrompt = PromptService.fillTemplate(gradingPromptTemplate, evalVars);
-            
-            const responses = await LlmService.queryLLM(llmEvaluator.node_id.toString(), [graderSpec], 1, gradingPrompt, evalVars, {});
-            const firstResp = responses.responses && responses.responses.length > 0 ? responses.responses[0] : undefined;
-            const graderOut = firstResp && firstResp.responses && firstResp.responses.length > 0 ? firstResp.responses[0] : undefined;
-            if (!graderOut) {
-                await EvaluatorService.handle_save_error_evaluator(llmEvaluator.node_id, 'No grader output', result.id, input_id, new Date().toISOString().replace('T', ' ').replace('Z', ' '));
-                return;
-            }
-            await EvaluatorService.handle_save_eval_result(graderOut, result.id, input_id, llmEvaluator.node_id);
-        } catch (err) {
-            await EvaluatorService.handle_save_error_evaluator(llmEvaluator.node_id, String(err), result.id, input_id, new Date().toISOString().replace('T', ' ').replace('Z', ' '));
-        }
-        return;
-    }
+  if (evaluator?.type === Eval_type.python) {
+    eval_result = await EvalProcessService.execute_python(
+      evaluator.code ?? "",
+      result,
+      markersDict,
+      {},
+      llmName,
+      prompt,
+      "evaluator",
+    );
+  } else if (evaluator?.type === Eval_type.simple) {
+    const simple_evaluator = await EvaluatorService.get_simple_evaluator_by_id(
+      evaluator.node_id,
+    );
+    if (simple_evaluator?.var_selected === true) {
+      const vars: PromptVarsDict = {};
+      const metavars: PromptVarsDict = {};
 
-    if (evaluator?.type === Eval_type.python) {
-        eval_result = await EvalProcessService.execute_python(evaluator.code ?? "", result, markersDict, {}, llmName, prompt, "evaluator");
-    }
-    if (evaluator?.type === Eval_type.simple) {
-        const simple_evaluator = await EvaluatorService.get_simple_evaluator_by_id(evaluator.node_id);
-        if (simple_evaluator?.var_selected === true) {
-            const vars: PromptVarsDict = {};
-            const metavars: PromptVarsDict = {};
-
-            for (const [key, value] of Object.entries(markersDict)) {
-                if (key === simple_evaluator?.var_value) {
-                    if (simple_evaluator?.var_type === 'meta') {
-                        metavars[`${key}`] = value;
-                    } else {
-                    vars[`${key}`] = value;
-                    }
-                } else {
-                    metavars[`${key}`] = value;
-                }
-            }
-
-            eval_result = await EvalProcessService.execute_javascript(evaluator.code ?? "", result, vars, metavars, llmName, prompt, "evaluator");
+      for (const [key, value] of Object.entries(markersDict)) {
+        if (key === simple_evaluator?.var_value) {
+          if (simple_evaluator?.var_type === "meta") {
+            metavars[`${key}`] = value;
+          } else {
+            vars[`${key}`] = value;
+          }
         } else {
-            eval_result = await EvalProcessService.execute_javascript(evaluator.code ?? "", result, markersDict, {}, llmName, prompt, "evaluator");
+          metavars[`${key}`] = value;
         }
+      }
+
+      eval_result = await EvalProcessService.execute_javascript(
+        evaluator.code ?? "",
+        result,
+        vars,
+        metavars,
+        llmName,
+        prompt,
+        "evaluator",
+      );
     } else {
-        eval_result = await EvalProcessService.execute_javascript(evaluator.code ?? "", result, markersDict, {}, llmName, prompt, "evaluator");
+      eval_result = await EvalProcessService.execute_javascript(
+        evaluator.code ?? "",
+        result,
+        markersDict,
+        {},
+        llmName,
+        prompt,
+        "evaluator",
+      );
     }
-    // Check if there is an error in the evaluator itself
-    if (eval_result.error) {
-        await EvaluatorService.handle_save_error_evaluator(evaluator.node_id, eval_result.error, result.id, input_id, new Date().toISOString().replace('T', ' ').replace('Z', ' '),);
-        return;
+  } else {
+    eval_result = await EvalProcessService.execute_javascript(
+      evaluator.code ?? "",
+      result,
+      markersDict,
+      {},
+      llmName,
+      prompt,
+      "evaluator",
+    );
+  }
+  // Check if there is an error in the evaluator itself
+  if (eval_result.error) {
+    await EvaluatorService.handle_save_error_evaluator(
+      evaluator.node_id,
+      eval_result.error,
+      result.id,
+      input_id,
+      new Date().toISOString().replace("T", " ").replace("Z", " "),
+    );
+    return;
+  }
+  // Check if there is an error in the evaluation result
+  if (!eval_result.response) {
+    await EvaluatorService.handle_save_error_evaluator(
+      evaluator.node_id,
+      "No evaluation result",
+      result.id,
+      input_id,
+      new Date().toISOString().replace("T", " ").replace("Z", " "),
+    );
+    return;
+  }
+  if (eval_result.response.error) {
+    await EvaluatorService.handle_save_error_evaluator(
+      evaluator.node_id,
+      eval_result.response.error,
+      eval_result.response.result_id ?? result.id,
+      input_id,
+      new Date().toISOString().replace("T", " ").replace("Z", " "),
+    );
+  } else {
+    const result = eval_result.response.result;
+    if (result !== null && result !== undefined) {
+      await EvaluatorService.handle_save_eval_result(
+        result,
+        eval_result.response.result_id ?? result.id,
+        input_id,
+        evaluator.node_id,
+      );
     }
-    // Check if there is an error in the evaluation result
-    if (!eval_result.response) {
-        await EvaluatorService.handle_save_error_evaluator(evaluator.node_id, 'No evaluation result', result.id, input_id, new Date().toISOString().replace('T', ' ').replace('Z', ' '));
-        return;
-    }
-    if (eval_result.response.error) {
-        await EvaluatorService.handle_save_error_evaluator(evaluator.node_id, eval_result.response.error, eval_result.response.result_id ?? result.id, input_id, new Date().toISOString().replace('T', ' ').replace('Z', ' '));
-    } else {
-        const result = eval_result.response.result;
-        if (result !== null && result !== undefined) {
-            await EvaluatorService.handle_save_eval_result(result, eval_result.response.result_id ?? result.id, input_id, evaluator.node_id);
-        }
-    }
+  }
 }
 
 /**
@@ -187,45 +395,114 @@ async function evaluate(evaluator_id: number, LLMSpec: LLMSpec, markersDict: Pro
  * @param resolved_input_id The ID of the resolved input associated with the processor.
  * @param resolved_inputs An array of resolved inputs associated with the processor.
  */
-async function process(processor_id: number, LLMSpec: LLMSpec,  markersDict: PromptVarsDict, template_value: string, result: Result, input_id: number, resolved_input_id: number | null, resolved_inputs: ResolvedInput[] | null) {
-    const processor = await ProcessorService.get_processor_by_id(processor_id);
-    if (!processor) {
-        return;
+async function process(
+  processor_id: number,
+  LLMSpec: LLMSpec,
+  markersDict: PromptVarsDict,
+  template_value: string,
+  result: Result,
+  input_id: number,
+  resolved_input_id: number | null,
+  resolved_inputs: ResolvedInput[] | null,
+) {
+  const processor = await ProcessorService.get_processor_by_id(processor_id);
+  if (!processor) {
+    return;
+  }
+  const llmName = LLMSpec?.base_model ?? "";
+  const prompt = template_value ?? "";
+  let process_result;
+  if (processor?.type === Processor_type.python) {
+    process_result = await EvalProcessService.execute_python(
+      processor.code ?? "",
+      result,
+      markersDict,
+      {},
+      llmName,
+      prompt,
+      "processor",
+    );
+  } else if (processor?.type === Processor_type.join) {
+    process_result = await EvalProcessService.execute_join(
+      processor.selected_group_vars ?? "",
+      resolved_inputs ?? [],
+      processor.format ?? "",
+    );
+    for (const result of process_result || []) {
+      await ProcessorService.handle_save_process_result(
+        result.response?.result,
+        result.response?.result_id || null,
+        processor.node_id,
+        result.response?.input_id || null,
+        resolved_input_id,
+      );
     }
-    const llmName = LLMSpec?.base_model ?? "";
-    const prompt = template_value ?? "";
-    let process_result;
-    if (processor?.type === Processor_type.python) {
-        process_result = await EvalProcessService.execute_python(processor.code ?? "", result, markersDict, {}, llmName, prompt, "processor");
-    } else if (processor?.type === Processor_type.join){
-        process_result = await EvalProcessService.execute_join(processor.selected_group_vars ?? "", resolved_inputs ?? [], processor.format ?? "");
-        for (const result of process_result || []) {
-            await ProcessorService.handle_save_process_result(result.response?.result, result.response?.result_id || null, processor.node_id, result.response?.input_id || null, resolved_input_id);
-        }
-        return;
-    } else if (processor?.type === Processor_type.split){
-        process_result = await EvalProcessService.execute_split(result, markersDict, {}, llmName, prompt, "processor", processor.format ?? "");
-    } else {
-        process_result = await EvalProcessService.execute_javascript(processor.code ?? "", result, markersDict, {}, llmName, prompt, "processor");
-    }
-    // Check if there is an error in the processor itself
-    if (process_result.error) {
-        await ProcessorService.handle_save_error_processor(processor.node_id, process_result.error, result.id, input_id, resolved_input_id ?? null, new Date().toISOString().replace('T', ' ').replace('Z', ' '),);
-        return;
-    }
-    // Check if there is an error in the process result
-    if (!process_result.response) {
-        await ProcessorService.handle_save_error_processor(processor.node_id, 'No processing result', result.id, input_id, resolved_input_id ?? null, new Date().toISOString().replace('T', ' ').replace('Z', ' '));
-    } else if (process_result.response.error) {
-        await ProcessorService.handle_save_error_processor(processor.node_id, process_result.response.error, process_result.response.result_id ?? result.id, input_id, resolved_input_id ?? null, new Date().toISOString().replace('T', ' ').replace('Z', ' '));
-    } else {
-        await ProcessorService.handle_save_process_result(process_result.response.result, process_result.response.result_id ?? null, processor.node_id, input_id, resolved_input_id ?? null);
-
-    }
+    return;
+  } else if (processor?.type === Processor_type.split) {
+    process_result = await EvalProcessService.execute_split(
+      result,
+      markersDict,
+      {},
+      llmName,
+      prompt,
+      "processor",
+      processor.format ?? "",
+    );
+  } else {
+    process_result = await EvalProcessService.execute_javascript(
+      processor.code ?? "",
+      result,
+      markersDict,
+      {},
+      llmName,
+      prompt,
+      "processor",
+    );
+  }
+  // Check if there is an error in the processor itself
+  if (process_result.error) {
+    await ProcessorService.handle_save_error_processor(
+      processor.node_id,
+      process_result.error,
+      result.id,
+      input_id,
+      resolved_input_id ?? null,
+      new Date().toISOString().replace("T", " ").replace("Z", " "),
+    );
+    return;
+  }
+  // Check if there is an error in the process result
+  if (!process_result.response) {
+    await ProcessorService.handle_save_error_processor(
+      processor.node_id,
+      "No processing result",
+      result.id,
+      input_id,
+      resolved_input_id ?? null,
+      new Date().toISOString().replace("T", " ").replace("Z", " "),
+    );
+  } else if (process_result.response.error) {
+    await ProcessorService.handle_save_error_processor(
+      processor.node_id,
+      process_result.response.error,
+      process_result.response.result_id ?? result.id,
+      input_id,
+      resolved_input_id ?? null,
+      new Date().toISOString().replace("T", " ").replace("Z", " "),
+    );
+  } else {
+    await ProcessorService.handle_save_process_result(
+      process_result.response.result,
+      process_result.response.result_id ?? null,
+      processor.node_id,
+      input_id,
+      resolved_input_id ?? null,
+    );
+  }
 }
 
 workerpool.worker({
-    processExperiment: processExperiment,
-    evaluate: evaluate,
-    process: process,
+  processExperiment: processExperiment,
+  evaluate: evaluate,
+  process: process,
 });

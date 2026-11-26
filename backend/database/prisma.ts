@@ -14,12 +14,11 @@ const adapter = new PrismaMariaDb({
   connectTimeout: 50_000,
 });
 export const prisma = new PrismaClient({ adapter });
-  
+
 export type DatabaseClient = PrismaClient | Prisma.TransactionClient;
 
 export const getClient = (connection?: DatabaseClient): DatabaseClient =>
   connection ?? prisma;
-
 
 // import "dotenv/config";
 // import { readFileSync } from "node:fs";
@@ -39,7 +38,7 @@ export const getClient = (connection?: DatabaseClient): DatabaseClient =>
 //   connectionLimit: 5,
 // });
 // export const prisma = new PrismaClient({ adapter });
-  
+
 // export type DatabaseClient = PrismaClient | Prisma.TransactionClient;
 
 // export const getClient = (connection?: DatabaseClient): DatabaseClient =>

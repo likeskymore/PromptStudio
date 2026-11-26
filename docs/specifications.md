@@ -1,4 +1,5 @@
 ﻿# PromptStudio
+
 PromptStudio is a tool to assist in engineering prompts for large language models. It allows you to run scientific experiments and a rigorous process to justify why you chose a particular prompt for a particular task. PromptStudio allows you to compare different prompts and the performance across different LLMs.
 It is meant to be used for any application domain and task. However, it does not support conversational prompts. Each prompt sent is assumed to be indepdent of any previous prompt sent.
 
@@ -8,6 +9,7 @@ A very related tool is [PromptFoo](https://www.promptfoo.dev/). It allows connec
 PromptStudio comprises 3 modules: designer, configurator, and analyzer.
 
 # Prompt designer
+
 The prompt designer offers a GUI to define the prompt in a way similar to template-based code generators.
 
 [Portkey](https://docs.portkey.ai/docs/product/prompt-library/prompt-templates) has a good prompt template syntax, engine, and management (storage and versioning). It also has a good dashboard for analytics of sending queries, error detection, and error recovery.
@@ -16,13 +18,16 @@ The syntax is based on [Mustache](https://mustache.github.io/mustache.5.html). A
 
 Prompt templates and marker indexes can be saved and versioned for future (re)use.
 A prompt template has the following characteristics:
+
 - **name**: a user-friendly name formatted as a variable name
 - **ID**: internal GUID
 
 ## Static text
+
 Static text is a collection of strings that are not analyzed and are processed as is.
 
 ## Dynamic text
+
 Dynamic text is encoded in `{markers}`. A marker is a keyword that will be indexed as a variable for the experiments.
 Here is an example of a prompt template:
 
@@ -38,7 +43,9 @@ Here is the information about the article:
 Title: {:title}
 Abstract: {:abstract}
 ```
+
 ### Syntax
+
 The dynamic text follows a specific syntax:
 
 **Input markers** in the form `{:marker}` indicate an input variable provided at run-time.
@@ -47,8 +54,9 @@ The dynamic text follows a specific syntax:
 
 **Loops** in the form `{:marker n}` can be specified over input variables when the variable has a list of values.
 
-In both cases, *n* specifies the number of iterations and can be any of the following:
-- a number, to choose the first *n* values
+In both cases, _n_ specifies the number of iterations and can be any of the following:
+
+- a number, to choose the first _n_ values
 - a marker representing numbers
 - `*` to choose all the values
 - `rand(n)` to randomly choose the number of (or all) values.
@@ -64,10 +72,12 @@ In both cases, *n* specifies the number of iterations and can be any of the foll
 **Template version** you can call a specific version of the prompt like so `{@sub_template@5}`, referring to version 5 of the `sub_template` template. By default, it calls the latest version.
 
 ## Marker index
+
 For each marker `{marker}`, the marker index defines all the possible values it can hold: number, text. Each value has an optional unique **label** to identify it. The label is a string of a maximum of 5 characters.
 No marker definition is specified for input variables.
 
 Here is the marker definition for the example:
+
 ```json
 persona = [
 	SE: {You are an expert in software engineering.},
@@ -100,12 +110,14 @@ feature = [
 > Also, we could have specified the `confidence` in the prompt as: `{confidence<}On a scale of 1 to 10, state how confident you are in your decision.{>confidence}`. In this case, we would not have defined the `confidence` marker in the marker index.
 
 > Any marker definition not used in the template will simply be ignored.
-Note how we do not use `"` to encode strings to avoid escaping characters.
+> Note how we do not use `"` to encode strings to avoid escaping characters.
 
 # Experiment configurator
+
 The experiment configurator allows the user to configure a prompt, provide input datasets, and configure the models and other parameters.
 
 ## Input dataset
+
 The input dataset is provided in tabular form `id, input1, input2, ...`
 The `id` is used to refer to the exact row when reporting errors or fine-grained analysis results.
 The `input` column name must match an `{:input}` marker in the prompt template. Additional columns will be ignored. If an `input` column is missing, the execution is halted, and an error is reported.
@@ -113,24 +125,28 @@ The `input` column name must match an `{:input}` marker in the prompt template. 
 > The values in the input dataset are assumed to be encoded in UTF-8.
 
 ## Prompt configurator
+
 It is based on the marker index and the prompt template. The user identifies which value(s) to choose for each marker based on its label. If no label was explicitly provided, a default label 1, 2, 3, ... is assigned to each value in the order they appear in the index. Unless it is a multi-valued marker, only one value can be assigned to each marker.
 
 In the prompt configurator, the user can specify how to select shots or training data. Different options are available.
 
 ### For shots:
-- A **shot dataset** *D* which can be the input dataset or a dedicated dataset for shots
-- A number *n &isin; [ 0, |D| ]* shots
-- Choose the first *n* rows in *D*
-- Randomly choose *n* rows in *D*
+
+- A **shot dataset** _D_ which can be the input dataset or a dedicated dataset for shots
+- A number _n &isin; [ 0, |D| ]_ shots
+- Choose the first _n_ rows in _D_
+- Randomly choose _n_ rows in _D_
 
 ### For training data:
-- A shot dataset *D* (see above)
-- A sample ratio *t* in the form of a percentage of *|D|*, default is 70%
+
+- A shot dataset _D_ (see above)
+- A sample ratio _t_ in the form of a percentage of _|D|_, default is 70%
 - The vectorization method (e.g., Word2Vec, TF-IDF)
 - The cross validation method (e.g., randomized, grid)
 - The folding method (e.g., repeated, stratified, k-fold)
 
 ## Data pre-processing
+
 By default, the data provided in a dataset is processed and loaded to the database as is.
 Using a specific function signature, it is possible to specify how the data should be pre-processed before it is loaded into the database.
 This may include reformatting, character encoding, or any other operation on each data provided in the input and shot datasets.
@@ -145,6 +161,7 @@ def preprocess(dataframe):
 ```
 
 ## Output post-processing
+
 By default, the result output by a model is processed and loaded to the database as is.
 Using a specific function signature, it is possible to specify how the output should be post-processed before it is loaded into the database.
 This may include reformatting, tokenization, truncation, or any other operation on the output.
@@ -161,6 +178,7 @@ def postprocess(output, result):
 ```
 
 ## Result evaluation
+
 The correspondance between the model's output and the expected oracle determines the confusion matrix outcome.
 By default, the output and oracle must be exactly the same.
 Using a specific function signature, it is possible to specify how the similarity between them, before storing the result of the evaluation in the database.
@@ -178,10 +196,12 @@ def evaluate(output, oracle):
 ```
 
 ## Model selection
+
 PromptStudio supports a variety of large language models, trainable models, and random to process the prompt and input dataset.
 The out-of-the-box supported models are the ones listed below.
 
 A model has the following characteristics:
+
 - **ID**: internal GUID.
 - **API**: the API family that the model is part of, such as "OpenAI" or "scikit-learn."
 - **Model**: the specific model name, such as "gpt-3.5-turbo" or "svc."
@@ -189,83 +209,99 @@ A model has the following characteristics:
 - **Parameters**: the hyperparameters set for this model.
 
 ### Large language models
+
 - Commercial LLMs that require the user to provide the corresponding **key** (e.g., API key, Project ID)
-	- OpenAI (GPT models)
-	- Google AI (Gemini models)
-	- Anthropic (Claude)
-	- Meta (LLama)
+  - OpenAI (GPT models)
+  - Google AI (Gemini models)
+  - Anthropic (Claude)
+  - Meta (LLama)
 - Mozilla AI Llamafile
 - Models from HuggingFace
 
 #### Hyperparameters
+
 Specify the hyperparameters. The built-in parameters are:
-- *Temperature:* between 0.0 and 2.0, varying the range of possible output tokens and influencing the model's creativity.
-- *Maximum tokens:* maximum number of tokens in the output.
+
+- _Temperature:_ between 0.0 and 2.0, varying the range of possible output tokens and influencing the model's creativity.
+- _Maximum tokens:_ maximum number of tokens in the output.
 
 When the values of the parameters above are empty, the hyperparameters below have a finer control:
-- *Top-p:* between 0.0 and 1.0, configuring a model to  sample the tokens with the highest probabilities until the sum of those  probabilities reaches the set value.
-- *Top-k:* between 1 and 100, specifying that the tokens  sampled by the model should be those with the highest probabilities  until the set value is reached.
-- *Stop sequence:* one or more characters that stop the output once they are produced.
-- *Frequency penalty:* between -2.0 and 2.0, indicating that a model should avoid using the same tokens too often. It is applied proportionally to how often a specific token has been used. It prevents repetition.
-- *Presence penalty:* between -2.0 and 2.0 is similar to the frequency penalty but only applies to tokens that have been used at least once. It encourages a broader assortment of tokens.
+
+- _Top-p:_ between 0.0 and 1.0, configuring a model to sample the tokens with the highest probabilities until the sum of those probabilities reaches the set value.
+- _Top-k:_ between 1 and 100, specifying that the tokens sampled by the model should be those with the highest probabilities until the set value is reached.
+- _Stop sequence:_ one or more characters that stop the output once they are produced.
+- _Frequency penalty:_ between -2.0 and 2.0, indicating that a model should avoid using the same tokens too often. It is applied proportionally to how often a specific token has been used. It prevents repetition.
+- _Presence penalty:_ between -2.0 and 2.0 is similar to the frequency penalty but only applies to tokens that have been used at least once. It encourages a broader assortment of tokens.
 
 > Additional parameters can be defined manually.
 
 ### Trainable models
+
 They are available in [scikit-learn](https://scikit-learn.org/)
+
 - Linear model (Logistic regression)
 - Naive Bayes (Complement NB and Multinomial NB)
 - Support vector machine (C-Support Vector Classification)
 - Ensemble model (Random Forest)
 
 #### Hyperparameters
+
 The hyperparameters of each trainable model must be defined manually.
 
 ### Random
+
 - Seeded Random selection
 
 #### Hyperparameters
+
 Only the seed must be defined.
 
 ## Self-validation
-When the model is an LLM, we can ask it to double-check its output. 
+
+When the model is an LLM, we can ask it to double-check its output.
 Here is the prompt that is used internally for to self-validate an output. However, the user can define another prompt.
+
 ```json
 Your are an expert in {:validation_task:}.
 Determine wether the output {:validation_result:} is correct based on the following instruction.
 {:validation_instruction:}
 Only answer {:validation_format:} and nothing more.
 ```
+
 Here, note how the markers are formatted as `{:marker:}`. These are internal markers that are assigned a value automatically. If the internal marker is in the marker index, it will use that value. Note that in this case, it will always take the first value if multiple are provided. Otherwise, PromptStudio asks the LLM to determine the value based on the prompt when it is not present. Here are the internal markers available for self-validation:
-- `{:validation_result:}` collects the value from the [*ExperimentResult* table](#results-1) in the `result` column.
+
+- `{:validation_result:}` collects the value from the [_ExperimentResult_ table](#results-1) in the `result` column.
 - `{:validation_task:}` is determined by asking the LLM to summarize in one sentence the task based on the prompt provided in the [Prompt designer](#prompt-designer).
 - `{:validation_instruction:}` is determined by asking the LLM to paraphrase the prompt provided in the [Prompt designer](#prompt-designer).
-- `{:validation_format:}` investigates all the unique values from the [*ExperimentResult* table](#results-1) in the `result` column.
+- `{:validation_format:}` investigates all the unique values from the [_ExperimentResult_ table](#results-1) in the `result` column.
 
 Self-validation is characterized by:
+
 - A **validation prompt** which is either the default one or user-defined. Note that the markers may or may not be defined in the marker index.
 - A **validation model** that will perform the validation. By default, it is the same model chosen during [model selection](#model-selection).
 - The number of **validation iterations**: for self-consistency and statistical power.
 
-The self-validation results are stored in a separate *Experiment validation* table and can be analyzed like the original results.
+The self-validation results are stored in a separate _Experiment validation_ table and can be analyzed like the original results.
 
 [Shankar et al.](https://arxiv.org/abs/2404.12272) suggests an architecture to use the validation as a recommender to improve the prompt.
 
 ## Experiment setup
+
 An experiment is characterized by:
+
 - An **ID**: internal GUID.
 - The number of **iterations**: for self-consistency and statistical power.
 - A configuration **tag**: constructed from prompt configuration, input dataset, model selected, and iteration.
-Its format follows: `{template.name}|{model.name}|{input_dataset.label}(|{marker.label})*(_{iterations})?`.
-For example, `slr|gpt-3.5-turbo|DSLCompo|SE|0|U2|NoConf|T+A_10` reads as follows: the *slr* template and the *DSMLCompo* input dataset; the prompt is configured with the labels *role_play = SE*, *num_shots = 2*, *uncertainty = 0*, *confidence = NoConf*, and *features = [T,A]*; the experiment will be repeated in 10 iterations. If the tag already exists, it will be suffixed by .1, .2, .3, ... Any boolean marker not defined in the marker index will have values `T` if true, `F` otherwise.
+  Its format follows: `{template.name}|{model.name}|{input_dataset.label}(|{marker.label})*(_{iterations})?`.
+  For example, `slr|gpt-3.5-turbo|DSLCompo|SE|0|U2|NoConf|T+A_10` reads as follows: the _slr_ template and the _DSMLCompo_ input dataset; the prompt is configured with the labels _role_play = SE_, _num_shots = 2_, _uncertainty = 0_, _confidence = NoConf_, and _features = [T,A]_; the experiment will be repeated in 10 iterations. If the tag already exists, it will be suffixed by .1, .2, .3, ... Any boolean marker not defined in the marker index will have values `T` if true, `F` otherwise.
 - A user-friendly **title**: must be unique and serves as ID. The title will be set to the tag if no title is provided.
-- A **status**: which can be *draft* (if not run yet), *running* (if its execution is in progress), and *completed* (if its execution has terminated).
+- A **status**: which can be _draft_ (if not run yet), _running_ (if its execution is in progress), and _completed_ (if its execution has terminated).
 
 Several options are also available when setting up the experiment:
 
 **Self-validation**: can be enabled or disabled [(see Self-validation)](#self-validation). In this case, another result and confusion matrix outcome is stored in the database.
 
-**Synchronicity**: to run requests synchronously  or asynchronously. The latter is the default.
+**Synchronicity**: to run requests synchronously or asynchronously. The latter is the default.
 
 **Threads**: to run requests on multiple threads. The default is 10.
 
@@ -289,19 +325,20 @@ Several options are also available when setting up the experiment:
 
 > Note that it is possible to re-configure and re-run a completed experiment.
 
-
 # Experiment analyzer
+
 PromptStudio allows you to analyze the results of previously run experiments. When an experiment is completed, it is available for analysis. Once the analysis is run on an experiment, all the analysis results are stored for faster retrieval in the future. Several analysis visualizations are available.
 
-A configuration selector enables the selection of the experiments that match the given configuration. For example, the user may choose all the values of a template marker (say *uncertainty*) and a given model (say *gpt-3.5-turbo*). Then, all the experiments that match that will be selected.
+A configuration selector enables the selection of the experiments that match the given configuration. For example, the user may choose all the values of a template marker (say _uncertainty_) and a given model (say _gpt-3.5-turbo_). Then, all the experiments that match that will be selected.
 
 > Note that any reported analysis can be exported as CSV or graphical plots.
 
 > When self-validation is enabled, the user can decide to view the analysis results of either the original results or the results of the validation.
 
 ## Dashboard
+
 The dashboard enables to inspect how the experiment went. It reports the following information about the entire experiment and each iteration, when applicable.
-These are available in tabular format and plots (*line*, *bar*, *box*, and *gauge*).
+These are available in tabular format and plots (_line_, _bar_, _box_, and _gauge_).
 
 - The **start** time, **end** time, and **duration**
 - The number of **iterations** completed
@@ -318,58 +355,66 @@ These are available in tabular format and plots (*line*, *bar*, *box*, and *gaug
 - The frequency of **tokens per day** and the average
 
 ## Results
-The analyzer reports the aggregate results. 
+
+The analyzer reports the aggregate results.
+
 - The number of **processed** data and **unprocessed** data (i.e., with errors).
 - The count and frequency of each **result group** (unique result values).
 - The **confusion matrix** (TP, TN, FP, FN) comparing the result the model has output with the oracle column in the input dataset.
 
 ## Statistics
+
 Different metrics are available to be computed. PromptStudio reports the descriptive statistics for each selected metric in a tabular format.
-All metrics are normalized on a scale from 0% to 100% with 2 decimal points. 
+All metrics are normalized on a scale from 0% to 100% with 2 decimal points.
 The supported metrics are:
-- *Accuracy*
-- *Area Under the Curve*
-- *Balanced Accuracy*
-- *Cohen's Kappa*
-- *F-Beta Score* (&beta; is a parameter)
-- *Geometric Mean*
-- *General Performance Score*
-- *Jaccard Index*
-- *Matthews Correlation Factor*
-- *Negative Likelihood*
-- *Negative Predictive Value*
-- *Positive Likelihood*
-- *Precision*
-- *Recall* (also called *Sensitivity*)
-- *Specificity*
-- *Youden's Index*
+
+- _Accuracy_
+- _Area Under the Curve_
+- _Balanced Accuracy_
+- _Cohen's Kappa_
+- _F-Beta Score_ (&beta; is a parameter)
+- _Geometric Mean_
+- _General Performance Score_
+- _Jaccard Index_
+- _Matthews Correlation Factor_
+- _Negative Likelihood_
+- _Negative Predictive Value_
+- _Positive Likelihood_
+- _Precision_
+- _Recall_ (also called _Sensitivity_)
+- _Specificity_
+- _Youden's Index_
 
 > Additional metrics can be defined as plug-ins.
 
-When the experiment comprises of a single iteration, one value is reported for each metric. 
+When the experiment comprises of a single iteration, one value is reported for each metric.
 When the experiment includes multiple iterations, the moment statistics is reported for each metric.
 The supported moment statistics are:
-- *Mean*
-- *Standard Deviation*
-- *Median*
-- *Inter-Quartile Range*
-- *Skewness*
-- *Kurtosis*
-- *Fleiss kappa* (although it is not a moment statistics)
+
+- _Mean_
+- _Standard Deviation_
+- _Median_
+- _Inter-Quartile Range_
+- _Skewness_
+- _Kurtosis_
+- _Fleiss kappa_ (although it is not a moment statistics)
 
 ## Plots
+
 PromptStudio visualizes plots for the selected metrics to assist users in further analyzing them.
 
-The user can compare different metrics in the same *column chart*.
-A *radar chart*, *parallel coordinates plot*, *facet grid/scatter matrix*, or *heat map* enables the comparison of multiple metrics within the same experiment or across multiple experiments. If the experiment has multiple iterations, moment statistics to aggregate the metric values are needed. If only two metrics are chosen, the comparison can be displayed in a *scatter plot* by specifying the metrics for the *x* and *y* axes.
+The user can compare different metrics in the same _column chart_.
+A _radar chart_, _parallel coordinates plot_, _facet grid/scatter matrix_, or _heat map_ enables the comparison of multiple metrics within the same experiment or across multiple experiments. If the experiment has multiple iterations, moment statistics to aggregate the metric values are needed. If only two metrics are chosen, the comparison can be displayed in a _scatter plot_ by specifying the metrics for the _x_ and _y_ axes.
 
-The confusion matrix can also be displayed in a *column chart*, *stacked bar chart*, or *heat map*.
-A *box plot* is displayed for each metric when the experiment includes multiple iterations.
+The confusion matrix can also be displayed in a _column chart_, _stacked bar chart_, or _heat map_.
+A _box plot_ is displayed for each metric when the experiment includes multiple iterations.
 
 ## Comparative analysis
+
 Multiple experiments can be selected to compare their results. This is useful if the user wants to compare different prompts for the same model, different models for the same prompt, different input datasets for the same model and prompt, etc.
 
-PromptStudio enables the comparison of different experiments for a fixed *series*. A series can be any of the following:
+PromptStudio enables the comparison of different experiments for a fixed _series_. A series can be any of the following:
+
 - the prompt
 - the model
 - the input dataset
@@ -377,18 +422,21 @@ PromptStudio enables the comparison of different experiments for a fixed *series
 The plot type available is determined as per [above](#plots). Univariate, bivariate, and multivariate analyses are supported.
 
 ## Analysis interpretation
+
 For the dashboard, results, statistics, and plots, PromptStudio can automatically query an LLM to interpret the analysis produced. The user can select which analysis unit to interpret.
 
 The analysis interpretation is characterized by:
+
 - The **analysis unit** is an element currently available in the analysis view. This can be:
-	- a metric (for dashboard, results, and statistics/plots)
-	- the result table (for results)
-	- a result row (for results)
-	- one or more series (for comparative analysis)
+  - a metric (for dashboard, results, and statistics/plots)
+  - the result table (for results)
+  - a result row (for results)
+  - one or more series (for comparative analysis)
 - An **interpretation prompt** which is either the default one or user-defined. Note that the markers may or may not be defined in the marker index.
 - An **interpretation model** that will perform the interpretation. By default, it is the same model chosen during [model selection](#model-selection) if the model is an LLM.
 
 Here is the prompt that is used internally for to interpret the analysis. However, the user can define another prompt.
+
 ```json
 You have already performed the task of {:analysis_task:}.
 Given the {:analysis_unit:}, interpret the results based on the data provided below.
@@ -398,20 +446,23 @@ Summarize your interpretation in a paragraph of at most {:analysis_word_length:}
 ```
 
 The internal markers are assigned a value automatically. If the internal marker is in the marker index, it will use that value. Note that in this case, it will always take the first value if multiple are provided. Otherwise, PromptStudio asks the LLM to determine the value based on the prompt when it is not present. Here are the internal markers available for analysis interpretation:
+
 - `{:analysis_task:}` is determined by asking the LLM to summarize in one sentence the task based on the prompt provided in the [Prompt designer](#prompt-designer).
 - `{:analysis_description:}` is determined by asking the LLM to paraphrase the prompt provided in the [Prompt designer](#prompt-designer).
 - `{:analysis_unit:}` is the unit selected by the user.
-- `{:analysis_data:}` collects the appropriate information from the [*ExperimentResult* table](#results-1) based on the analysis unit.
+- `{:analysis_data:}` collects the appropriate information from the [_ExperimentResult_ table](#results-1) based on the analysis unit.
 
 ## Querying the results
+
 Instead of analyzing aggregate results, individual results for each data record in the input dataset can be investigated.
 A `Result` view is available for read-only MySQL queries.
 
 | Experiment | Iteration | Input Dataset | Prompt | Model | Input 1 | Input 2 | ... | Oracle | Result | Confusion Class | Latency | Token Count | Error | Retries |
-|------------|-----------|---------------|--------|-------|---------|---------|-----|--------|--------|-----------------|---------|-------------|-------|---------|
+| ---------- | --------- | ------------- | ------ | ----- | ------- | ------- | --- | ------ | ------ | --------------- | ------- | ----------- | ----- | ------- |
 |            |           |               |        |       |         |         |     |        |        |                 |         |             |       |         |
 
 Here is an example query to retrieve some information from iteration 1 of an experiment.
+
 ```sql
 SELECT title, abstract, oracle, result, confusion_class
 FROM Result
@@ -419,6 +470,7 @@ WHERE error IS NULL AND experiment_id = {some_guid} AND iteration = 1
 ```
 
 Here is another example to count all the false negatives for each iteration.
+
 ```sql
 SELECT iteration, COUNT(confusion_class) AS FN
 FROM Result
@@ -427,6 +479,7 @@ GROUP BY iteration
 ```
 
 Here is a final example to analyze the requests with errors.
+
 ```sql
 SELECT iteration, prompt, model, title, abstract, oracle, token_count, error, retries
 FROM Result
@@ -434,29 +487,36 @@ WHERE error IS NOT NULL AND experiment_id = {some_guid}
 ```
 
 # Architecture
+
 The high-level 3-tier architecture is as follows.
 
 ### Data
+
 We assume a MySQL database storing the following entities on the data tier.
 
 ##### Input
-- *Prompt templates*(id, static, marker, input, sub_template, version)
-- *Marker index*(id, prompt_template, marker) and *Marker value*(marker, label, value)
-- *Input datasets*(id, name) and *Input values*(id, input_dataset, oracle, input1, input2, ...)
+
+- _Prompt templates_(id, static, marker, input, sub_template, version)
+- _Marker index_(id, prompt*template, marker) and \_Marker value*(marker, label, value)
+- _Input datasets_(id, name) and _Input values_(id, input_dataset, oracle, input1, input2, ...)
 
 ##### Configuration
-- *Prompt configuration*(prompt_template, llm, llm_parameters) and *Marker assignment*(marker_id, value)
-- *LLM*(id, base_model, version, timestamp), *LLM parameters*(temperature, top_p, hyperparameters), *Random*(seed), *Trainable model*(training_ratio, training_model, hyperparameters), *Training mode*(cross_over, ...)
-- *Experiment*(id, title, tag, prompt_configuration, num_iterations, input_dataset, llm_model, llm_parameters, trainable_model, training_mode, status, datetime, total_requests), *Experiment mode*(experiment, options, input_preprocessing, output_postprocessing), and *Validation* (id, experiment, validation_prompt, num_iterations, llm_model, llm_parameters, trainable_model, training_mode, status, datetime, total_requests)
+
+- _Prompt configuration_(prompt*template, llm, llm_parameters) and \_Marker assignment*(marker_id, value)
+- _LLM_(id, base*model, version, timestamp), \_LLM parameters*(temperature, top*p, hyperparameters), \_Random*(seed), _Trainable model_(training*ratio, training_model, hyperparameters), \_Training mode*(cross_over, ...)
+- _Experiment_(id, title, tag, prompt*configuration, num_iterations, input_dataset, llm_model, llm_parameters, trainable_model, training_mode, status, datetime, total_requests), \_Experiment mode*(experiment, options, input*preprocessing, output_postprocessing), and \_Validation* (id, experiment, validation_prompt, num_iterations, llm_model, llm_parameters, trainable_model, training_mode, status, datetime, total_requests)
 
 ##### Results
-- *Experiment results*(experiment, iteration, input_id, result, evaluation, duration, token_count, error, latency), *Experiment validation*(validation, experiment_result, iteration, result, evaluation, duration, token_count, error, latency) and *Error log*(experiment, input_id, code, reason)
-- *Measurement*(experiment, metric1, metric2, ...)
-- *Comparative statistics*(experiment, metric1, metric2, ...)
+
+- _Experiment results_(experiment, iteration, input*id, result, evaluation, duration, token_count, error, latency), \_Experiment validation*(validation, experiment*result, iteration, result, evaluation, duration, token_count, error, latency) and \_Error log*(experiment, input_id, code, reason)
+- _Measurement_(experiment, metric1, metric2, ...)
+- _Comparative statistics_(experiment, metric1, metric2, ...)
 
 ### Logic
+
 A Python 3.10+ API to define prompts, configure an experiment, and analyze experiment results.
 The libraries to consider are:
+
 - [asyncio](https://docs.python.org/3/library/asyncio.html)
 - [configparser](https://docs.python.org/3/library/configparser.html)
 - [Flask](https://flask.palletsprojects.com/en/3.0.x/)
@@ -467,8 +527,8 @@ The libraries to consider are:
 - [scipy](https://docs.scipy.org/doc/scipy/index.html)
 - [seaborn](https://seaborn.pydata.org/)
 
-
 The main features are:
+
 - Template parser and engine
 - Validation of all input artifacts and data
 - Plug-and-play of LLM APIs, including HuggingFace and commercial models
@@ -488,14 +548,17 @@ The main features are:
 - Direct read-only query of the whole database
 
 ### Presentation
+
 PromptStudio is a web-based application that can run headless from the command line.
 
 #### Web GUI
+
 Like PromptSLR, PromptStudio has a menu on the left to navigate the different modules. Each module has multiple tabs on the top, grouping related features. At the bottom, navigation buttons drive the user through the workflow.
 Consider using [Flask](https://flask.palletsprojects.com/en/3.0.x/) to integrate Python, HTML, and Javascript seamlessly.
 For the plots, consider using either [seaborn](https://seaborn.pydata.org/) or [Highcharts](https://www.highcharts.com/).
 
 ##### Prompt designer
+
 The prompt template and marker index can be loaded from a file and edited in the UI.
 Use plain text input with syntax highlighting or a projectional editor like Gentleman. Alternatively, offer to add a line, which can be static or dynamic.
 
@@ -504,6 +567,7 @@ For the marker index, a button adds the missing markers from the prompt template
 A validate button ensures that the prompt template, marker index, and input dataset (this is optional; they can upload one for validation purposes only) are consistent with each other: missing markers, unused markers, unused input columns, and marker type.
 
 ##### Experiment configurator
+
 The UI should show all the markers based on the marker index, and the user should select the values using radio buttons. Only the value's label is displayed. Hovering over displays the value. Each radio button group (for each marker) is displayed in a color. A checkbox group is used in the case of a multi-valued marker.
 
 Below all the radio buttons, a text field shows the actual prompt that will be used. Only `{:input}` markers will remain. Each marker has a color code from a standard palette of 20 colors (passed 20, we resume back to the first color). The rendered dynamic text is displayed in the color corresponding to its marker. The coloring option can be toggled on/off.
@@ -530,13 +594,17 @@ They can also write a query directly. The query result is displayed in tabular f
 All the information can be exported to a CSV file or seaborn plots.
 
 #### Headless CLI
+
 To use PromptStudio in headless mode, you can run the following command in the command line interface:
+
 ```cmd
 > python promptstudio.py -headless -config my_config.ini
 ```
+
 It requires the `headless` argument and a configuration file.
-The file is in the *.ini* format and has all the following configuration options.
+The file is in the _.ini_ format and has all the following configuration options.
 Here is a sample:
+
 ```ini
 [PROMPT]
 # Use only if you want to create a new prompt template otherwise keep this section empty or commented out
@@ -571,9 +639,9 @@ model = "gpt-3.5-turbo"		# if "random" then api is ignored
 
 # Only for LLM (if api is not empty)
 temperature = 0.1					# between 0.0 and 1.0
-;top_p = 
-;top_k = 
-;max_tokens = 
+;top_p =
+;top_k =
+;max_tokens =
 ;stop_sequence =
 ;frequency_penality =
 ;presence_penality =
@@ -599,11 +667,11 @@ retry_on_error = true
 max_retry = 1
 
 # Limits
-;tokens_per_minute = 
-;tokens_per_day = 
-;requests_per_minute = 
-;requests_per_day = 
-;batch_queue_limit = 
+;tokens_per_minute =
+;tokens_per_day =
+;requests_per_minute =
+;requests_per_day =
+;batch_queue_limit =
 
 ######################
 
@@ -621,9 +689,9 @@ validation_model = "gpt-3.5-turbo"		# if "random" then api is ignored
 
 # Only for LLM (if api is not empty)
 validation_temperature = 0.1					# between 0.0 and 1.0
-;validation_top_p = 
-;validation_top_k = 
-;validation_max_tokens = 
+;validation_top_p =
+;validation_top_k =
+;validation_max_tokens =
 ;validation_stop_sequence =
 ;validation_frequency_penality =
 ;validation_presence_penality =
@@ -649,7 +717,7 @@ export_path = .
 
 # Choose between ALL, enumerate separated by commas, or keep empty
 ;dashboard_table = ALL
-;dashboard_plot = 
+;dashboard_plot =
 
 metric_table = ALL
 

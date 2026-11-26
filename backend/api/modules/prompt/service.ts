@@ -139,10 +139,7 @@ export const PromptService = {
       const promises: Promise<void>[] = [];
       for (const config of configs) {
         promises.push(
-          ExperimentConfigService.update_final_dataset(
-            config.id,
-            dataset_id,
-          ),
+          ExperimentConfigService.update_final_dataset(config.id, dataset_id),
         );
       }
       await Promise.all(promises);

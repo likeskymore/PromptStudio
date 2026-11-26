@@ -96,7 +96,9 @@ export function extract_llm_provider(llm_spec: LLMSpec): LLMProvider {
   return baseModelToProvider(llm_spec.base_model);
 }
 
-export function to_standard_format(r: RawLLMResponseObject | Dict): LLMResponse {
+export function to_standard_format(
+  r: RawLLMResponseObject | Dict,
+): LLMResponse {
   const resp_obj: LLMResponse = {
     vars: r.vars,
     metavars: r.metavars ?? {},

@@ -15,7 +15,7 @@ export function sendResponse<T>(
     statusCode?: number;
     responseCode?: ResponseCode;
     body: T;
-  }
+  },
 ) {
   return res.status(statusCode).json({
     statusCode,

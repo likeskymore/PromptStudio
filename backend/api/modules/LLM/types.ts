@@ -7,7 +7,6 @@ export interface Dict<T = any> {
 
 export type ResponseUID = string;
 
-
 export type JSONLeaf = string | number | boolean | null | undefined;
 
 export type JSONCompatible<T = JSONLeaf> =

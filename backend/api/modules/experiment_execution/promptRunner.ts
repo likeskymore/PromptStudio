@@ -1,7 +1,7 @@
 import { Promptconfig } from "../experiment_config/types";
 import { Task, WorkerTaskResult } from "./types";
 import * as workerpool from "workerpool";
-import { fileURLToPath } from "node:url";
+import path from "node:path";
 import { ExperimentConfigService } from "../experiment_config/service";
 import { ExperimentConfigRepository } from "../experiment_config/repository";
 import { LlmService } from "../LLM/service";
@@ -36,8 +36,9 @@ export class PromptRunner {
     private runId?: string,
     private rerun = false,
   ) {
-    const workerPath = fileURLToPath(
-      new URL("../worker/worker.ts", import.meta.url),
+    const workerPath = path.resolve(
+      process.cwd(),
+      "backend/api/modules/worker/worker.ts",
     );
     this.pool = workerpool.pool(workerPath, {
       minWorkers: this.num_workers,
@@ -76,13 +77,11 @@ export class PromptRunner {
     for (const config of this.configs) {
       if (
         this.runId &&
-        ExperimentStateService.isExperimentRunPauseRequested(this.runId)
+        ExperimentStateService.is_experiment_run_pause_requested(this.runId)
       ) {
         break;
       }
-      const updatedConfig = await ExperimentConfigService.get_config(
-        config.id,
-      );
+      const updatedConfig = await ExperimentConfigService.get_config(config.id);
       if (!updatedConfig) continue;
       const llm = await LlmService.get_llm_by_id(updatedConfig.LLM_id);
       const llm_param = await LlmService.get_llm_param_by_id(
@@ -119,14 +118,14 @@ export class PromptRunner {
       const totalTasks = await this.calculateTotalTasks();
 
       if (this.runId) {
-        ExperimentStateService.recordTotalTasks(this.runId, totalTasks);
+        ExperimentStateService.record_total_tasks(this.runId, totalTasks);
       }
 
       // Create a task for each input in the final dataset
       for (const [inputId, markersDict] of Object.entries(inputs)) {
         if (
           this.runId &&
-          ExperimentStateService.isExperimentRunPauseRequested(this.runId)
+          ExperimentStateService.is_experiment_run_pause_requested(this.runId)
         ) {
           this.isProducing = false;
           return;
@@ -155,7 +154,7 @@ export class PromptRunner {
         while (this.taskQueue.length > maximumQueueSize) {
           if (
             this.runId &&
-            ExperimentStateService.isExperimentRunPauseRequested(this.runId)
+            ExperimentStateService.is_experiment_run_pause_requested(this.runId)
           ) {
             this.isProducing = false;
             return;
@@ -182,7 +181,9 @@ export class PromptRunner {
     const experimentMaxRetry = experiment.max_retry ?? 0;
     while (
       (!this.runId ||
-        !ExperimentStateService.isExperimentRunPauseRequested(this.runId)) &&
+        !ExperimentStateService.is_experiment_run_pause_requested(
+          this.runId,
+        )) &&
       (this.isProducing ||
         this.taskQueue.length > 0 ||
         this.failedQueue.size > 0)
@@ -225,7 +226,7 @@ export class PromptRunner {
    */
   private async submitTask(task: Task, experimentMaxRetry: number) {
     if (this.runId) {
-      ExperimentStateService.recordTaskStarted(this.runId);
+      ExperimentStateService.record_task_started(this.runId);
     }
     const result = (await this.pool.exec("processExperiment", [
       this.runId,
@@ -240,7 +241,10 @@ export class PromptRunner {
     ])) as WorkerTaskResult;
 
     if (this.runId && result.latencyMs !== undefined) {
-      ExperimentStateService.recordRequestLatency(this.runId, result.latencyMs);
+      ExperimentStateService.record_request_latency(
+        this.runId,
+        result.latencyMs,
+      );
     }
 
     if (!result.success && result.tries <= experimentMaxRetry) {
@@ -249,7 +253,7 @@ export class PromptRunner {
       triesBucket.push({ ...task, tries: result.tries });
       this.failedQueue.set(result.tries, triesBucket);
       if (this.runId) {
-        ExperimentStateService.recordTaskRetry(
+        ExperimentStateService.record_task_retry(
           this.runId,
           `task ${task.config_id}/${task.input_id} retry ${result.tries}`,
         );
@@ -257,14 +261,14 @@ export class PromptRunner {
     } else if (!result.success) {
       this.errors++;
       if (this.runId) {
-        ExperimentStateService.recordTaskFailed(
+        ExperimentStateService.record_task_failed(
           this.runId,
           `task ${task.config_id}/${task.input_id} failed after ${result.tries} tries`,
         );
       }
     } else {
       if (this.runId) {
-        ExperimentStateService.recordTaskCompleted(
+        ExperimentStateService.record_task_completed(
           this.runId,
           result.totalTokens ?? 0,
         );
@@ -275,9 +279,7 @@ export class PromptRunner {
     let totalTasks = 0;
 
     for (const config of this.configs) {
-      const updatedConfig = await ExperimentConfigService.get_config(
-        config.id,
-      );
+      const updatedConfig = await ExperimentConfigService.get_config(config.id);
       if (!updatedConfig) continue;
       const template = await PromptService.get_prompt_template_by_id(
         updatedConfig.prompt_template_id,
@@ -311,9 +313,7 @@ export class PromptRunner {
           template.iterations -
           (existingResultsByInput.get(Number(inputId)) ?? 0);
         if (this.rerun || remainingIterations > 0) {
-          totalTasks += this.rerun
-            ? template.iterations
-            : remainingIterations;
+          totalTasks += this.rerun ? template.iterations : remainingIterations;
         }
       }
     }

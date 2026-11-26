@@ -52,7 +52,7 @@ Start the backend in one terminal:
 npx tsx backend/api/server.ts
 ```
 
-*The frontend dashboard is optional. If you want to use it, run the frontend separately by following the instructions provided in the dashboard project's README.*
+_The frontend dashboard is optional. If you want to use it, run the frontend separately by following the instructions provided in the dashboard project's README._
 
 The backend and frontend listen on ports `3001` and `3005`, respectively, by default.
 

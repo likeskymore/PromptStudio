@@ -1,5 +1,6 @@
 import path from "path";
 import * as fs from "fs";
+import { parse } from "csv-parse";
 import yaml from "js-yaml";
 import { DatabaseClient, prisma } from "../../../database/prisma";
 import { NodeType } from "../node/types";
@@ -13,20 +14,35 @@ import { NodeService } from "../node/service";
 import { ExperimentService } from "../experiment/service";
 import { ResultService } from "../result/service";
 
+async function read_dataset_rows(
+  file: string,
+): Promise<Record<string, string>[]> {
+  const parser = fs.createReadStream(file).pipe(
+    parse({
+      columns: true,
+      trim: true,
+    }),
+  );
+  const rows: Record<string, string>[] = [];
+  for await (const row of parser) {
+    rows.push(row as Record<string, string>);
+  }
+  return rows;
+}
+
 export const ExperimentConfigService = {
   /**
    * Handles saving a dataset node to the database.
    * @param dataset The dataset to save.
    * @param connection The database connection to use for saving.
-   * @param file_map A map of file fields to their uploaded files.
    * @param experiment_id The ID of the experiment to which the dataset belongs.
+   * @param rows The rows parsed from the dataset CSV before the transaction.
    */
   async handle_save_dataset(
     dataset: Dataset,
     connection: DatabaseClient,
-    file_map: Record<string, Express.Multer.File[]>,
     experiment_id: number,
-    baseDir?: string,
+    rows: Record<string, string>[],
   ) {
     const node_id = await NodeService.handle_save_node(
       "dataset",
@@ -34,12 +50,8 @@ export const ExperimentConfigService = {
       dataset.name,
       connection,
     );
-    const fileField = `file:${dataset.path}`;
-    const datasetPath =
-      file_map[fileField]?.[0]?.path ??
-      (baseDir ? path.resolve(baseDir, dataset.path) : dataset.path);
     await ExperimentConfigRepository.save_dataset(
-      datasetPath,
+      rows,
       node_id,
       dataset.name,
       connection,
@@ -58,6 +70,19 @@ export const ExperimentConfigService = {
       const raw = fs.readFileSync(yml_path, "utf-8");
       const parsed: any = yaml.load(raw);
       const baseDir = path.dirname(yml_path);
+      const datasetRows = new Map<number, Record<string, string>[]>();
+      await Promise.all(
+        parsed.nodes.map(async (node: any, index: number) => {
+          if (!node.dataset) return;
+          const fileField = `file:${node.dataset.path}`;
+          const datasetPath =
+            file_map[fileField]?.[0]?.path ??
+            (baseDir
+              ? path.resolve(baseDir, node.dataset.path)
+              : node.dataset.path);
+          datasetRows.set(index, await read_dataset_rows(datasetPath));
+        }),
+      );
 
       return await prisma.$transaction(
         async (connection) => {
@@ -79,7 +104,7 @@ export const ExperimentConfigService = {
             connection,
           );
 
-          for (const node of parsed.nodes) {
+          for (const [index, node] of parsed.nodes.entries()) {
             if (node.template) {
               await PromptService.handle_save_template(
                 node.template,
@@ -90,9 +115,8 @@ export const ExperimentConfigService = {
               await this.handle_save_dataset(
                 node.dataset,
                 connection,
-                file_map,
                 experiment_id,
-                baseDir,
+                datasetRows.get(index) ?? [],
               );
             } else if (node.evaluator) {
               const evaluatorType = String(node.evaluator.type).toLowerCase();

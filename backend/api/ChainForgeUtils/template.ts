@@ -226,7 +226,6 @@ export class PromptTemplate {
     return new StringTemplate(this.template).has_vars([varname]);
   }
 
-
   /** Returns True if the template has an unfilled variable in its fill_history with the given name,
    * that is a settings variable (i.e. starts with =, e.g. {=system_msg}). */
   /*
@@ -258,7 +257,6 @@ export class PromptTemplate {
                 "PL": "Python"
             });
     */
-
 
   fill(paramDict: Dict<PromptVarType>): PromptTemplate {
     // Check for special 'past fill history' format:
@@ -296,7 +294,7 @@ export class PromptTemplate {
         ) {
           // @ts-ignore
           newParamDict[param] = obj.text as StringOrHash;
-        }/* else if (obj.image !== undefined && typeof obj.image === "string") {
+        } /* else if (obj.image !== undefined && typeof obj.image === "string") {
           // This is a special case for images.
           image_params.push(param);
           newParamDict[param] = {
@@ -383,7 +381,7 @@ export class PromptTemplate {
    * Modifies the prompt template in place.
    * @param fill_history A fill history dict.
    */
-/*  fill_special_vars(fill_history: Dict<LLMResponseData>): void {
+  /*  fill_special_vars(fill_history: Dict<LLMResponseData>): void {
     // Special variables {#...} denotes filling a variable from a matching var in fill_history or metavars.
     // Find any special variables:
     const unfilled_vars = new StringTemplate(this.template).get_vars();
@@ -406,7 +404,6 @@ export class PromptTemplate {
         StringLookup.concretizeDict(special_vars_to_fill),
       );
   }*/
-
 }
 
 export class PromptPermutationGenerator {
@@ -472,15 +469,18 @@ export class PromptPermutationGenerator {
           const v_associate_id = (v as TemplateVarInfo).associate_id;
           params_left.forEach((other_param) => {
             if (
-              (template.has_var(other_param) &&
+              template.has_var(other_param) &&
               Array.isArray(paramDict[other_param])
-            )) {
+            ) {
               for (
                 let i = 0;
-                i < (paramDict[other_param] as unknown as PromptVarType[]).length;
+                i <
+                (paramDict[other_param] as unknown as PromptVarType[]).length;
                 i++
               ) {
-                const ov = (paramDict[other_param] as unknown as PromptVarType[])[i];
+                const ov = (
+                  paramDict[other_param] as unknown as PromptVarType[]
+                )[i];
                 if (
                   isDict(ov) &&
                   (ov as TemplateVarInfo).associate_id === v_associate_id

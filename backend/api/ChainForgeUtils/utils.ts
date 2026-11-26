@@ -4,7 +4,12 @@
 
 // from chainforge.promptengine.models import LLM
 import * as React from "react";
-import { LLM, LLMProvider, NativeLLM, getProvider } from "../modules/LLM/models";
+import {
+  LLM,
+  LLMProvider,
+  NativeLLM,
+  getProvider,
+} from "../modules/LLM/models";
 import {
   Dict,
   LLMAPICall,
@@ -62,8 +67,8 @@ const ANTHROPIC_AI_PROMPT = "\n\nAssistant:";
 
 export const FLASK_BASE_URL =
   //window.__CF_HOSTNAME !== undefined && window.__CF_PORT !== undefined
-   // ? "/"
-    "http://localhost:8000/";
+  // ? "/"
+  "http://localhost:8000/";
 
 export async function call_flask_backend(
   route: string,
@@ -427,7 +432,7 @@ export async function call_chatgpt(
   if (params?.tools === undefined && params?.parallel_tool_calls !== undefined)
     delete params?.parallel_tool_calls;
 
-/*  if (!BASE_URL)
+  /*  if (!BASE_URL)
     console.log(`Querying OpenAI model '${model}' with prompt '${prompt}'...`);*/
 
   // Determine the system message and whether there's chat history to continue:
@@ -468,7 +473,7 @@ export async function call_chatgpt(
     );
   }
 
-/*
+  /*
   query.messages = await resolve_images_in_user_messages(
     query.messages,
     "openai",
@@ -832,7 +837,7 @@ export async function call_anthropic(
     query.prompt = wrapped_prompt;
   }
 
-/*  query.messages = await resolve_images_in_user_messages(
+  /*  query.messages = await resolve_images_in_user_messages(
     query.messages,
     "anthropic",
   );*/
@@ -1154,13 +1159,13 @@ export async function call_google_gemini(
     gemini_chat_context.history = gemini_messages;
   }
 
-/*  console.log(
+  /*  console.log(
     `Calling Google Gemini model '${model}' with prompt '${prompt}' (n=${n}). Please be patient...`,
   );*/
 
   const responses: Array<Dict> = [];
   const prompt_parts: Array<Part> = [{ text: prompt }];
-/*  if (images && images.length > 0) {
+  /*  if (images && images.length > 0) {
     const image_data_urls: string[] = await imagesToBase64(images);
     for (const image of image_data_urls) {
       prompt_parts.push({
@@ -1469,7 +1474,7 @@ export async function call_ollama_provider(
     );
     url += "chat";
 
-/*    query.messages = await resolve_images_in_user_messages(
+    /*    query.messages = await resolve_images_in_user_messages(
       query.messages,
       "ollama",
     );*/
@@ -1484,7 +1489,7 @@ export async function call_ollama_provider(
   } else {
     // Text-only models
     query.prompt = prompt;
-/*    query.images = (await imagesToBase64(images ?? [])).map(
+    /*    query.images = (await imagesToBase64(images ?? [])).map(
       getBase64DataFromDataURL,
     );*/
     url += "generate";
@@ -2043,7 +2048,7 @@ export function extract_responses(
   const llm_name = llm.toString().toLowerCase();
   switch (llm_provider) {
     case LLMProvider.OpenAI:
-/*      if (llm_name.startsWith("dall-e") || llm_name.startsWith("gpt-image"))
+      /*      if (llm_name.startsWith("dall-e") || llm_name.startsWith("gpt-image"))
         return _extract_openai_image_responses(
           response as Array<ImagesResponseDataInner>,
         );*/
@@ -2074,8 +2079,7 @@ export function extract_responses(
       if (
         Array.isArray(response) &&
         response.length > 0 &&
-        (typeof response[0] === "string"
-          )
+        typeof response[0] === "string"
       )
         return response as LLMResponseData[];
       else
@@ -2164,11 +2168,11 @@ export const extractSettingsVars = (vars?: PromptVarsDict) => {
     Object.keys(vars).some((k) => k.charAt(0) === "=")
   ) {
     //return StringLookup.concretizeDict(
-      //transformDict(
-       // deepcopy(vars),
-        //(k) => k.charAt(0) === "=",
-        //(k) => k.substring(1),
-      //),
+    //transformDict(
+    // deepcopy(vars),
+    //(k) => k.charAt(0) === "=",
+    //(k) => k.substring(1),
+    //),
     //);
     return {};
   } else return {};
@@ -2604,7 +2608,7 @@ export function repairCachedResponses(
     });
   });
 
-/*  if (repaired) {
+  /*  if (repaired) {
     // The data did not include uids. Flash it back to the cache to repair.
     // This maintains consistency across re-runs.
     StorageCache.store(storageKey, data);

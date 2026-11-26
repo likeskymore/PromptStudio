@@ -8,10 +8,7 @@ import { ExperimentStateRepository } from "../experiment_state/repository";
 import path from "path";
 
 const router = express.Router();
-export const credentialsPath = path.join(
-  __dirname,
-  "../../credentials.json",
-);
+export const credentialsPath = path.join(__dirname, "../../credentials.json");
 const credentials = JSON.parse(fs.readFileSync(credentialsPath, "utf-8"));
 const api_keys = JSON.stringify(credentials.api_keys ?? {});
 

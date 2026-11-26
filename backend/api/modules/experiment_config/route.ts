@@ -31,7 +31,10 @@ router.post("/", upload.any(), async (req, res) => {
       fileMap[f.fieldname].push(f);
     }
 
-    const experiment_name = await ExperimentConfigService.save_config(yamlFile.path, fileMap);
+    const experiment_name = await ExperimentConfigService.save_config(
+      yamlFile.path,
+      fileMap,
+    );
 
     return res.status(201).json({ experiment_name });
   } catch (error) {

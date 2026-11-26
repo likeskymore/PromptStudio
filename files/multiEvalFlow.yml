@@ -1,0 +1,83 @@
+experiment:
+  title: multiEvalFlow
+  max_retry: 0
+  threads: 1
+nodes:
+  - template:
+      name: prompt-1782356805696
+      value: "{prompt}"
+      iterations: 1
+      llms:
+        - key: ae08366b-8455-4159-bc58-7ef81d3cf78c
+          name: Qwen2.5 0.5B
+          model: Qwen2.5-0.5B-Instruct-q4f16_1-MLC
+          emoji: "\U0001F310"
+          base_model: webllm
+          temp: 0.7
+          max_tokens: 512
+          system_msg: You are a helpful assistant.
+          temperature: 0.7
+          top_p: 1
+  - dataset:
+      name: textfields-1782356805696
+      path: ../files/textfields-1782356805696.csv
+  - dataset:
+      name: textFieldsNode-e9eed984-7905-4852-bf21-2076ef4f90a6
+      path: ../files/textFieldsNode-e9eed984-7905-4852-bf21-2076ef4f90a6.csv
+  - evaluator:
+      type: multieval
+      name: multieval-0fa3e78c-7362-4384-8b33-04cac4448b1b
+      return_type: string
+      evaluators:
+        - evaluator:
+            type: javascript
+            name: ea977c45-4393-4bcd-a480-f77bb29e68d6
+            return_type: string
+            file: ../files/ea977c45-4393-4bcd-a480-f77bb29e68d6.js
+        - evaluator:
+            type: python
+            name: 4c226279-4f96-426c-bed0-531a39323892
+            return_type: string
+            file: ../files/4c226279-4f96-426c-bed0-531a39323892.py
+        - evaluator:
+            type: llm
+            name: cae45262-f64d-470d-9f77-748e0e315049
+            return_type: string
+            prompt: |-
+              You are evaluating text that will be pasted below. yahoo 
+              ```
+              {response}
+              ```
+
+              First, explain your reasoning for the classification. Then, output your final answer in the following format on a new line: SCORE: true or SCORE: false
+            format: bin
+            reason_before_scoring: true
+            grader:
+              key: 9a8e897d-9b80-4f0b-8e12-9996ad11ecd8
+              name: GPT-5
+              model: gpt-5
+              emoji: "\U0001F680"
+              base_model: gpt-4
+              temp: 1
+              frequency_penalty: 0
+              parallel_tool_calls: true
+              presence_penalty: 0
+              reasoning_effort: medium
+              system_msg: You are a helpful assistant.
+              temperature: 0
+              tool_choice: ""
+              top_p: 1
+              verbosity: medium
+links:
+  - source: textfields-1782356805696
+    target: textFieldsNode-e9eed984-7905-4852-bf21-2076ef4f90a6
+    source_var: output
+    target_var: text
+  - source: textFieldsNode-e9eed984-7905-4852-bf21-2076ef4f90a6
+    target: prompt-1782356805696
+    source_var: output
+    target_var: prompt
+  - source: prompt-1782356805696
+    target: multieval-0fa3e78c-7362-4384-8b33-04cac4448b1b
+    source_var: prompt
+    target_var: responseBatch

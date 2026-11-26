@@ -2,7 +2,6 @@ import { prisma } from "../database/prisma";
 import app from "./app";
 import { ExperimentStateService } from "./modules/experiment_state/service";
 
-
 const PORT = process.env.PORT || 3001;
 
 let isShuttingDown = false;
@@ -21,7 +20,7 @@ async function shutdown(reason: string, error?: unknown) {
   }
 
   try {
-    await ExperimentStateService.pauseRunningExperimentRuns();
+    await ExperimentStateService.pause_running_experiment_runs();
     console.log("Running experiments paused successfully.");
   } catch (shutdownError) {
     console.error("Failed to pause running experiments:", shutdownError);
@@ -53,7 +52,9 @@ process.on("unhandledRejection", (error) => {
 
 async function startServer() {
   console.log("Connecting to database...");
+
   await prisma.$connect();
+  await prisma.$queryRaw`SELECT 1`;
 
   app.listen(PORT, () => {
     console.log(`Server is running at http://localhost:${PORT}`);

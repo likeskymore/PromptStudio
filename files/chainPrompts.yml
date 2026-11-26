@@ -1,0 +1,66 @@
+experiment:
+  title: chainPrompts
+  max_retry: 0
+  threads: 1
+nodes:
+  - template:
+      name: prompt-1795620072558
+      value: "generate a prompt for this problem {prompt}"
+      iterations: 2
+      llms:
+        - key: 5fc673dc-a9bd-41e3-8786-ed77873bdbc3
+          name: Gemma 3 1B (711 MB)
+          model: gemma3-1b-it-q4f16_1-MLC
+          emoji: "\U0001F310"
+          base_model: webllm
+          temp: 0.7
+          system_msg: You are a helpful assistant.
+          temperature: 0.7
+          top_p: 1
+          max_tokens: 512
+  - dataset:
+      name: textfields-1795620072559
+      path: ../files/textfields-1795620072559.csv
+  - template:
+      name: promptNode-eccdf1ba-5853-4700-8b29-84bb2246ee1e
+      value: "shorten this text {text}"
+      iterations: 2
+      llms:
+        - key: c43942a4-1bb1-4475-bab5-7ef1e3ffbb6a
+          name: Qwen2.5 0.5B (945 MB)
+          model: Qwen2.5-0.5B-Instruct-q4f16_1-MLC
+          emoji: "\U0001F310"
+          base_model: webllm
+          temp: 0.7
+          system_msg: You are a helpful assistant.
+          temperature: 0.7
+          top_p: 1
+          max_tokens: 512
+  - template:
+      name: promptNode-ddd09d87-2b07-4b0d-b1a6-70fbdee4f635
+      value: "answer this question {question}"
+      iterations: 2
+      llms:
+        - key: b936d1f4-d444-4031-9e6e-6b8ada9a0735
+          name: Qwen3.5 0.8B (1.6 GB)
+          model: Qwen3.5-0.8B-q4f16_1-MLC
+          emoji: "\U0001F310"
+          base_model: webllm
+          temp: 0.7
+          system_msg: You are a helpful assistant.
+          temperature: 0.7
+          top_p: 1
+          max_tokens: 2048
+links:
+  - source: textfields-1795620072559
+    target: prompt-1795620072558
+    source_var: output
+    target_var: prompt
+  - source: promptNode-eccdf1ba-5853-4700-8b29-84bb2246ee1e
+    target: promptNode-ddd09d87-2b07-4b0d-b1a6-70fbdee4f635
+    source_var: prompt
+    target_var: question
+  - source: prompt-1795620072558
+    target: promptNode-eccdf1ba-5853-4700-8b29-84bb2246ee1e
+    source_var: prompt
+    target_var: text

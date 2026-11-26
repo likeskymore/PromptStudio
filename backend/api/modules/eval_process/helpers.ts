@@ -5,7 +5,6 @@ import { fromMarkdown } from "mdast-util-from-markdown";
 import { compileTextFromMdAST, processCSV } from "../../ChainForgeUtils/utils";
 import { JoinFormat } from "./types";
 
-
 /**
  * Given a string, returns the same string with the \ before any braces \{ and \} removed. Does nothing else.
  * @param str The string to transform
@@ -33,38 +32,35 @@ function escapeBraces(str: string): string {
  * @param format - Optional output format passed as the second argument to the process function.
  */
 export async function run_over_response(
-    process_func: ((resp: ResponseInfo, format?: string) => any),
-    result: Result,
-    vars: PromptVarsDict,
-    metavars: Dict,
-    llm_name: string,
-    prompt: string,
-    format: string | undefined,
-): Promise<
-    { result_id: number; result?: any; error?: string }
-> {
-    const r_info = new ResponseInfo(
-        cleanEscapedBraces(result.output_result),
-        prompt,
-        vars,
-        metavars || {},
-        llm_name
-    );
+  process_func: (resp: ResponseInfo, format?: string) => any,
+  result: Result,
+  vars: PromptVarsDict,
+  metavars: Dict,
+  llm_name: string,
+  prompt: string,
+  format: string | undefined,
+): Promise<{ result_id: number; result?: any; error?: string }> {
+  const r_info = new ResponseInfo(
+    cleanEscapedBraces(result.output_result),
+    prompt,
+    vars,
+    metavars || {},
+    llm_name,
+  );
 
-
-    try {
-        let processed = process_func(r_info,format);
-        if (processed && typeof processed.then === "function") {
-            processed = await processed;
-        }
-
-            return { result_id: result.id, result: processed }
-    } catch (err) {
-        return {
-            result_id: result.id,
-            error: (err as Error).message,
-        };
+  try {
+    let processed = process_func(r_info, format);
+    if (processed && typeof processed.then === "function") {
+      processed = await processed;
     }
+
+    return { result_id: result.id, result: processed };
+  } catch (err) {
+    return {
+      result_id: result.id,
+      error: (err as Error).message,
+    };
+  }
 }
 
 export function splitText(resp: ResponseInfo, format?: string): string[] {

@@ -2,7 +2,7 @@ import axios from "axios";
 
 import FormData from "form-data";
 
-import * as fs from 'fs';
+import * as fs from "fs";
 import * as yaml from "js-yaml";
 import * as path from "node:path";
 import Dict = NodeJS.Dict;
@@ -14,61 +14,63 @@ const URL = "http://localhost:3001";
  * This function reads a YAML configuration file, extracts datasets and evaluators files, and uploads them along with the configuration file itself.
  * @param configPath path to the YAML configuration file.
  */
-export async function save_config(configPath: string): Promise<string | undefined> {
-    try {
-        if (!configPath || !fs.existsSync(configPath)) {
-            throw new Error(`Missing or invalid config file: ${configPath}`);
-        }
-
-        const fileContent = fs.readFileSync(configPath, "utf-8");
-        const parsed = yaml.load(fileContent) as any;
-
-        const formData = new FormData();
-
-        formData.append("yaml", fs.createReadStream(configPath), {
-            filename: path.basename(configPath),
-        });
-
-        const fileFields = new Map<string, string>();
-
-        for (const node of parsed.nodes){
-            if (node.dataset){
-                const datasetPath = node.dataset.path;
-                const key = `file:${datasetPath}`;
-                if (!fileFields.has(key) && fs.existsSync(datasetPath)) {
-                    fileFields.set(key, datasetPath);
-                }
-            }
-            if (node.evaluator){
-                const evaluatorPath = node.evaluator.file;
-                const key = `evaluator:${evaluatorPath}`;
-                if (!fileFields.has(key) && fs.existsSync(evaluatorPath)) {
-                    fileFields.set(key, evaluatorPath);
-                }
-            }
-            if (node.processor){
-                const processorPath = node.processor.file;
-                const key = `processor:${processorPath}`;
-                if (!fileFields.has(key) && fs.existsSync(processorPath)) {
-                    fileFields.set(key, processorPath);
-                }
-            }
-        }
-        // @ts-ignore
-        for (const [fieldName, filePath] of fileFields.entries()) {
-            formData.append(fieldName, fs.createReadStream(filePath), {
-                filename: path.basename(filePath),
-            });
-        }
-        const response = await axios.post(`${URL}/config`, formData, {
-            headers: {
-                ...formData.getHeaders(),
-            },
-        });
-        return response.data.experiment_name;
-    } catch (error) {
-        console.error("Failed to save config:", error);
+export async function save_config(
+  configPath: string,
+): Promise<string | undefined> {
+  try {
+    if (!configPath || !fs.existsSync(configPath)) {
+      throw new Error(`Missing or invalid config file: ${configPath}`);
     }
+
+    const fileContent = fs.readFileSync(configPath, "utf-8");
+    const parsed = yaml.load(fileContent) as any;
+
+    const formData = new FormData();
+
+    formData.append("yaml", fs.createReadStream(configPath), {
+      filename: path.basename(configPath),
+    });
+
+    const fileFields = new Map<string, string>();
+
+    for (const node of parsed.nodes) {
+      if (node.dataset) {
+        const datasetPath = node.dataset.path;
+        const key = `file:${datasetPath}`;
+        if (!fileFields.has(key) && fs.existsSync(datasetPath)) {
+          fileFields.set(key, datasetPath);
+        }
+      }
+      if (node.evaluator) {
+        const evaluatorPath = node.evaluator.file;
+        const key = `evaluator:${evaluatorPath}`;
+        if (!fileFields.has(key) && fs.existsSync(evaluatorPath)) {
+          fileFields.set(key, evaluatorPath);
+        }
+      }
+      if (node.processor) {
+        const processorPath = node.processor.file;
+        const key = `processor:${processorPath}`;
+        if (!fileFields.has(key) && fs.existsSync(processorPath)) {
+          fileFields.set(key, processorPath);
+        }
+      }
+    }
+    // @ts-ignore
+    for (const [fieldName, filePath] of fileFields.entries()) {
+      formData.append(fieldName, fs.createReadStream(filePath), {
+        filename: path.basename(filePath),
+      });
+    }
+    const response = await axios.post(`${URL}/config`, formData, {
+      headers: {
+        ...formData.getHeaders(),
+      },
+    });
+    return response.data.experiment_name;
+  } catch (error) {
+    console.error("Failed to save config:", error);
+  }
 }
 
 /**
@@ -76,12 +78,12 @@ export async function save_config(configPath: string): Promise<string | undefine
  * @param name The name of the experiment to run.
  */
 export async function run_experiment(name: string): Promise<void> {
-    try {
-        const response = await axios.post(`${URL}/experiments/run/${name}`);
-        console.log(`Experiment ${name} started successfully.`);
-    } catch (error) {
-        console.error(`Failed to run experiment ${name}:`, error);
-    }
+  try {
+    const response = await axios.post(`${URL}/experiments/run/${name}`);
+    console.log(`Experiment ${name} started successfully.`);
+  } catch (error) {
+    console.error(`Failed to run experiment ${name}:`, error);
+  }
 }
 
 /**
@@ -89,12 +91,12 @@ export async function run_experiment(name: string): Promise<void> {
  * @param name The name of the experiment to rerun.
  */
 export async function rerun_experiment(name: string): Promise<void> {
-    try {
-        await axios.post(`${URL}/experiments/run/${name}/rerun`);
-        console.log(`Experiment ${name} rerun started successfully.`);
-    } catch (error) {
-        console.error(`Failed to rerun experiment ${name}:`, error);
-    }
+  try {
+    await axios.post(`${URL}/experiments/run/${name}/rerun`);
+    console.log(`Experiment ${name} rerun started successfully.`);
+  } catch (error) {
+    console.error(`Failed to rerun experiment ${name}:`, error);
+  }
 }
 
 /**
@@ -102,12 +104,19 @@ export async function rerun_experiment(name: string): Promise<void> {
  * @param experiment_name The name of the experiment to get the token count for.
  * @returns The total token count for the experiment.
  */
-export async function getTotalTokenCountForExperiment(experiment_name: string): Promise<number> {
-    try {
-        const response = await axios.get(`${URL}/experiments/${experiment_name}/tokens`);
-        return response.data.body.total_tokens;
-    } catch (error) {
-        console.error(`Failed to get total token count for experiment ${experiment_name}:`, error);
-        return 0;
-    }
+export async function getTotalTokenCountForExperiment(
+  experiment_name: string,
+): Promise<number> {
+  try {
+    const response = await axios.get(
+      `${URL}/experiments/${experiment_name}/tokens`,
+    );
+    return response.data.body.total_tokens;
+  } catch (error) {
+    console.error(
+      `Failed to get total token count for experiment ${experiment_name}:`,
+      error,
+    );
+    return 0;
+  }
 }

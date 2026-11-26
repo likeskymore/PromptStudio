@@ -7,7 +7,9 @@ export const processCSV = (csv: string): string[] => {
     matches[index] = matches[index].trim();
     if (matches[index] === ",") matches[index] = "";
   }
-  return matches.map((value) => value.trim()).filter((value) => value.length > 0);
+  return matches
+    .map((value) => value.trim())
+    .filter((value) => value.length > 0);
 };
 
 export function compileTextFromMdAST(md: Root | RootContent): string {

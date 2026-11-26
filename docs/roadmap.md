@@ -3,16 +3,21 @@ Here is a dump of my head for the challenges a 3-year project should address. Mo
 # Trustworthy, Transparent, and Tenable Prompt Engineering (T3PE)
 
 ## 1. Cost-efficient scalable prompt optimization
+
 ### 1.1. Advanced prompt templates
-*HQP: Vennila*
-- Markers logic *(see PromptStudio doc)*
+
+_HQP: Vennila_
+
+- Markers logic _(see PromptStudio doc)_
 - Integrate into chains
-- Prompt paraphrasing *(Kiruthika)*: parameters, intent
+- Prompt paraphrasing _(Kiruthika)_: parameters, intent
 - Derive prompt variants
 - ChainForge configuration mode to customize built-in prompts and LLMs to use for each interaction
 
 ### 1.2. Headless mode of ChainForge
-*HQP: Samuel, Parsa*
+
+_HQP: Samuel, Parsa_
+
 - Export a chain
 - Setup an experiment
 - Input dataset
@@ -23,13 +28,17 @@ Here is a dump of my head for the challenges a 3-year project should address. Mo
 - Integrate into ChainForge GUI
 
 ### 1.3. Search-space exploration
-*HQP: Cassendre, Parsa*
+
+_HQP: Cassendre, Parsa_
+
 - Multi-armed bandit cost-efficient optimization for search-space pruning
 - Thompson sampling
 - LLM-based search
 
 ## 2. Evaluation and reporting
+
 ### 2.1. Evaluation metrics for experiments
+
 - Diversity of quantitative metrics
 - Diversity of qualitative metrics
 - LLM-based evaluation
@@ -39,28 +48,36 @@ Here is a dump of my head for the challenges a 3-year project should address. Mo
 - Interoperability with qualitative analysis tools
 
 ### 2.2. Visualization of evaluation results
-- Charts, Tables *(see PromptStudio doc)*
+
+- Charts, Tables _(see PromptStudio doc)_
 - Confidence interval
 - Visualization of qualitative evaluation
 
 ### 2.3. Visualization of qualitative evaluation
+
 - Charts, maps, text mining
 - Trade-offs
 
 ### 2.4. Reporting methodology
-*HQP: Karla*
+
+_HQP: Karla_
+
 - Reporting results
 - Reporting the prompt engineering process
 
 ## 3. Continuous optimization
+
 ### 3.1. Continuous evolution
+
 - LLM evolution
 - Test set evolution
 - Evaluator evolution
 
 ### 3.2. Prompt Linter
+
 - Guidance on prompts
 - Prompt pattern catalog
 
 ### 3.3. Integration in IDE
+
 - VSCode plugin

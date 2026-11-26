@@ -262,5 +262,5 @@ export const EvaluatorService = {
       evaluator_id,
       connection,
     );
-  }
+  },
 };

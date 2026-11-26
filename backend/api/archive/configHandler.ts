@@ -349,7 +349,7 @@
 //         let totalTokens = 0;
 
 //         for (const config of prompt_configs) {
-            
+
 //             const llm = await get_llm_by_id(config.LLM_id);
 //             const model = llm.base_model;
 //             const template = await get_template_by_id(config.prompt_template_id);
@@ -369,7 +369,6 @@
 //                 // move to next config
 //                 continue;
 //             }
-
 
 //             let input_id = 0;
 //             const last_id = await get_last_input_id(config.final_dataset_id);

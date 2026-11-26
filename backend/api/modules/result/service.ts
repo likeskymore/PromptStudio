@@ -93,4 +93,13 @@ export const ResultService = {
       connection,
     );
   },
+  async get_results_by_experiment_name(
+    experiment_name: string,
+    connection: DatabaseClient = prisma,
+  ): Promise<Result[]> {
+    return await ResultRepository.get_results_by_experiment_name(
+      experiment_name,
+      connection,
+    );
+  },
 };

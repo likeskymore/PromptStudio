@@ -3,7 +3,6 @@ import { ResponseCode, sendResponse } from "../../common/responseHandler";
 import { ExperimentStateService } from "./service";
 import { ExperimentStateRepository } from "./repository";
 
-
 const router = express.Router();
 
 const SSE_THROTTLE_MS = 1000;
@@ -11,7 +10,7 @@ const SSE_THROTTLE_MS = 1000;
 /** Streams throttled run snapshots and heartbeats until the client disconnects. */
 router.get("/state/:runId/events", (req, res) => {
   const { runId } = req.params;
-  const snapshot = ExperimentStateService.getExperimentRun(runId);
+  const snapshot = ExperimentStateService.get_experiment_run(runId);
 
   if (!snapshot) {
     return res.status(404).json({ error: `Run ${runId} not found` });
@@ -61,9 +60,12 @@ router.get("/state/:runId/events", (req, res) => {
     }, SSE_THROTTLE_MS - elapsed);
   };
 
-  const unsubscribe = ExperimentStateService.subscribeExperimentRun(runId, (state) => {
-    sendThrottledSnapshot(state);
-  });
+  const unsubscribe = ExperimentStateService.subscribe_experiment_run(
+    runId,
+    (state) => {
+      sendThrottledSnapshot(state);
+    },
+  );
 
   const heartbeat = setInterval(() => {
     res.write(`event: heartbeat\n`);
@@ -86,7 +88,8 @@ router.get("/state/:runId/events", (req, res) => {
 router.get("/", async (req, res) => {
   /** Returns lightweight metadata for persisted experiment runs. */
   try {
-    const experiment_states_metadata = await ExperimentStateRepository.get_experiment_runs_metadata();
+    const experiment_states_metadata =
+      await ExperimentStateRepository.get_experiment_runs_metadata();
 
     return sendResponse(res, {
       body: {
@@ -107,7 +110,8 @@ router.get("/", async (req, res) => {
 router.get("/state/:runId", async (req, res) => {
   /** Returns one persisted run snapshot, or HTTP 404 when it is unavailable. */
   const { runId } = req.params;
-  const snapshot = await ExperimentStateRepository.get_experiment_run_state_by_run_id(runId);
+  const snapshot =
+    await ExperimentStateRepository.get_experiment_run_state_by_run_id(runId);
 
   if (!snapshot) {
     return res.status(404).json({ error: `Run ${runId} not found` });
@@ -117,8 +121,5 @@ router.get("/state/:runId", async (req, res) => {
     body: snapshot,
   });
 });
-
-
-
 
 export const ExperimentStateRoutes = router;

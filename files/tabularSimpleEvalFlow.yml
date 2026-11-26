@@ -5,7 +5,7 @@ experiment:
 nodes:
   - template:
       name: prompt-1784158998615
-      value: '{prompt}'
+      value: "{prompt}"
       iterations: 1
       llms:
         - key: 6d3b0cad-fb02-4b37-8816-bda1a4b9d6b8

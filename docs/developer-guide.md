@@ -32,7 +32,7 @@ Start the backend API in one terminal:
 npx tsx backend/api/server.ts
 ```
 
-*The frontend dashboard is optional. If you want to use it, run the frontend separately by following the instructions provided in the dashboard project's README.*
+_The frontend dashboard is optional. If you want to use it, run the frontend separately by following the instructions provided in the dashboard project's README._
 
 The backend and frontend listen on ports `3001` and `3005`, respectively, by default.
 
@@ -62,6 +62,22 @@ Keep HTTP concerns in `backend/api/`. Put experiment orchestration in the runner
 See [Database](database.md) for the schema source, connection setup, table responsibilities, run snapshots, and schema change workflow.
 
 When adding a feature, follow the nearest existing module pattern. Keep route handlers thin, preserve the existing YAML and saved-experiment formats, and avoid adding frontend-only behavior that cannot be exercised through the backend or CLI when the behavior is shared.
+
+### LLM stub latency
+
+The worker uses mocked LLM responses by default. Set `LLM_STUB_ENABLED=false` to send requests to the configured LLM provider. Stub latency defaults to log-normal, with a median of `0.65` seconds and sigma `0.4`, preserving the worker's existing behavior.
+
+Configure stub latency with `LLM_STUB_LATENCY_MODE` (`none`, `fixed`, or `lognormal`). Latency values are in seconds:
+
+| Environment variable              | Purpose                                                    | Default     |
+| --------------------------------- | ---------------------------------------------------------- | ----------- |
+| `LLM_STUB_ENABLED`                | Use mock responses (`true`) or real LLM requests (`false`) | `true`      |
+| `LLM_STUB_LATENCY_MODE`           | Stub latency mode                                          | `lognormal` |
+| `LLM_STUB_FIXED_LATENCY_SECONDS`  | Delay for `fixed` mode                                     | `0`         |
+| `LLM_STUB_MEDIAN_LATENCY_SECONDS` | Median delay for `lognormal` mode                          | `0.65`      |
+| `LLM_STUB_LATENCY_SIGMA`          | Sigma for `lognormal` mode                                 | `0.4`       |
+
+Use `LLM_STUB_LATENCY_MODE=none` to make stubbed tests run without simulated delay. Use fixed latency when testing a precise client timeout.
 
 ## Testing and quality checks
 

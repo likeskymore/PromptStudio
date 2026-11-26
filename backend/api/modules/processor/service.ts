@@ -153,5 +153,5 @@ export const ProcessorService = {
       timestamp,
       connection,
     );
-  }
+  },
 };

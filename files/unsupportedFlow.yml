@@ -1,0 +1,90 @@
+experiment:
+  title: simpleEvalFlow
+  max_retry: 0
+  threads: 1
+nodes:
+  - template:
+      name: prompt-1735326172437
+      value: "{prompt}"
+      iterations: 3
+      llms:
+        - key: 1c55c547-9afd-4722-8dc4-1521ab39ad1d
+          name: GPT3.5
+          model: gpt-3.5-turbo
+          emoji: "\U0001F916"
+          base_model: gpt-3.5-turbo
+          temp: 1
+          parallel_tool_calls: true
+          system_msg: You are a helpful assistant.
+          temperature: 1
+          top_p: 1
+        - key: f33490c1-9d76-469e-91b4-8f05152cde8d
+          name: GPT4o-mini
+          model: gpt-4o-mini
+          emoji: "\U0001F444"
+          base_model: gpt-4
+          temp: 1
+          parallel_tool_calls: true
+          system_msg: You are a helpful assistant.
+          temperature: 1
+          top_p: 1
+        - key: b85c1f4b-99c2-4dc5-9c6a-07ffc6271265
+          name: Claude-3.5-Sonnet
+          model: claude-3-5-sonnet-latest
+          emoji: "\U0001F4DA"
+          base_model: claude-v1
+          temp: 0.5
+          max_tokens_to_sample: 1024
+          parallel_tool_calls: true
+          stop_sequences:
+            - |-
+
+
+              Human:
+          temperature: 1
+          top_p: -1
+  - dataset:
+      name: textfields-1735326172437
+      path: ../files/textfields-1735326172437.csv
+  - dataset:
+      name: textFieldsNode-1735326334600
+      path: ../files/textFieldsNode-1735326334600.csv
+  - evaluator:
+      type: simple
+      name: simpleEval-701430b9-5b82-4143-817d-ed5b3c473714
+      return_type: string
+      text_value: "true"
+      var_value: ""
+      var_type: ""
+      var_selected: false
+      file: ../files/simpleEval-701430b9-5b82-4143-817d-ed5b3c473714.js
+  - visnode:
+      type: simple
+      name: simpleEval-701430b9-5b82-4143-817d-ed5b3c473714
+      return_type: string
+      file: ../files/simpleEval-701430b9-5b82-4143-817d-ed5b3c473714.js
+links:
+  - source: textfields-1735326172437
+    target: prompt-1735326172437
+    source_var: output
+    target_var: prompt
+  - source: textFieldsNode-1735326334600
+    target: textfields-1735326172437
+    source_var: output
+    target_var: text
+  - source: prompt-1735326172437
+    target: evalNode-1735326661375
+    source_var: prompt
+    target_var: responseBatch
+  - source: prompt-1735326172437
+    target: evaluator-1735327098496
+    source_var: prompt
+    target_var: responseBatch
+  - source: evaluator-1735327098496
+    target: visNode-1735327175018
+    source_var: output
+    target_var: input
+  - source: prompt-1735326172437
+    target: simpleEval-701430b9-5b82-4143-817d-ed5b3c473714
+    source_var: prompt
+    target_var: responseBatch

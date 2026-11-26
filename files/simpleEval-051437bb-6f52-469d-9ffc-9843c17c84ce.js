@@ -1,3 +1,3 @@
 function evaluate(r) {
-  return r.text.includes(r.meta['Expected']);
+  return r.text.includes(r.meta["Expected"]);
 }

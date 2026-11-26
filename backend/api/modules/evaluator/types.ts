@@ -46,4 +46,3 @@ export type MultiEvaluator = {
 };
 
 export type MultiEvaluatorMapping = [number, number];
-

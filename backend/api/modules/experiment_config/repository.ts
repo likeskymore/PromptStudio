@@ -1,5 +1,3 @@
-import * as fs from "fs";
-import { parse } from "csv-parse";
 import { DatabaseClient, getClient, prisma } from "../../../database/prisma";
 import { Input, Promptconfig, PromptVarsDict } from "./types";
 import { NodeRepository } from "../node/repository";
@@ -8,16 +6,15 @@ import { computeMarkerValueHash } from "./helpers";
 export const ExperimentConfigRepository = {
   /**
    * Saves a dataset to the database.
-   * This function processes a CSV file, extracts markers and their values,
-   * inserts them into the database, and associates them with the dataset and the template.
-   * @param file The path to the CSV file containing the dataset.
+   * Inserts parsed CSV rows and their marker relationships into the database.
+   * @param rows The rows parsed from the dataset CSV.
    * @param node_id
    * @param name The name of the dataset to be saved.
    * @param connection
    * @return The ID of the newly created dataset.
    */
   async save_dataset(
-    file: string,
+    rows: Record<string, string>[],
     node_id: number,
     name: string,
     connection: DatabaseClient = prisma,
@@ -26,52 +23,83 @@ export const ExperimentConfigRepository = {
       const client = getClient(connection);
       await client.dataset.create({ data: { nodeId: node_id, name } });
 
-      // If no file is provided, return the dataset_id immediately.
-      if (!file || file.trim() === "") return node_id;
+      if (rows.length === 0) return node_id;
 
-      const markers_id: Record<string, number> = {};
-      const parser = fs
-        .createReadStream(file)
-        .pipe(parse({ columns: true, trim: true }));
-
-      for await (const row of parser) {
-        const input = await client.dataInput.create({
-          data: { datasetId: node_id },
+      const markerNames = new Set(
+        rows.flatMap((row) =>
+          Object.keys(row).filter((marker) => marker !== "oracle"),
+        ),
+      );
+      if (markerNames.size > 0) {
+        await client.marker.createMany({
+          data: [...markerNames].map((marker) => ({
+            marker,
+            datasetId: node_id,
+          })),
         });
+      }
 
-        for (const marker of Object.keys(row)) {
-          if (marker === "oracle") {
-            await client.dataInput.update({
-              where: { id: input.id },
-              data: { oracle: row[marker] },
-            });
-            continue;
-          }
+      const savedMarkers = await client.marker.findMany({
+        where: { datasetId: node_id },
+        select: { id: true, marker: true },
+      });
+      const markerIds = new Map(
+        savedMarkers.map(({ marker, id }) => [marker, id]),
+      );
 
-          if (!(marker in markers_id)) {
-            const existingMarker = await client.marker.findFirst({
-              where: { marker, datasetId: node_id },
-            });
-            const savedMarker =
-              existingMarker ??
-              (await client.marker.create({
-                data: { marker, datasetId: node_id },
-              }));
-            markers_id[marker] = savedMarker.id;
-          }
+      await client.dataInput.createMany({
+        data: rows.map((row) => ({
+          datasetId: node_id,
+          oracle: row.oracle ?? null,
+        })),
+      });
+      const savedInputs = await client.dataInput.findMany({
+        where: { datasetId: node_id },
+        orderBy: { id: "asc" },
+        select: { id: true },
+      });
 
-          const marker_id = markers_id[marker];
-          const value = row[marker];
-          const hash = computeMarkerValueHash(marker_id, value);
-          const markerValue = await client.markerValue.upsert({
-            where: { hash },
-            update: {},
-            create: { markerId: marker_id, value, hash },
-          });
-          await client.inputMarker.create({
-            data: { inputId: input.id, markerValuesId: markerValue.id },
-          });
-        }
+      const markerValues = rows.flatMap((row) =>
+        Object.entries(row)
+          .filter(([marker]) => marker !== "oracle")
+          .map(([marker, value]) => {
+            const markerId = markerIds.get(marker)!;
+            return {
+              markerId,
+              value,
+              hash: computeMarkerValueHash(markerId, value),
+            };
+          }),
+      );
+      if (markerValues.length > 0) {
+        await client.markerValue.createMany({
+          data: markerValues,
+          skipDuplicates: true,
+        });
+      }
+
+      const savedMarkerValues = await client.markerValue.findMany({
+        where: { hash: { in: markerValues.map(({ hash }) => hash) } },
+        select: { id: true, hash: true },
+      });
+      const markerValueIds = new Map(
+        savedMarkerValues.map(({ hash, id }) => [hash, id]),
+      );
+      const inputMarkers = rows.flatMap((row, inputIndex) =>
+        Object.entries(row)
+          .filter(([marker]) => marker !== "oracle")
+          .map(([marker, value]) => {
+            const markerId = markerIds.get(marker)!;
+            return {
+              inputId: savedInputs[inputIndex].id,
+              markerValuesId: markerValueIds.get(
+                computeMarkerValueHash(markerId, value),
+              )!,
+            };
+          }),
+      );
+      if (inputMarkers.length > 0) {
+        await client.inputMarker.createMany({ data: inputMarkers });
       }
 
       return node_id;

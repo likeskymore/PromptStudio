@@ -1,7 +1,6 @@
 import { ResolvedInput } from "./types";
 import * as crypto from "crypto";
 
-
 export function cartesianProduct(arrays: ResolvedInput[][]): ResolvedInput[] {
   if (arrays.length === 0) return [];
 
@@ -27,7 +26,10 @@ export function cartesianProduct(arrays: ResolvedInput[][]): ResolvedInput[] {
   );
 }
 
-export function computeMarkerValueHash(marker_id: number, value: string): string {
+export function computeMarkerValueHash(
+  marker_id: number,
+  value: string,
+): string {
   return crypto
     .createHash("sha256")
     .update(`${marker_id}${value}`)
