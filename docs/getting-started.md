@@ -17,7 +17,7 @@ From the repository root:
 npm install
 ```
 
-Create a MySQL database and add `credentials.json` to the project root. Keep this file out of version control.
+Create a MySQL database, copy `.env.example` to `.env` in the project root, and set the database variables and provider keys needed by your experiments. Keep `.env` out of version control.
 
 ## Start PromptStudio
 

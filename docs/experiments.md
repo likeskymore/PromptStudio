@@ -30,7 +30,7 @@ To rerun an experiment already saved in the database:
 npx tsx headless/cli.ts --name YOUR_EXPERIMENT_NAME
 ```
 
-The runner requires `credentials.json` and a running backend API. It estimates input-token usage and asks for confirmation before sending provider requests.
+The runner requires a configured `.env` file and a running backend API. It estimates input-token usage and asks for confirmation before sending provider requests.
 
 ## Providers and privacy
 

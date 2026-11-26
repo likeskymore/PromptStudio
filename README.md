@@ -28,23 +28,13 @@ Install dependencies:
 npm install
 ```
 
-Create a MySQL database and configure `credentials.json` in the project root:
+Create a MySQL database, then copy `.env.example` to `.env` in the project root:
 
-```json
-{
-  "database": {
-    "host": "localhost",
-    "user": "root",
-    "password": "your_password",
-    "database": "promptstudio",
-    "port": 3306
-  },
-  "api_keys": {
-    "OpenAI": "your_openai_api_key",
-    "Google": "your_google_api_key"
-  }
-}
+```bash
+cp .env.example .env
 ```
+
+Set `DATABASE_HOST`, `DATABASE_USER`, `DATABASE_PASSWORD`, and `DATABASE_NAME`, plus the provider keys used by your workflows (for example `OPENAI_API_KEY` and `PALM_API_KEY` for Google).
 
 Start the backend in one terminal:
 
@@ -89,7 +79,7 @@ The runner estimates input-token usage and asks for confirmation before executio
 
 ## Security
 
-Keep `credentials.json`, database credentials, API keys, private datasets, and generated outputs out of version control. Use provider keys with appropriate access and spending limits.
+Keep `.env`, database credentials, API keys, private datasets, and generated outputs out of version control. Use provider keys with appropriate access and spending limits.
 
 ## License
 

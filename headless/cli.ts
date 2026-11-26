@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { Command } from "commander";
 import {
   getTotalTokenCountForExperiment,
@@ -6,7 +7,6 @@ import {
   save_config,
 } from "./apiCall";
 import * as fs from "fs";
-import * as path from "node:path";
 import readline from "node:readline";
 
 /**
@@ -54,14 +54,6 @@ async function main() {
     .parse(process.argv);
 
   const options = program.opts();
-
-  const credentialsPath = path.join(process.cwd(), "../credentials.json");
-  if (!fs.existsSync(credentialsPath)) {
-    console.error(
-      `Required file 'credentials.json' not found in ${credentialsPath}`,
-    );
-    process.exit(1);
-  }
 
   if (options.config) {
     // Check if the provided config file exists

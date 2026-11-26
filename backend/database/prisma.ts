@@ -19,27 +19,3 @@ export type DatabaseClient = PrismaClient | Prisma.TransactionClient;
 
 export const getClient = (connection?: DatabaseClient): DatabaseClient =>
   connection ?? prisma;
-
-// import "dotenv/config";
-// import { readFileSync } from "node:fs";
-// import { fileURLToPath } from "node:url";
-// import { PrismaMariaDb } from "@prisma/adapter-mariadb";
-// import { Prisma, PrismaClient } from "../../generated/prisma/client";
-
-// const credentials = JSON.parse(
-//   readFileSync(
-//     fileURLToPath(new URL("../../credentials.json", import.meta.url)),
-//     "utf-8",
-//   ),
-// );
-
-// const adapter = new PrismaMariaDb({
-//   ...credentials.database,
-//   connectionLimit: 5,
-// });
-// export const prisma = new PrismaClient({ adapter });
-
-// export type DatabaseClient = PrismaClient | Prisma.TransactionClient;
-
-// export const getClient = (connection?: DatabaseClient): DatabaseClient =>
-//   connection ?? prisma;

@@ -4,10 +4,6 @@ import { ExperimentRepository } from "../backend/api/modules/experiment/reposito
 import { ExperimentService } from "../backend/api/modules/experiment/service";
 import { closeTestServer, request, startTestServer } from "./routeTestHelpers";
 
-jest.mock("fs", () => ({
-  ...jest.requireActual("fs"),
-  readFileSync: jest.fn(() => JSON.stringify({ api_keys: {} })),
-}));
 jest.mock("../backend/api/modules/experiment/repository", () => ({
   ExperimentRepository: {
     get_all_experiment_names_and_ids: jest.fn(),
@@ -58,14 +54,27 @@ describe("ExperimentRoutes", () => {
 
   it("starts an experiment in the background", async () => {
     jest.mocked(ExperimentService.run_experiment).mockResolvedValue("run-1");
+    const originalOpenAiKey = process.env.OPENAI_API_KEY;
+    process.env.OPENAI_API_KEY = "test-openai-key";
 
-    const response = await request(server, "POST", "/experiments/run/Demo");
+    try {
+      const response = await request(server, "POST", "/experiments/run/Demo");
 
-    expect(response.status).toBe(200);
-    expect(response.body.body).toEqual({
-      message: "Experiment Demo started successfully.",
-      runId: "run-1",
-    });
+      expect(response.status).toBe(200);
+      expect(response.body.body).toEqual({
+        message: "Experiment Demo started successfully.",
+        runId: "run-1",
+      });
+      const call = jest
+        .mocked(ExperimentService.run_experiment)
+        .mock.calls.at(-1);
+      expect(call?.[0]).toBe("Demo");
+      expect(JSON.parse(call?.[1] ?? "{}").OpenAI).toBe("test-openai-key");
+      expect(call?.[2]).toEqual({ background: true });
+    } finally {
+      if (originalOpenAiKey === undefined) delete process.env.OPENAI_API_KEY;
+      else process.env.OPENAI_API_KEY = originalOpenAiKey;
+    }
   });
 
   it("rejects an invalid experiment id", async () => {

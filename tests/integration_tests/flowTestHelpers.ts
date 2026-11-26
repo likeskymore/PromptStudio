@@ -1,20 +1,8 @@
-import fs, { type PathLike } from "node:fs";
-import { syncBuiltinESMExports } from "node:module";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { PrismaClient } from "../../generated/prisma/client";
 
-export async function setupFlowTest(apiKeys: Record<string, string> = {}) {
-  const originalReadFileSync = fs.readFileSync.bind(fs);
-  const overrideReadFileSync = ((filePath: PathLike, options?: any) => {
-    if (String(filePath).endsWith("credentials.json")) {
-      return JSON.stringify({ api_keys: apiKeys });
-    }
-    return originalReadFileSync(filePath, options);
-  }) as typeof fs.readFileSync;
-
-  fs.readFileSync = overrideReadFileSync;
-  syncBuiltinESMExports();
+export async function setupFlowTest() {
   Object.assign(globalThis, {
     __dirname: path.resolve(
       path.dirname(fileURLToPath(import.meta.url)),
@@ -22,46 +10,44 @@ export async function setupFlowTest(apiKeys: Record<string, string> = {}) {
     ),
   });
 
-  try {
-    const { prisma } = await import("../../backend/database/prisma");
-    const { ExperimentRoutes } =
-      await import("../../backend/api/modules/experiment/route");
-    const { ExperimentStateRoutes } =
-      await import("../../backend/api/modules/experiment_state/route");
-    const { ExperimentConfigService } =
-      await import("../../backend/api/modules/experiment_config/service");
-    const { ExperimentService } =
-      await import("../../backend/api/modules/experiment/service");
-    const { ExperimentRepository } =
-      await import("../../backend/api/modules/experiment/repository");
-    const { ExperimentStateRepository } =
-      await import("../../backend/api/modules/experiment_state/repository");
-    const { NodeRepository } =
-      await import("../../backend/api/modules/node/repository");
-    const { PromptRepository } =
-      await import("../../backend/api/modules/prompt/repository");
-    const { ResultRepository } =
-      await import("../../backend/api/modules/result/repository");
-    const { EvaluatorRepository } =
-      await import("../../backend/api/modules/evaluator/repository");
+  const { prisma } = await import("../../backend/database/prisma");
+  await prisma.$connect();
+  await prisma.$queryRaw`SELECT 1`;
 
-    return {
-      prisma,
-      ExperimentRoutes,
-      ExperimentStateRoutes,
-      ExperimentConfigService,
-      ExperimentService,
-      ExperimentRepository,
-      ExperimentStateRepository,
-      NodeRepository,
-      PromptRepository,
-      ResultRepository,
-      EvaluatorRepository,
-    };
-  } finally {
-    fs.readFileSync = originalReadFileSync;
-    syncBuiltinESMExports();
-  }
+  const { ExperimentRoutes } =
+    await import("../../backend/api/modules/experiment/route");
+  const { ExperimentStateRoutes } =
+    await import("../../backend/api/modules/experiment_state/route");
+  const { ExperimentConfigService } =
+    await import("../../backend/api/modules/experiment_config/service");
+  const { ExperimentService } =
+    await import("../../backend/api/modules/experiment/service");
+  const { ExperimentRepository } =
+    await import("../../backend/api/modules/experiment/repository");
+  const { ExperimentStateRepository } =
+    await import("../../backend/api/modules/experiment_state/repository");
+  const { NodeRepository } =
+    await import("../../backend/api/modules/node/repository");
+  const { PromptRepository } =
+    await import("../../backend/api/modules/prompt/repository");
+  const { ResultRepository } =
+    await import("../../backend/api/modules/result/repository");
+  const { EvaluatorRepository } =
+    await import("../../backend/api/modules/evaluator/repository");
+
+  return {
+    prisma,
+    ExperimentRoutes,
+    ExperimentStateRoutes,
+    ExperimentConfigService,
+    ExperimentService,
+    ExperimentRepository,
+    ExperimentStateRepository,
+    NodeRepository,
+    PromptRepository,
+    ResultRepository,
+    EvaluatorRepository,
+  };
 }
 
 export async function cleanupFlowExperiment(

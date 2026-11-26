@@ -47,7 +47,7 @@ const {
   PromptRepository,
   ResultRepository,
   EvaluatorRepository,
-} = await setupFlowTest(apiKeys);
+} = await setupFlowTest();
 
 let server: Awaited<ReturnType<typeof startTestServer>> | undefined;
 let experimentTitle: string | undefined;

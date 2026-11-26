@@ -80,7 +80,7 @@ Example workflows and small public fixtures belong in `files/`. Private datasets
 
 ### Providers and network access
 
-Provider clients should remain behind small adapters or injectable collaborators. Provider request shaping, token estimation, retry behavior, and response normalization should be testable without a real model request. Tests must use mocked responses or fakes and must not depend on `credentials.json`.
+Provider clients should remain behind small adapters or injectable collaborators. Provider request shaping, token estimation, retry behavior, and response normalization should be testable without a real model request. Tests must use mocked responses or fakes and must not depend on local `.env` values.
 
 Keep provider-specific behavior out of generic route handlers. This makes it possible to add or change a provider without changing the API contract or experiment orchestration.
 
@@ -121,7 +121,7 @@ When adding a boundary, add a focused test that would fail if a caller bypassed 
 
 Runtime state belongs outside source-controlled code:
 
-- `credentials.json` and provider API keys
+- `.env` and provider API keys
 - MySQL databases and connection dumps
 - uploaded files under `uploads/`
 - generated experiment results and logs

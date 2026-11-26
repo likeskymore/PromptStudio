@@ -22,7 +22,7 @@ This guide covers repository onboarding and the development workflow for PromptS
 - `tests/`: Jest tests for the CLI, configuration handling, runners, and integration behavior.
 - `docs/`: user, architecture, testing, and contribution documentation.
 - `uploads/`: local runtime uploads. Do not commit its contents.
-- `credentials.json`: local provider and database configuration. This file must remain outside version control.
+- `.env`: local provider and database configuration. This file must remain outside version control.
 
 ## Run the application
 
@@ -117,7 +117,7 @@ For changes that affect experiment execution, verify both a direct backend path 
 
 Never commit:
 
-- `credentials.json` or API keys.
+- `.env` or API keys.
 - Database passwords or connection dumps.
 - Private datasets and uploaded files.
 - Generated experiment results, logs, or temporary runtime state.

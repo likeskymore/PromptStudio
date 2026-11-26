@@ -6,7 +6,6 @@ import * as os from "os";
 const cliPath = path.resolve(__dirname, "../headless/cli.ts");
 
 // We will create a temp root folder with this structure:
-// tmpRoot/credentials.json
 // tmpRoot/tmp2/test.yml
 // Then run cli with cwd = tmpRoot/tmp2
 
@@ -46,33 +45,14 @@ afterAll(async () => {
   await fs.rm(tmpRoot, { recursive: true, force: true });
 });
 
-test("fails when credentials.json missing", async () => {
-  // Create only config file inside tmp2
-  await fs.writeFile(path.join(tmp2Dir, "test.yml"), "name: dummy\n");
-
-  const { stderr } = await runCli("-c test.yml", tmp2Dir);
-  expect(stderr).toContain("Required file 'credentials.json' not found");
-});
-
 test("fails when both -c and -n provided", async () => {
-  // Create credentials.json in root tmp folder
-  await fs.writeFile(
-    path.join(tmpRoot, "credentials.json"),
-    JSON.stringify({ api_keys: { test: "abc" } }),
-  );
   await fs.writeFile(path.join(tmp2Dir, "test.yml"), "name: dummy\n");
 
   const { stderr } = await runCli("-c test.yml -n dummy", tmp2Dir);
   expect(stderr).toContain("Please chose only 1 option.");
 });
 
-test("fails when config file missing", async () => {
-  // Create credentials.json in root tmp folder
-  await fs.writeFile(
-    path.join(tmpRoot, "credentials.json"),
-    JSON.stringify({ api_keys: { test: "abc" } }),
-  );
-
+test("validates config file without requiring credentials.json", async () => {
   const { stderr } = await runCli("-c test.yml", tmp2Dir);
   expect(stderr).toContain("Configuration file not found");
 });

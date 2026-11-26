@@ -1,23 +1,51 @@
+import "dotenv/config";
 import express from "express";
-import * as fs from "fs";
 import { ResponseCode, sendResponse } from "../../common/responseHandler";
 import { ExperimentService } from "./service";
 import { ExperimentRepository } from "./repository";
 import { ExperimentStateService } from "../experiment_state/service";
 import { ExperimentStateRepository } from "../experiment_state/repository";
-import path from "path";
 
 const router = express.Router();
-export const credentialsPath = path.join(__dirname, "../../credentials.json");
-const credentials = JSON.parse(fs.readFileSync(credentialsPath, "utf-8"));
-const api_keys = JSON.stringify(credentials.api_keys ?? {});
+const apiKeyEnvironmentVariables = {
+  OpenAI: "OPENAI_API_KEY",
+  OpenAI_BaseURL: "OPENAI_BASE_URL",
+  HuggingFace: "HUGGINGFACE_API_KEY",
+  Anthropic: "ANTHROPIC_API_KEY",
+  Google: "PALM_API_KEY",
+  Azure_OpenAI: "AZURE_OPENAI_KEY",
+  Azure_OpenAI_Endpoint: "AZURE_OPENAI_ENDPOINT",
+  AlephAlpha: "ALEPH_ALPHA_API_KEY",
+  AlephAlpha_BaseURL: "ALEPH_ALPHA_BASE_URL",
+  AWS_Access_Key_ID: "AWS_ACCESS_KEY_ID",
+  AWS_Secret_Access_Key: "AWS_SECRET_ACCESS_KEY",
+  AWS_Session_Token: "AWS_SESSION_TOKEN",
+  AWS_Region: "AWS_REGION",
+  Together: "TOGETHER_API_KEY",
+  DeepSeek: "DEEPSEEK_API_KEY",
+} as const;
+
+export function getApiKeysFromEnvironment(): Record<string, string> {
+  const apiKeys: Record<string, string> = {};
+  for (const [providerName, environmentName] of Object.entries(
+    apiKeyEnvironmentVariables,
+  )) {
+    const value = process.env[environmentName];
+    if (value?.trim()) apiKeys[providerName] = value;
+  }
+  return apiKeys;
+}
+
+function serializedApiKeysFromEnvironment(): string {
+  return JSON.stringify(getApiKeysFromEnvironment());
+}
 
 router.post("/run/:name", async (req, res) => {
   try {
     const experiment_name = req.params.name;
     const runId = await ExperimentService.run_experiment(
       experiment_name,
-      api_keys,
+      serializedApiKeysFromEnvironment(),
       {
         background: true,
       },
@@ -45,7 +73,7 @@ router.post("/run/:name/rerun", async (req, res) => {
     const experiment_name = req.params.name;
     const runId = await ExperimentService.run_experiment(
       experiment_name,
-      api_keys,
+      serializedApiKeysFromEnvironment(),
       {
         background: true,
         rerun: true,
@@ -150,7 +178,7 @@ router.post("/run/:runId/resume", async (req, res) => {
     }
     const runId = await ExperimentService.run_experiment(
       persistedRun.experiment_name,
-      api_keys,
+      serializedApiKeysFromEnvironment(),
       {
         background: true,
         resumeRunId: persistedRun.run_id,

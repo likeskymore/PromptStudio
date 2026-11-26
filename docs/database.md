@@ -6,7 +6,7 @@ The optional React dashboard and the headless runner both use the backend API. T
 
 ## Database connection
 
-The backend reads database credentials from the repository-root `credentials.json` file when [backend/database/database.ts](../backend/database/database.ts) is loaded. The expected `database` object contains the MySQL host, user, password, database name, and optional port. Keep this file local and outside version control.
+The backend reads `DATABASE_HOST`, `DATABASE_USER`, `DATABASE_PASSWORD`, and `DATABASE_NAME` from the process environment when [backend/database/prisma.ts](../backend/database/prisma.ts) is loaded. For local development, define them in the repository-root `.env` file. Keep this file local and outside version control.
 
 The backend creates one `mysql2/promise` connection pool with these operational defaults:
 
@@ -28,7 +28,7 @@ mysql -u YOUR_USER -p < backend/database/db.sql
 
 The script creates and selects the `promptstudio` database before creating tables and views. If the database already exists, remove or comment out the `CREATE DATABASE promptstudio` statement and run only the schema statements that are appropriate for the target environment. The schema script is an initialization script, not a migration history.
 
-Start the backend after `credentials.json` points at the configured database:
+Start the backend after `.env` points at the configured database:
 
 ```bash
 npx tsx backend/api/server.ts
@@ -202,7 +202,7 @@ When changing tables, columns, constraints, indexes, views, or relationships:
 
 Keep the following out of source control:
 
-- `credentials.json`, passwords, and provider keys;
+- `.env`, passwords, and provider keys;
 - database dumps and production exports;
 - private datasets and prompt content;
 - generated model outputs, logs, and temporary run artifacts.
